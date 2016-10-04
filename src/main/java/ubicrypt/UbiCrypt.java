@@ -85,7 +85,6 @@ public class UbiCrypt extends Application {
             anchor().getControllerStream().subscribe(initializable -> {
                 log.debug("register in spring:{}", initializable);
                 Utils.springIt(ctx, initializable);
-//                ctx.getBeanFactory().registerSingleton(initializable.getClass().getSimpleName(), initializable);
             });
         });
 
