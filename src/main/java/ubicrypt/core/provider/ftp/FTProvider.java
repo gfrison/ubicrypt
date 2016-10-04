@@ -58,7 +58,7 @@ public class FTProvider extends UbiProvider {
     }
 
     private Observable<FTPClient> connect() {
-        return Observable.create(subscriber -> {
+        return Observable.<FTPClient>create(subscriber -> {
             final FTPClient client = new FTPClient();
             try {
                 client.connect(conf.getHost(), getConf().getPort() == -1 ? 21 : getConf().getPort());
@@ -103,7 +103,7 @@ public class FTProvider extends UbiProvider {
                 disconnect(client);
                 subscriber.onError(e);
             }
-        });
+        }).subscribeOn(Schedulers.io());
     }
 
     private void disconnect(FTPClient client) {
