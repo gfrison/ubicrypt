@@ -6,7 +6,8 @@ _Cloud storage is pervasive and cheap, but it raises concerns on privacy, securi
 
 *UbiCrypt* is a desktop application that allows you to keep your data secret and safely stored in multiple locations.
 
-[![Build Status](https://travis-ci.org/gfrison/ubicrypt.svg?branch=master)](https://travis-ci.org/gfrison/ubicrypt)
+[![Build Status](https://travis-ci.org/gfrison/ubicrypt.svg?branch=master)](https://travis-ci.org/gfrison/ubicrypt)  
+[![Join the chat at https://gitter.im/ubicryp/Lobby](https://badges.gitter.im/ubicryp/Lobby.svg)](https://gitter.im/ubicryp/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 ### Ubicrypt encrypts your files and keeps them to any cloud storage
 #### Key features:
