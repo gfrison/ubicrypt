@@ -11,7 +11,7 @@ _Cloud storage is pervasive and cheap, but it raises concerns on privacy, securi
 
 ### Ubicrypt encrypts your files and keeps them to any cloud storage
 #### Key features:
-  - Asymetric encryption with [Elliptic Curves 32bit](https://en.wikipedia.org/wiki/Elliptic_curve).
+  - Asymmetric encryption with [Elliptic Curves 32bit](https://en.wikipedia.org/wiki/Elliptic_curve).
   - Symmetric encryption with [GCM-AES-256](https://en.wikipedia.org/wiki/Galois/Counter_Mode).
   - File replication on multiple [Cloud Storage](https://en.wikipedia.org/wiki/Cloud_storage) system.
   - Sharing between multiple devices (Computer at home, at work, etc)
