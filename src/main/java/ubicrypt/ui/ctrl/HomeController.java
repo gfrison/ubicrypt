@@ -214,7 +214,7 @@ public class HomeController implements Initializable, ApplicationContextAware {
         root.getChildren().add(filesRoot);
         treeView.setShowRoot(false);
         localConfig.getLocalFiles().stream()
-                .filter(Utils.ignoredFiles)
+                .filter(Utils.trackedFile)
                 .forEach(localFile -> addFiles(localFile.getPath().iterator(), basePath, filesRoot, localFile));
 
 

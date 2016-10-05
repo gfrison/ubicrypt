@@ -91,7 +91,7 @@ public class WatcherBroadcaster {
      */
     private void registerFileFolders() {
         localConfig.getLocalFiles().stream()
-                .filter(Utils.ignoredFiles)
+                .filter(Utils.trackedFile)
                 .map(LocalFile::getPath)
                 .map(basePath::resolve)
                 .filter(Files::isRegularFile)

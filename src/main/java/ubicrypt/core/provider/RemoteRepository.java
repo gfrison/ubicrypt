@@ -13,7 +13,6 @@
  */
 package ubicrypt.core.provider;
 
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.slf4j.Logger;
@@ -118,7 +117,7 @@ public class RemoteRepository implements IRepository {
             UbiFile<UbiFile> file = fp.getFile();
             Optional<RemoteFile> rfile = remoteConfig.getRemoteFiles().stream().filter(file1 -> file1.equals(file)).findFirst();
             if (!rfile.isPresent()) {
-                if (!Utils.ignoredFiles.test(file)) {
+                if (!Utils.trackedFile.test(file)) {
                     return just(false);
                 }
                 //create new one remotely
@@ -137,20 +136,30 @@ public class RemoteRepository implements IRepository {
                                             return true;
                                         }))
                         .defaultIfEmpty(false)
-                        .filter(BooleanUtils::isTrue)
+//                        .filter(BooleanUtils::isTrue)
                         .doOnCompleted(fileEvents(fp, fileEventType.get()));
             }
             //update already present file
             if (file.compare(rfile.get()) == VClock.Comparison.newer) {
                 //coming file is new version
                 log.debug("file:{} newer than:{} on provider:{}", file.getPath(), rfile.get(), provider);
-                rfile.get().copyFrom(file);
-                if (rfile.get().isDeleted() || rfile.get().isRemoved()) {
+                if (!Utils.trackedFile.test(file)) {
                     //delete remotely
-                    fileEventType.set(rfile.get().isDeleted() ? FileEvent.Type.deleted : FileEvent.Type.removed);
+                    if (file.isRemoved()) {
+                        fileEventType.set(FileEvent.Type.removed);
+                    }
+                    if (file.isDeleted()) {
+                        fileEventType.set(FileEvent.Type.deleted);
+                    }
                     return provider.delete(rfile.get().getName())
                             .doOnNext(saved -> log.info("deleted:{} file:{}, to provider:{}", saved, rfile.get().getPath(), provider))
-                            .filter(BooleanUtils::isTrue)
+                            .doOnNext(saved -> {
+                                if (saved) {
+                                    rfile.get().copyFrom(file);
+                                }
+                            })
+                            .doOnError(err -> rfile.get().setError(true))
+//                            .filter(BooleanUtils::isTrue)
                             .doOnCompleted(fileEvents(fp, fileEventType.get()));
                 }
                 //update remotely
@@ -158,19 +167,25 @@ public class RemoteRepository implements IRepository {
                 return fp.getOrigin().get(file)
                         .flatMap(is -> {
                             //renew encryption key
-                            rfile.get().setKey(new Key(AESGCM.rndKey(), UbiFile.KeyType.aes));
+                            final Key key = new Key(AESGCM.rndKey(), UbiFile.KeyType.aes);
                             return provider.put(rfile.get().getName(),
-                                    AESGCM.encryptIs(rfile.get().getKey().getBytes(), new DeflaterInputStream(monitor(fp, is), new Deflater(BEST_COMPRESSION))))
+                                    AESGCM.encryptIs(key.getBytes(), new DeflaterInputStream(monitor(fp, is), new Deflater(BEST_COMPRESSION))))
                                     .doOnNext(saved -> log.info("updated:{} file:{}, to provider:{}", saved, rfile.get().getPath(), provider))
-                                    .filter(BooleanUtils::isTrue)
+                                    .doOnNext(saved -> {
+                                        rfile.get().copyFrom(file);
+                                        rfile.get().setKey(key);
+                                    })
+                                    .doOnError(err -> rfile.get().setError(true))
+//                                    .filter(BooleanUtils::isTrue)
                                     .doOnCompleted(fileEvents(fp, fileEventType.get()));
                         });
             }
-            log.debug("no update file:{} for provider:{}", file.getPath(), provider);
+            log.trace("no update file:{} for provider:{}", file.getPath(), provider);
             return Observable.just(false);
         })
                 .doOnError(releaserRef.get() != null ? err -> releaserRef.get().getReleaser().call() : Actions.empty())
                 .doOnError(err -> progressEvents.onNext(new ProgressFile(fp, this, false, true)))
+                .doOnError(err -> fileEvents(fp, FileEvent.Type.error))
                 .onErrorReturn(err -> {
                     log.error(err.getMessage(), err);
                     return false;

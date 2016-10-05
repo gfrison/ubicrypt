@@ -20,6 +20,8 @@ import ubicrypt.core.crypto.AESGCM;
 public class RemoteFile extends UbiFile<RemoteFile> {
     private Key key = new Key(AESGCM.rndKey());
     private String remoteName;
+    //on uploading error mark it: true
+    private boolean error = false;
 
     public static RemoteFile createFrom(UbiFile file) {
         RemoteFile ret = new RemoteFile();
@@ -31,6 +33,7 @@ public class RemoteFile extends UbiFile<RemoteFile> {
         super.copyFrom(file);
         key = file.getKey();
         remoteName = file.getRemoteName();
+        error = file.isError();
         return this;
     }
 
@@ -60,5 +63,11 @@ public class RemoteFile extends UbiFile<RemoteFile> {
         return getRemoteName();
     }
 
+    public boolean isError() {
+        return error;
+    }
 
+    public void setError(boolean error) {
+        this.error = error;
+    }
 }

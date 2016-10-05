@@ -184,7 +184,7 @@ public class FileSynchronizer implements Observable.OnSubscribe<Boolean> {
             final Multimap<UUID, FileProvenience> all = LinkedHashMultimap.create();
             //add local files
             localConfig.getLocalFiles().stream()
-                    .filter(Utils.ignoredFiles)
+                    .filter(Utils.trackedFile)
                     .forEach(file -> all.put(file.getId(), new FileProvenience(file, localRepository)));
             //add all remote files
             Tuple2<ProviderHook, RemoteConfig>[] configs = Arrays.copyOf(args, args.length, Tuple2[].class);

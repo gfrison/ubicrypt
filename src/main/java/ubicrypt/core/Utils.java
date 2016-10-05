@@ -80,7 +80,7 @@ import ubicrypt.core.util.PGPKValueSerializer;
 import static org.apache.commons.lang3.StringUtils.substringAfter;
 
 public class Utils {
-    public static final Predicate<? super UbiFile> ignoredFiles = file -> !(file.isDeleted() || file.isRemoved());
+    public static final Predicate<? super UbiFile> trackedFile = file -> !(file.isDeleted() || file.isRemoved());
     private final static Logger log = LoggerFactory.getLogger(Utils.class);
     public static final Action1<Throwable> logError = err -> log.error(err.getMessage(), err);
     private final static SmileFactory smile = new SmileFactory();
