@@ -76,6 +76,8 @@ import ubicrypt.core.exp.NotFoundException;
 import ubicrypt.core.util.PGPKValue;
 import ubicrypt.core.util.PGPKValueDeserializer;
 import ubicrypt.core.util.PGPKValueSerializer;
+import ubicrypt.core.util.PathDeserializer;
+import ubicrypt.core.util.PathSerializer;
 
 import static org.apache.commons.lang3.StringUtils.substringAfter;
 
@@ -97,6 +99,8 @@ public class Utils {
         mapper.registerModule(new SimpleModule("ubicrypt module") {{
             addSerializer(new PGPKValueSerializer(PGPKValue.class));
             addDeserializer(PGPKValue.class, new PGPKValueDeserializer(PGPKValue.class));
+            addSerializer(new PathSerializer(Path.class));
+            addDeserializer(Path.class, new PathDeserializer(Path.class));
         }});
         mapper.registerModule(new AfterburnerModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
