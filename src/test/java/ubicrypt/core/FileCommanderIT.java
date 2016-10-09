@@ -71,7 +71,6 @@ import ubicrypt.core.util.QueueLiner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-//@Ignore
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class, classes = {FileCommanderIT.Config.class})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -187,6 +186,12 @@ public class FileCommanderIT implements ApplicationContextAware {
         @Bean
         public Subject<ProviderEvent, ProviderEvent> providerEvent() {
             return ReplaySubject.create();
+        }
+
+
+        @Bean
+        public Subject<Object, Object> appEvents() {
+            return PublishSubject.create();
         }
 
         @Bean

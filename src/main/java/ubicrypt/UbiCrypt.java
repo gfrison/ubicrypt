@@ -21,13 +21,18 @@ import org.springframework.context.annotation.Lazy;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
+import rx.subjects.Subject;
 import ubicrypt.core.FixPassPhraseInitializer;
 import ubicrypt.core.UbiConf;
 import ubicrypt.core.Utils;
+import ubicrypt.core.events.ShutdownOK;
+import ubicrypt.core.events.ShutdownRequest;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static ubicrypt.core.Utils.securityFile;
 import static ubicrypt.core.Utils.ubiqFolder;
 import static ubicrypt.ui.Anchor.anchor;
@@ -58,6 +63,17 @@ public class UbiCrypt extends Application {
     public void stop() throws Exception {
         super.stop();
         if (ctx != null) {
+            Subject appEvents = ctx.getBeanFactory().getBean("appEvents", Subject.class);
+            log.info("shutdown request, waiting for all components acks...");
+            CountDownLatch cd = new CountDownLatch(1);
+            appEvents.filter(event -> event instanceof ShutdownOK)
+                    .subscribe(next -> cd.countDown());
+            appEvents.onNext(new ShutdownRequest());
+            if (cd.await(1, MINUTES)) {
+                log.info("shutting gracefully down");
+            } else {
+                log.info("shutting process timed out");
+            }
             ctx.close();
         }
     }

@@ -37,6 +37,7 @@ import javax.inject.Inject;
 import javafx.scene.image.ImageView;
 import rx.Observable;
 import rx.subjects.PublishSubject;
+import rx.subjects.ReplaySubject;
 import rx.subjects.Subject;
 import ubicrypt.core.crypto.PGPService;
 import ubicrypt.core.dto.LocalConfig;
@@ -70,6 +71,11 @@ public class UbiConf {
     }
 
     @Bean
+    public ShutterDown shutterDown() {
+        return new ShutterDown();
+    }
+
+    @Bean
     public Path basePath(@Value("${home:@null}") final String home) {
         final Path ret = StringUtils.isEmpty(home) ? Paths.get(System.getProperty("user.home")) : Paths.get(home);
         log.info("home folder:{}", ret);
@@ -92,12 +98,6 @@ public class UbiConf {
     }
 
 
-/*    @Bean
-    @DependsOn("localFileInitSynchronizer")
-    public InitProviders initProviders() {
-        return new InitProviders();
-    }*/
-
     @Bean
     public FileCommander fileCommander(final Path basePath) {
         return new FileCommander(basePath);
@@ -111,8 +111,8 @@ public class UbiConf {
 
 
     @Bean
-    public InitLocalConfPersistor initLocalConfPersistor() {
-        return new InitLocalConfPersistor();
+    public LocalConfigPersistor initLocalConfPersistor() {
+        return new LocalConfigPersistor();
     }
 
 
@@ -153,7 +153,7 @@ public class UbiConf {
 
     @Bean
     public Subject<Object, Object> appEvents() {
-        return PublishSubject.create();
+        return ReplaySubject.create();
     }
 
     @Bean

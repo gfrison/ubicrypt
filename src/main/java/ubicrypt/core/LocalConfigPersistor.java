@@ -17,6 +17,7 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.core.env.Environment;
@@ -28,16 +29,19 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
+import javax.annotation.Resource;
 import javax.inject.Inject;
 
 import rx.Observable;
 import rx.Subscriber;
+import rx.schedulers.Schedulers;
+import rx.subjects.Subject;
 import ubicrypt.core.crypto.IPGPService;
 import ubicrypt.core.dto.LocalConfig;
+import ubicrypt.core.events.ShutdownRegistration;
 
-public class InitLocalConfPersistor implements Observable.OnSubscribe<Void>, EnvironmentAware {
-    private final Logger log = LoggerFactory.getLogger(InitLocalConfPersistor.class);
+public class LocalConfigPersistor implements Observable.OnSubscribe<Void>, EnvironmentAware, ICloseable {
+    private final Logger log = LoggerFactory.getLogger(LocalConfigPersistor.class);
     private final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1);
     @Inject
     LocalConfig localConfig;
@@ -49,6 +53,11 @@ public class InitLocalConfPersistor implements Observable.OnSubscribe<Void>, Env
     private Environment env;
     @Value("${pgp.enabled:true}")
     private Boolean encrypt = true;
+    private Runnable runnable;
+    @Resource
+    @Qualifier("appEvents")
+    private Subject appEvents;
+
 
     @PostConstruct
     public void init() {
@@ -56,7 +65,7 @@ public class InitLocalConfPersistor implements Observable.OnSubscribe<Void>, Env
             encrypt = Boolean.valueOf(env.getProperty("pgp.enabled", "true"));
         }
         log.info("local conf persistor started, pgp enable:{}", encrypt);
-        executorService.scheduleWithFixedDelay(() -> {
+        runnable = () -> {
             try {
                 final byte[] clearBytes = Utils.marshall(localConfig);
                 Files.write(Utils.configFile(),
@@ -64,13 +73,24 @@ public class InitLocalConfPersistor implements Observable.OnSubscribe<Void>, Env
             } catch (final Exception e) {
                 log.error(e.getMessage(), e);
             }
-        }, interval, 1, TimeUnit.SECONDS);
+        };
+        executorService.scheduleWithFixedDelay(runnable, interval, 1, TimeUnit.SECONDS);
+        appEvents.onNext(new ShutdownRegistration(this));
     }
 
-    @PreDestroy
-    public void close() {
-        log.info("shutdown local config persistor");
-        executorService.shutdown();
+    @Override
+    public Observable<Void> close() {
+        return Observable.<Void>create(subscriber -> {
+            log.debug("shutdown local config persistor");
+            executorService.shutdown();
+            try {
+                executorService.awaitTermination(5, TimeUnit.SECONDS);
+                runnable.run();
+                subscriber.onCompleted();
+            } catch (InterruptedException e) {
+                subscriber.onError(e);
+            }
+        }).subscribeOn(Schedulers.io());
     }
 
     @Override

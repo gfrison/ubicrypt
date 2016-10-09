@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
@@ -32,6 +32,7 @@ import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
 import static java.lang.Thread.sleep;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.IntStream.range;
 import static org.apache.log4j.LogManager.getRootLogger;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -63,7 +64,7 @@ public class QueueLinerTest {
             return just(0);
         });
         final int[] vals = {0};
-        range(0, 11).forEach(i -> epi1.call(timer(10, TimeUnit.MILLISECONDS).map(t -> i)).subscribeOn(Schedulers.io()).subscribe((Action1<Integer>) val -> vals[0] += val));
+        range(0, 11).forEach(i -> epi1.call(timer(10, MILLISECONDS).map(t -> i)).subscribeOn(Schedulers.io()).subscribe((Action1<Integer>) val -> vals[0] += val));
         sleep(500);
         assertThat(epilogeCounter1.get()).isEqualTo(1);
         assertThat(vals).isEqualTo(new int[]{(int) (5.5 * 10)});
@@ -86,8 +87,8 @@ public class QueueLinerTest {
         });
         log.debug("epi1:{}, epi2:{}", epi1.hashCode(), epi2.hashCode());
         final int[] vals = {0};
-        range(0, 11).forEach(i -> epi1.call(timer(10, TimeUnit.MILLISECONDS).map(t -> i)).subscribeOn(Schedulers.io()).subscribe((Action1<Integer>) val -> vals[0] += val));
-        range(0, 11).forEach(i -> epi2.call(timer(10, TimeUnit.MILLISECONDS).map(t -> i)).subscribeOn(Schedulers.io()).subscribe((Action1<Integer>) val -> vals[0] += val));
+        range(0, 11).forEach(i -> epi1.call(timer(10, MILLISECONDS).map(t -> i)).subscribeOn(Schedulers.io()).subscribe((Action1<Integer>) val -> vals[0] += val));
+        range(0, 11).forEach(i -> epi2.call(timer(10, MILLISECONDS).map(t -> i)).subscribeOn(Schedulers.io()).subscribe((Action1<Integer>) val -> vals[0] += val));
         sleep(500);
         assertThat(epilogeCounter1.get()).isEqualTo(1);
         assertThat(epilogeCounter2.get()).isEqualTo(1);
@@ -102,10 +103,10 @@ public class QueueLinerTest {
             epilogeCounter1.incrementAndGet();
             return just(0);
         });
-        final List<Observable<Integer>> ls = range(0, 11).mapToObj((IntFunction<Observable<Integer>>) i -> epi1.call(timer(10, TimeUnit.MILLISECONDS).map(t -> i)).subscribeOn(Schedulers.io())).collect(Collectors.toList());
+        final List<Observable<Integer>> ls = range(0, 11).mapToObj((IntFunction<Observable<Integer>>) i -> epi1.call(timer(10, MILLISECONDS).map(t -> i)).subscribeOn(Schedulers.io())).collect(Collectors.toList());
         final CountDownLatch cd = new CountDownLatch(1);
         Observable.merge(ls).doOnCompleted(cd::countDown).subscribe();
-        assertThat(cd.await(1500, TimeUnit.MILLISECONDS)).isTrue();
+        assertThat(cd.await(1500, MILLISECONDS)).isTrue();
 
     }
 
@@ -118,11 +119,11 @@ public class QueueLinerTest {
             return just(0);
         });
         IntStream.range(0, 10).forEach(ii -> {
-            List<Observable<Integer>> ls = range(0, 11).mapToObj((IntFunction<Observable<Integer>>) i -> epi1.call(timer(10, TimeUnit.MILLISECONDS).map(t -> i)).subscribeOn(Schedulers.io())).collect(Collectors.toList());
+            List<Observable<Integer>> ls = range(0, 11).mapToObj((IntFunction<Observable<Integer>>) i -> epi1.call(timer(10, MILLISECONDS).map(t -> i)).subscribeOn(Schedulers.io())).collect(Collectors.toList());
             CountDownLatch cd = new CountDownLatch(1);
             Observable.merge(ls).doOnCompleted(cd::countDown).subscribe();
             try {
-                assertThat(cd.await(1500, TimeUnit.MILLISECONDS)).isTrue();
+                assertThat(cd.await(1500, MILLISECONDS)).isTrue();
             } catch (InterruptedException e) {
                 log.error(e.getMessage(), e);
             }
@@ -139,10 +140,85 @@ public class QueueLinerTest {
             return just(0);
         });
         final int[] vals = {0};
-        range(0, 11).forEach(i -> epi1.call(timer(i < 5 ? 10 : 50 + i, TimeUnit.MILLISECONDS).map(t -> i)).subscribeOn(Schedulers.io()).subscribe((Action1<Integer>) val -> vals[0] += val));
+        range(0, 11).forEach(i -> epi1.call(timer(i < 5 ? 10 : 50 + i, MILLISECONDS).map(t -> i)).subscribeOn(Schedulers.io()).subscribe((Action1<Integer>) val -> vals[0] += val));
         sleep(1000);
         assertThat(epilogeCounter1.get()).isEqualTo(2);
         assertThat(vals).isEqualTo(new int[]{(int) (5.5 * 10)});
+
+    }
+
+    @Test
+    public void shutdown1() throws Exception {
+        AtomicBoolean result = new AtomicBoolean(false);
+        AtomicBoolean invokedEpiloguer = new AtomicBoolean(false);
+        final QueueLiner<Boolean> liner = new QueueLiner<>(100);
+        QueueLiner.QueueEpilogued epi1 = liner.createEpiloguer(() -> Observable.create(subscriber -> {
+            invokedEpiloguer.set(true);
+            subscriber.onNext(true);
+            subscriber.onCompleted();
+        }));
+        epi1.call(timer(100, MILLISECONDS).map(i -> {
+            result.set(true);
+            return true;
+        }).subscribeOn(Schedulers.io())).subscribe();
+        long ts = System.currentTimeMillis();
+        Thread.sleep(50);
+        liner.close().toBlocking().firstOrDefault(null);
+        assertThat(System.currentTimeMillis() - ts).isGreaterThan(90);
+        assertThat(result.get()).isTrue();
+        assertThat(invokedEpiloguer.get()).isTrue();
+    }
+
+    @Test
+    public void shutdownMultijobSameEpiloguer() throws Exception {
+        AtomicInteger result = new AtomicInteger(0);
+        AtomicInteger completed = new AtomicInteger(0);
+        AtomicInteger invokedEpiloguer = new AtomicInteger(0);
+        final QueueLiner<Boolean> liner = new QueueLiner<>(100);
+        QueueLiner.QueueEpilogued epi1 = liner.createEpiloguer(() -> Observable.create(subscriber -> {
+            invokedEpiloguer.incrementAndGet();
+            subscriber.onNext(true);
+            subscriber.onCompleted();
+        }));
+        IntStream.range(0, 10).forEach(i -> epi1.call(timer(100, MILLISECONDS).map(y -> {
+            result.incrementAndGet();
+            return true;
+        }).subscribeOn(Schedulers.io()))
+                .doOnCompleted(() -> completed.incrementAndGet())
+                .subscribe());
+        Thread.sleep(50);
+        liner.close().toBlocking().firstOrDefault(null);
+        assertThat(result.get()).isEqualTo(1);
+        assertThat(invokedEpiloguer.get()).isEqualTo(1);
+        assertThat(completed.get()).isEqualTo(10);
+    }
+
+    @Test
+    public void shutdownMultiEpiloguers() throws Exception {
+        AtomicInteger result = new AtomicInteger(0);
+        AtomicInteger invokedEpiloguer = new AtomicInteger(0);
+        final QueueLiner<Boolean> liner = new QueueLiner<>(100);
+
+        List<QueueLiner<Boolean>.QueueEpilogued> eps = IntStream.range(0, 10).mapToObj(i -> liner.createEpiloguer(() -> Observable.create(subscriber -> {
+            invokedEpiloguer.incrementAndGet();
+            subscriber.onNext(true);
+            subscriber.onCompleted();
+        }))).collect(Collectors.toList());
+        eps.forEach(ep -> ep.call(timer(100, MILLISECONDS).map(y -> {
+            result.incrementAndGet();
+            return true;
+        }).subscribeOn(Schedulers.io())).subscribe());
+        Thread.sleep(50);
+        liner.close().toBlocking().firstOrDefault(null);
+        assertThat(result.get()).isEqualTo(1);
+        assertThat(invokedEpiloguer.get()).isEqualTo(1);
+    }
+
+    @Test
+    public void shutdownNoJobs() throws Exception {
+        final QueueLiner<Boolean> liner = new QueueLiner<>(100);
+        liner.close().toBlocking().firstOrDefault(null);
+
 
     }
 }

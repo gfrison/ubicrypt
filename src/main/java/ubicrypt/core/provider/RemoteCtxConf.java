@@ -13,10 +13,15 @@
  */
 package ubicrypt.core.provider;
 
+import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 
 import rx.Observable;
 import rx.subjects.PublishSubject;
@@ -27,11 +32,26 @@ import ubicrypt.core.InitFileSyncronizer;
 import ubicrypt.core.InitLocalFiles;
 import ubicrypt.core.ProgressFile;
 import ubicrypt.core.dto.UbiFile;
+import ubicrypt.core.events.ShutdownRegistration;
 import ubicrypt.core.util.InProgressTracker;
 import ubicrypt.core.util.QueueLiner;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 @Configuration
 public class RemoteCtxConf {
+    private static final Logger log = getLogger(RemoteCtxConf.class);
+    @Resource
+    private QueueLiner<Boolean> queueLiner;
+    @Resource
+    @Qualifier("appEvents")
+    private Subject appEvents;
+
+    @PostConstruct
+    public void init() {
+        log.info("register queue-liner for shutdown");
+        appEvents.onNext(new ShutdownRegistration(queueLiner));
+    }
 
     @Bean
     @DependsOn("localFileInitSynchronizer")

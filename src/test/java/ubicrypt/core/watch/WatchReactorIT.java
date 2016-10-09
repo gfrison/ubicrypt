@@ -193,6 +193,10 @@ public class WatchReactorIT {
             return new LocalRepository(rndPath);
         }
 
+        @Bean
+        public Subject<Object, Object> appEvents() {
+            return PublishSubject.create();
+        }
     }
 
 
