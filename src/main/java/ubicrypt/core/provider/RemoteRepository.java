@@ -200,8 +200,14 @@ public class RemoteRepository implements IRepository {
     private InputStream monitor(final FileProvenience fp, final InputStream inputStream) {
         final MonitorInputStream mis = new MonitorInputStream(inputStream);
         mis.monitor().subscribe(chunk -> progressEvents.onNext(new ProgressFile(fp, this, chunk)),
-                err -> log.error(err.getMessage(), err),
-                () -> progressEvents.onNext(new ProgressFile(fp, this, true, false)));
+                err -> {
+                    log.error(err.getMessage(), err);
+                    progressEvents.onNext(new ProgressFile(fp, this, false, true));
+                },
+                () -> {
+                    log.debug("send complete progress file:{}", fp.getFile());
+                    progressEvents.onNext(new ProgressFile(fp, this, true, false));
+                });
         return mis;
     }
 

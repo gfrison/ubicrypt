@@ -468,7 +468,6 @@ public class Utils {
         final AutowireCapableBeanFactory factory = ctx.getAutowireCapableBeanFactory();
         factory.autowireBean(object);
         factory.applyBeanPostProcessorsBeforeInitialization(object, name);
-        factory.initializeBean(object, name);
         factory.applyBeanPostProcessorsAfterInitialization(object, name);
         return object;
     }

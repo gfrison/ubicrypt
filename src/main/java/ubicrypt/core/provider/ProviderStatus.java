@@ -15,5 +15,5 @@ package ubicrypt.core.provider;
 
 public enum ProviderStatus {
 
-    added, unitialized, initialized, active, unavailable, expired, error, removed
+    added, uninitialized, initialized, active, unavailable, expired, error, removed
 }

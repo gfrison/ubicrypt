@@ -300,7 +300,7 @@ public class HomeController implements Initializable, ApplicationContextAware {
         //file progress monitor
         progressEvents.subscribe(progress -> {
             Platform.runLater(() -> {
-                if (progress.isCompleted()) {
+                if (progress.isCompleted() || progress.isError()) {
                     log.debug("progress completed");
                     if (!filesInProgress.remove(progress)) {
                         log.warn("progress not tracked. progress file:{}, element:{}", progress.getProvenience().getFile());
@@ -336,13 +336,13 @@ public class HomeController implements Initializable, ApplicationContextAware {
                 .on(SyncBeginEvent.class, event -> {
                     log.info("sync begin received");
                     Platform.runLater(() -> {
-                        gProgress.startProgress("Synchronizing providers");
+                        gProgress.startProgress("synchronizing providers");
                         addFile.setDisable(true);
                         addProvider.setDisable(true);
                     });
                 })
                 .on(SynchDoneEvent.class, event -> {
-                    log.debug("sync done");
+                    log.debug("synchronization done");
                     refreshItems(filesRoot);
                     Platform.runLater(() -> {
                         gProgress.stopProgress();
@@ -368,7 +368,7 @@ public class HomeController implements Initializable, ApplicationContextAware {
         if (optTreeItem.isPresent()) {
             return addFiles(it, resolvedPath, optTreeItem.get(), file);
         }
-        final TreeItem<ITreeItem> fileItem = new TreeFolderItem(new FolderItem(path, event->fileAdder.accept(resolvedPath)));
+        final TreeItem<ITreeItem> fileItem = new TreeFolderItem(new FolderItem(path, event -> fileAdder.accept(resolvedPath)));
         root.getChildren().add(fileItem);
         return addFiles(it, resolvedPath, fileItem, file);
     }

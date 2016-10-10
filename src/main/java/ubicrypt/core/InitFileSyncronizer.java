@@ -17,6 +17,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.PostConstruct;
@@ -26,9 +28,14 @@ import rx.Observable;
 import rx.functions.Action0;
 import rx.functions.Actions;
 import ubicrypt.core.provider.ProviderEvent;
+import ubicrypt.core.provider.ProviderStatus;
 
 import static ubicrypt.core.provider.ProviderStatus.active;
 import static ubicrypt.core.provider.ProviderStatus.added;
+import static ubicrypt.core.provider.ProviderStatus.error;
+import static ubicrypt.core.provider.ProviderStatus.initialized;
+import static ubicrypt.core.provider.ProviderStatus.removed;
+import static ubicrypt.core.provider.ProviderStatus.uninitialized;
 
 /**
  * take all local and remote files and synchronized them all at startup.
@@ -39,11 +46,12 @@ public class InitFileSyncronizer {
     private final AtomicBoolean processing = new AtomicBoolean(false);
     @Resource
     @Qualifier("providerEvent")
-    Observable<ProviderEvent> providerStatusEvents;
+    Observable<ProviderEvent> providerEvent;
     @Resource
     @Qualifier("fileSynchronizer")
     Observable.OnSubscribe<Boolean> fileSynchronizer;
     private Action0 onComplete = Actions.empty();
+    private static List<ProviderStatus> ignoreStatuses = Arrays.asList(added, uninitialized, initialized, error, removed);
 
     /**
      * when all provider are not uninitialized, begin the sync for all files
@@ -51,22 +59,17 @@ public class InitFileSyncronizer {
     @PostConstruct
     public void init() {
         log.info("file synchronizer started");
-        providerStatusEvents.subscribe(event -> {
-            if (event.getEvent() == added) {
-                process(event);
-                event.getHook().getStatusEvents()
-                        .filter(status -> status == active)
-                        .first()
-                        .subscribe(status -> {
-                            process(event);
-                        });
-                return;
-            }
-        });
+        providerEvent
+                .filter(event -> !ignoreStatuses.contains(event.getEvent()))
+                .subscribe(event -> {
+                    if (event.getEvent() == active) {
+                        process(event);
+                    }
+                });
     }
 
-    public void process(ProviderEvent event) {
-        log.info("become active:{}", event.getHook());
+    private void process(ProviderEvent event) {
+        log.info("become active:{}", event);
         if (processing.compareAndSet(false, true)) {
             doSync();
         } else {
@@ -90,5 +93,13 @@ public class InitFileSyncronizer {
 
     public void setOnComplete(final Action0 onComplete) {
         this.onComplete = onComplete;
+    }
+
+    public void setProviderEvent(Observable<ProviderEvent> providerEvent) {
+        this.providerEvent = providerEvent;
+    }
+
+    public void setFileSynchronizer(Observable.OnSubscribe<Boolean> fileSynchronizer) {
+        this.fileSynchronizer = fileSynchronizer;
     }
 }

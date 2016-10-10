@@ -33,6 +33,7 @@ import ubicrypt.core.InitLocalFiles;
 import ubicrypt.core.ProgressFile;
 import ubicrypt.core.dto.UbiFile;
 import ubicrypt.core.events.ShutdownRegistration;
+import ubicrypt.core.provider.lock.RemoveLockOnShutdown;
 import ubicrypt.core.util.InProgressTracker;
 import ubicrypt.core.util.QueueLiner;
 
@@ -51,6 +52,11 @@ public class RemoteCtxConf {
     public void init() {
         log.info("register queue-liner for shutdown");
         appEvents.onNext(new ShutdownRegistration(queueLiner));
+    }
+
+    @Bean
+    public RemoveLockOnShutdown removeLockOnShutdown() {
+        return new RemoveLockOnShutdown();
     }
 
     @Bean

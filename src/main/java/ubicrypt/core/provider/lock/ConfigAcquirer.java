@@ -34,7 +34,7 @@ import static ubicrypt.core.provider.ProviderStatus.error;
 import static ubicrypt.core.provider.ProviderStatus.expired;
 import static ubicrypt.core.provider.ProviderStatus.initialized;
 import static ubicrypt.core.provider.ProviderStatus.unavailable;
-import static ubicrypt.core.provider.ProviderStatus.unitialized;
+import static ubicrypt.core.provider.ProviderStatus.uninitialized;
 
 
 public class ConfigAcquirer implements Observable.OnSubscribe<AcquirerReleaser> {
@@ -44,7 +44,7 @@ public class ConfigAcquirer implements Observable.OnSubscribe<AcquirerReleaser> 
     private final Subject<ProviderStatus, ProviderStatus> statusStream = PublishSubject.create();
     private final Observable<ProviderStatus> statuses = statusStream.share();
     AtomicLong inprogress = new AtomicLong(0);
-    private ProviderStatus status = unitialized;
+    private ProviderStatus status = uninitialized;
     private RemoteConfig config;
     private String provider = "";
 
@@ -59,7 +59,7 @@ public class ConfigAcquirer implements Observable.OnSubscribe<AcquirerReleaser> 
     public void call(Subscriber<? super AcquirerReleaser> subscriber) {
         log.trace("status:{}", status);
         switch (status) {
-            case unitialized:
+            case uninitialized:
             case expired:
                 Observable.create(lockChecker).subscribe(new LockSubscriber(subscriber));
             case initialized:

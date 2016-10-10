@@ -105,12 +105,6 @@ public class UbiConf {
 
 
     @Bean
-    public InitFileSyncronizer initialSyncronizer() {
-        return new InitFileSyncronizer();
-    }
-
-
-    @Bean
     public LocalConfigPersistor initLocalConfPersistor() {
         return new LocalConfigPersistor();
     }
