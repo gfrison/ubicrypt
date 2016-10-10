@@ -11,12 +11,19 @@ apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: 'application'
 apply plugin: 'idea'
+apply plugin: 'jacoco'
 
 version = '0.11'
 sourceCompatibility = 1.8
 
 project.group = 'ubicrypt'
 mainClassName = 'ubicrypt.UbiCrypt'
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+    }
+}
 
 publishing {
     publications {
