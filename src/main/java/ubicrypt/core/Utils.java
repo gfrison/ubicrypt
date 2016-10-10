@@ -366,7 +366,7 @@ public class Utils {
         return false;
     }
 
-    public static <T> T umarshall(final InputStream is, final Class<T> remoteConfigClass) {
+    public static <T> T unmarshall(final InputStream is, final Class<T> remoteConfigClass) {
         try {
             return mapper.readValue(is, remoteConfigClass);
         } catch (final IOException e) {
@@ -393,11 +393,11 @@ public class Utils {
         }
     }
 
-    public static <T> T umarshall(final byte[] content, final Class<T> clz) {
+    public static <T> T unmarshall(final byte[] content, final Class<T> clz) {
         try {
             return mapper.readValue(content, clz);
         } catch (final IOException e) {
-            log.debug("error umarshall:{}", new String(content));
+            log.debug("error unmarshall:{}", new String(content));
             Throwables.propagate(e);
         }
         return null;

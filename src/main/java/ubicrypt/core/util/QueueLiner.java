@@ -30,7 +30,7 @@ import rx.Subscriber;
 import rx.functions.Func1;
 import rx.internal.operators.BufferUntilSubscriber;
 import rx.subjects.Subject;
-import ubicrypt.core.ICloseable;
+import ubicrypt.core.IStoppable;
 
 import static org.slf4j.LoggerFactory.getLogger;
 import static rx.functions.Actions.empty;
@@ -41,7 +41,7 @@ import static ubicrypt.core.util.QueueLiner.Status.stopping;
 /**
  * Runs sequentially any Observable and terminate any job with the given conclusive epiloguer.
  */
-public class QueueLiner<T> implements ICloseable {
+public class QueueLiner<T> implements IStoppable {
     enum Status {running, stopping, stopped}
 
     private final Logger log = getLogger(QueueLiner.class);
@@ -74,7 +74,7 @@ public class QueueLiner<T> implements ICloseable {
      * related epiloguer will be invoked. All the others won't be executed, but just terminated with
      * 'complete' signal.
      */
-    public Observable<Void> close() {
+    public Observable<Void> stop() {
         if (inProcess.get()) {
             log.info("waiting for finishing current job...");
         } else {

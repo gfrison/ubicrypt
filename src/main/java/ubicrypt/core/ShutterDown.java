@@ -35,7 +35,7 @@ import static ubicrypt.core.Utils.logError;
 
 public class ShutterDown {
     private static final Logger log = getLogger(ShutterDown.class);
-    private CopyOnWriteArrayList<ICloseable> shutdownRegistered = new CopyOnWriteArrayList<>();
+    private CopyOnWriteArrayList<IStoppable> shutdownRegistered = new CopyOnWriteArrayList<>();
     @Resource
     @Qualifier("appEvents")
     private Subject appEvents;
@@ -49,7 +49,7 @@ public class ShutterDown {
                 })
                 .on(ShutdownRequest.class, shutdown -> {
                     Observable.merge(shutdownRegistered.stream()
-                            .map(ICloseable::close)
+                            .map(IStoppable::stop)
                             .collect(Collectors.toList()))
                             .subscribe(empty(), logError, () -> {
                                 log.debug("all services shutdown");

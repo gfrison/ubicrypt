@@ -13,16 +13,16 @@
  */
 package ubicrypt.core.events;
 
-import ubicrypt.core.ICloseable;
+import ubicrypt.core.IStoppable;
 
 public class ShutdownRegistration {
-    private final ICloseable ref;
+    private final IStoppable ref;
 
-    public ShutdownRegistration(ICloseable ref) {
+    public ShutdownRegistration(IStoppable ref) {
         this.ref = ref;
     }
 
-    public ICloseable getRef() {
+    public IStoppable getRef() {
         return ref;
     }
 }

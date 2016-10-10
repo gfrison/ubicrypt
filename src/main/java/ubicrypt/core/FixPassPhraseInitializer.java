@@ -99,7 +99,7 @@ public class FixPassPhraseInitializer implements ApplicationContextInitializer<C
             } catch (final PGPException e) {
                 Throwables.propagate(e);
             }
-            config = Utils.umarshall(configIs, LocalConfig.class);
+            config = Utils.unmarshall(configIs, LocalConfig.class);
         }
         applicationContext.getBeanFactory().registerSingleton("ubiqConfig", config);
     }

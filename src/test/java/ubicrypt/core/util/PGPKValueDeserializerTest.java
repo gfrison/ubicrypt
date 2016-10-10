@@ -37,7 +37,7 @@ public class PGPKValueDeserializerTest {
         final BeanTest bean = new BeanTest();
         bean.setPks(newLinkedHashSet(new PGPKValue(key1.getPublicKey())));
         final byte[] bytes = Utils.marshall(bean);
-        final BeanTest loaded = Utils.umarshall(bytes, BeanTest.class);
+        final BeanTest loaded = Utils.unmarshall(bytes, BeanTest.class);
         final InputStream enc = PGPEC.encrypt(loaded.getPks().stream().map(PGPKValue::getValue).collect(Collectors.toList()), toInputStream("ciao"));
         assertThat(IOUtils.toString(PGPEC.decrypt(key1.getPrivateKey(), enc))).isEqualTo("ciao");
     }

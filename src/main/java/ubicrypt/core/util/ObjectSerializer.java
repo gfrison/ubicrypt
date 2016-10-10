@@ -26,6 +26,7 @@ import java.util.zip.InflaterInputStream;
 import javax.inject.Inject;
 
 import rx.Observable;
+import ubicrypt.core.Utils;
 import ubicrypt.core.crypto.AESGCM;
 import ubicrypt.core.crypto.IPGPService;
 import ubicrypt.core.dto.RemoteFile;
@@ -35,7 +36,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.zip.Deflater.BEST_COMPRESSION;
 import static org.slf4j.LoggerFactory.getLogger;
 import static ubicrypt.core.Utils.marshallIs;
-import static ubicrypt.core.Utils.umarshall;
 
 public class ObjectSerializer implements IObjectSerializer, EnvironmentAware {
 
@@ -77,7 +77,7 @@ public class ObjectSerializer implements IObjectSerializer, EnvironmentAware {
         checkNotNull(descriptor.getName(), "file name must not be null");
         checkNotNull(type, "type must not be null");
         return provider.get(descriptor.getName())
-                .map(is -> umarshall(decrypt(descriptor, is), type));
+                .map(is -> Utils.unmarshall(decrypt(descriptor, is), type));
     }
 
     private InputStream encrypt(final RemoteFile file, final InputStream inputStream) {

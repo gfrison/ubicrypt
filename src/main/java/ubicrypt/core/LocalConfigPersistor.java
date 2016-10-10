@@ -40,7 +40,7 @@ import ubicrypt.core.crypto.IPGPService;
 import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.events.ShutdownRegistration;
 
-public class LocalConfigPersistor implements Observable.OnSubscribe<Void>, EnvironmentAware, ICloseable {
+public class LocalConfigPersistor implements Observable.OnSubscribe<Void>, EnvironmentAware, IStoppable {
     private final Logger log = LoggerFactory.getLogger(LocalConfigPersistor.class);
     private final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1);
     @Inject
@@ -79,7 +79,7 @@ public class LocalConfigPersistor implements Observable.OnSubscribe<Void>, Envir
     }
 
     @Override
-    public Observable<Void> close() {
+    public Observable<Void> stop() {
         return Observable.<Void>create(subscriber -> {
             log.debug("shutdown local config persistor");
             executorService.shutdown();

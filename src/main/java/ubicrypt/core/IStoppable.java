@@ -16,6 +16,6 @@ package ubicrypt.core;
 
 import rx.Observable;
 
-public interface ICloseable {
-    Observable<Void> close();
+public interface IStoppable {
+    Observable<Void> stop();
 }

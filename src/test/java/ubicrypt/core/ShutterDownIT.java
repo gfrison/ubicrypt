@@ -81,12 +81,12 @@ public class ShutterDownIT {
         services.stream().forEach(service -> assertThat(service.getCounter().get()).isEqualTo(1));
     }
 
-    static class Service implements ICloseable {
+    static class Service implements IStoppable {
         private AtomicInteger counter = new AtomicInteger(0);
 
         @Override
-        public Observable<Void> close() {
-            log.info("close service");
+        public Observable<Void> stop() {
+            log.info("stop service");
             counter.incrementAndGet();
             return empty();
         }

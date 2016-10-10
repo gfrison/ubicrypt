@@ -163,7 +163,7 @@ public class QueueLinerTest {
         }).subscribeOn(Schedulers.io())).subscribe();
         long ts = System.currentTimeMillis();
         Thread.sleep(50);
-        liner.close().toBlocking().firstOrDefault(null);
+        liner.stop().toBlocking().firstOrDefault(null);
         assertThat(System.currentTimeMillis() - ts).isGreaterThan(90);
         assertThat(result.get()).isTrue();
         assertThat(invokedEpiloguer.get()).isTrue();
@@ -187,7 +187,7 @@ public class QueueLinerTest {
                 .doOnCompleted(() -> completed.incrementAndGet())
                 .subscribe());
         Thread.sleep(50);
-        liner.close().toBlocking().firstOrDefault(null);
+        liner.stop().toBlocking().firstOrDefault(null);
         assertThat(result.get()).isEqualTo(1);
         assertThat(invokedEpiloguer.get()).isEqualTo(1);
         assertThat(completed.get()).isEqualTo(10);
@@ -209,7 +209,7 @@ public class QueueLinerTest {
             return true;
         }).subscribeOn(Schedulers.io())).subscribe());
         Thread.sleep(50);
-        liner.close().toBlocking().firstOrDefault(null);
+        liner.stop().toBlocking().firstOrDefault(null);
         assertThat(result.get()).isEqualTo(1);
         assertThat(invokedEpiloguer.get()).isEqualTo(1);
     }
@@ -217,7 +217,7 @@ public class QueueLinerTest {
     @Test
     public void shutdownNoJobs() throws Exception {
         final QueueLiner<Boolean> liner = new QueueLiner<>(100);
-        liner.close().toBlocking().firstOrDefault(null);
+        liner.stop().toBlocking().firstOrDefault(null);
 
 
     }

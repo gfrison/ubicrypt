@@ -84,7 +84,7 @@ public class ImportConfigCtrl implements Initializable {
 
     private ExportConfig loadConfig() throws IOException {
         final ArmoredInputStream is = new ArmoredInputStream(new ByteArrayInputStream(text.getText().getBytes()));
-        return Utils.umarshall(pgpService.decrypt(is), ExportConfig.class);
+        return Utils.unmarshall(pgpService.decrypt(is), ExportConfig.class);
     }
 
     @Override

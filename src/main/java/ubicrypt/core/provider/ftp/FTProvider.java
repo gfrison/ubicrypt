@@ -81,7 +81,7 @@ public class FTProvider extends UbiProvider {
                 client.setFileType(FTP.BINARY_FILE_TYPE);
                 client.setBufferSize(1 << 64);
                 client.enterLocalPassiveMode();
-                client.setControlKeepAliveTimeout(300);
+                client.setControlKeepAliveTimeout(60 * 60); //1h
                 if (!isEmpty(conf.getFolder())) {
                     final String directory = startsWith("/", conf.getFolder()) ? conf.getFolder() : "/" + conf.getFolder();
                     if (!client.changeWorkingDirectory(directory)) {
