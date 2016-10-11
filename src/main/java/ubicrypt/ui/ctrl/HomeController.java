@@ -84,8 +84,8 @@ import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static org.slf4j.LoggerFactory.getLogger;
 import static rx.functions.Actions.empty;
-import static ubicrypt.ui.Anchor.emptyPath;
-import static ubicrypt.ui.Anchor.searchFile;
+import static ubicrypt.ui.UItils.emptyPath;
+import static ubicrypt.ui.UItils.searchFile;
 
 public class HomeController implements Initializable, ApplicationContextAware {
     private static final Logger log = getLogger(HomeController.class);
@@ -142,7 +142,7 @@ public class HomeController implements Initializable, ApplicationContextAware {
     private final Function<UbiFile, Observable<Boolean>> fileUntracker = file -> fileCommander.removeFile(basePath.resolve(file.getPath()))
             .doOnNext(res -> {
                 log.info("untrack file:{}  result:{}", file, res);
-                searchFile(filesRoot, file, file.getPath().iterator(), emptyPath).ifPresent(HomeController::removeItem);
+                searchFile(filesRoot, file).ifPresent(HomeController::removeItem);
             })
             .doOnError(err -> log.error("error untracking file", err));
     private TreeItem<ITreeItem> providersRoot;
@@ -167,6 +167,7 @@ public class HomeController implements Initializable, ApplicationContextAware {
         FileChooser fc = new FileChooser();
         log.debug("add files from:{}", basePath.resolve(fromFolder));
         fc.setInitialDirectory(basePath.resolve(fromFolder).toFile());
+        fc.setTitle("Select Files or Folders to track");
         Optional.ofNullable(fc.showOpenMultipleDialog(stage)).ifPresent(files -> Observable.merge(files.stream().map(file -> {
             log.debug("adding file:{}", file);
             final Path relPath = basePath.relativize(file.toPath());
@@ -275,6 +276,7 @@ public class HomeController implements Initializable, ApplicationContextAware {
                     Observable.create(fileInSync.call(file))
                             .subscribe(res -> {
                                         searchFile(filesRoot, file).ifPresent(treeView -> {
+                                            log.debug("found file item:{}", treeView);
                                             final Node graphics = treeView.getValue().getGraphics();
                                             graphics.getStyleClass().clear();
                                             graphics.getStyleClass().add(format("tree-file-saved-%s", res));

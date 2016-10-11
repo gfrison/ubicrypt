@@ -54,7 +54,6 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 public class Anchor {
 
-    public static final Path emptyPath = Paths.get("");
     private static final Logger log = getLogger(Anchor.class);
     private final static Anchor ctx = new Anchor();
     //FXLoader bug: https://community.oracle.com/message/11240449
@@ -75,24 +74,6 @@ public class Anchor {
 
     public static Anchor anchor() {
         return ctx;
-    }
-
-    public static Optional<TreeItem<ITreeItem>> searchFile(final TreeItem<ITreeItem> filesRoot, final UbiFile file) {
-        return searchFile(filesRoot, file, file.getPath().iterator(), emptyPath);
-    }
-
-    public static Optional<TreeItem<ITreeItem>> searchFile(final TreeItem<ITreeItem> filesRoot, final UbiFile file, final Iterator<Path> it,
-                                                           final Path basePath) {
-        if (!it.hasNext()) {
-            if (((FileItem) filesRoot.getValue()).getFile().equals(file)) {
-                return Optional.of(filesRoot);
-            }
-            return Optional.empty();
-        }
-        final Path path = it.next();
-        final Path resolvedPath = basePath.resolve(path);
-        return filesRoot.getChildren().stream().filter(item -> ((FolderItem) item.getValue()).getPath().equals(resolvedPath))
-                .findFirst().flatMap(item -> searchFile(item, file, it, resolvedPath));
     }
 
 

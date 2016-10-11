@@ -43,7 +43,7 @@ public class AnchorTest {
         }};
         final TreeItem<ITreeItem> treeItem = new TreeItem<>();
         treeItem.getChildren().add(new TreeItem<>(new FileItem(file, file1 -> emptySubject())));
-        final Optional<TreeItem<ITreeItem>> opt = Anchor.searchFile(treeItem, file);
+        final Optional<TreeItem<ITreeItem>> opt = UItils.searchFile(treeItem, file);
         assertThat(opt).isPresent();
     }
 
@@ -57,7 +57,7 @@ public class AnchorTest {
             setPath(Paths.get("nonprova"));
         }}, file1 -> emptySubject())));
         treeItem.getChildren().add(new TreeItem<>(new FileItem(file, file1 -> emptySubject())));
-        final Optional<TreeItem<ITreeItem>> opt = Anchor.searchFile(treeItem, file);
+        final Optional<TreeItem<ITreeItem>> opt = UItils.searchFile(treeItem, file);
         assertThat(opt).isPresent();
     }
 }

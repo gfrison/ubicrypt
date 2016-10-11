@@ -22,7 +22,7 @@ import java.util.Optional;
 
 import javafx.scene.control.TreeItem;
 import ubicrypt.core.dto.LocalFile;
-import ubicrypt.ui.Anchor;
+import ubicrypt.ui.UItils;
 import ubicrypt.ui.tree.FileItem;
 import ubicrypt.ui.tree.FolderItem;
 import ubicrypt.ui.tree.ITreeItem;
@@ -44,7 +44,7 @@ public class HomeControllerTest {
         }};
         dirA.getChildren().add(new TreeItem<>(new FileItem(fileA, file1 -> emptySubject())));
 
-        final Optional<TreeItem<ITreeItem>> opt = Anchor.searchFile(filesRoot, fileA);
+        final Optional<TreeItem<ITreeItem>> opt = UItils.searchFile(filesRoot, fileA);
         assertThat(opt).isPresent();
         assertThat(((FileItem) opt.get().getValue()).getFile()).isEqualTo(fileA);
     }
