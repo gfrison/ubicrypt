@@ -21,8 +21,10 @@ import org.springframework.context.annotation.Lazy;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.jar.Manifest;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -96,7 +98,7 @@ public class UbiCrypt extends Application {
     @Override
     public void start(final Stage stage) throws Exception {
         setUserAgentStylesheet(STYLESHEET_MODENA);
-        stage.setTitle("UbiCrypt");
+        stage.setTitle("UbiCrypt v" + getVersion());
         anchor().setStage(stage);
         final File file = securityFile().toFile();
         stage.setScene(anchor().showScene(file.exists() ? "login" : "createKey"));
@@ -124,5 +126,35 @@ public class UbiCrypt extends Application {
         Runtime.getRuntime().addShutdownHook(new Thread(shutdown));
 
 
+    }
+
+    private static String getVersion() {
+        String version = null;
+        // try to load from maven properties first
+        try {
+            try (final InputStream is = UbiCrypt.class.getResourceAsStream("META-INF/MANIFEST.MF")) {
+                if (is != null) {
+                    Manifest manifest = new Manifest(is);
+                    version = manifest.getMainAttributes().getValue("Implementation-Version");
+                }
+            }
+        } catch (final Exception e) {
+            // ignore
+        }
+        // fallback to using Java API
+        if (version == null) {
+            final Package aPackage = UbiCrypt.class.getPackage();
+            if (aPackage != null) {
+                version = aPackage.getImplementationVersion();
+                if (version == null) {
+                    version = aPackage.getSpecificationVersion();
+                }
+            }
+        }
+        if (version == null) {
+            // we could not compute the version so use a blank
+            version = "";
+        }
+        return version;
     }
 }
