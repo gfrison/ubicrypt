@@ -5,5 +5,7 @@ jdk:
 script:
   - sudo apt-get update && sudo apt-get install oracle-java8-installer
   - java -version
-after_success:
-  - bash <(curl -s https://codecov.io/bash)
+test:
+    post:
+        - if [ -e ./gradlew ]; then ./gradlew jacocoTestReport;else gradle jacocoTestReport;fi
+        - bash <(curl -s https://codecov.io/bash)

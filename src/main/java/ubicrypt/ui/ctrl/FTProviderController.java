@@ -154,7 +154,6 @@ public class FTProviderController implements Initializable {
                     });
         } catch (Exception e) {
             log.error("exp", e);
-            host.getScene().getRoot().setCursor(Cursor.DEFAULT);
         }
     }
 

@@ -22,8 +22,10 @@ import org.springframework.context.annotation.Lazy;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.stage.Stage;
 import rx.subjects.Subject;
 import ubicrypt.core.FixPassPhraseInitializer;
@@ -42,6 +44,32 @@ public class UbiCrypt extends Application {
     private static final Logger log = LoggerFactory.getLogger(UbiCrypt.class);
     public static String[] arguments = {};
     private ConfigurableApplicationContext ctx;
+    private final static AtomicBoolean stopped = new AtomicBoolean(false);
+    private Runnable shutdown = () -> {
+        if (stopped.compareAndSet(false, true)) {
+            if (ctx != null) {
+                Platform.runLater(() -> anchor().browse("wait", "Shutting down UbiCrypt..."));
+
+                Subject appEvents = ctx.getBeanFactory().getBean("appEvents", Subject.class);
+                log.info("shutdown request, waiting for all components acks...");
+                CountDownLatch cd = new CountDownLatch(1);
+                appEvents.filter(event -> event instanceof ShutdownOK)
+                        .subscribe(next -> cd.countDown());
+                appEvents.onNext(new ShutdownRequest());
+                try {
+                    if (cd.await(1, MINUTES)) {
+                        log.info("shutting gracefully down");
+                    } else {
+                        log.info("shutting process timed out");
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                ctx.close();
+            }
+            Platform.exit();
+        }
+    };
 
 
     public static void main(final String[] args) throws IOException, InterruptedException {
@@ -61,21 +89,8 @@ public class UbiCrypt extends Application {
 
     @Override
     public void stop() throws Exception {
+        shutdown.run();
         super.stop();
-        if (ctx != null) {
-            Subject appEvents = ctx.getBeanFactory().getBean("appEvents", Subject.class);
-            log.info("shutdown request, waiting for all components acks...");
-            CountDownLatch cd = new CountDownLatch(1);
-            appEvents.filter(event -> event instanceof ShutdownOK)
-                    .subscribe(next -> cd.countDown());
-            appEvents.onNext(new ShutdownRequest());
-            if (cd.await(1, MINUTES)) {
-                log.info("shutting gracefully down");
-            } else {
-                log.info("shutting process timed out");
-            }
-            ctx.close();
-        }
     }
 
     @Override
@@ -91,6 +106,7 @@ public class UbiCrypt extends Application {
         final UbiCrypt ubiCrypt = this;
         anchor().getPasswordStream().subscribe(pwd -> {
             final SpringApplication app = new SpringApplication(UbiConf.class);
+            app.setRegisterShutdownHook(false);
             app.addInitializers(new FixPassPhraseInitializer(pwd));
             app.setLogStartupInfo(true);
             ctx = app.run(arguments);
@@ -103,6 +119,9 @@ public class UbiCrypt extends Application {
                 Utils.springIt(ctx, initializable);
             });
         });
+
+        stage.setOnCloseRequest(windowEvent -> shutdown.run());
+        Runtime.getRuntime().addShutdownHook(new Thread(shutdown));
 
 
     }
