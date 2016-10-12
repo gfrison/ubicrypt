@@ -33,6 +33,7 @@ import rx.schedulers.Schedulers;
 
 import static java.lang.Thread.sleep;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.IntStream.range;
 import static org.apache.log4j.LogManager.getRootLogger;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -218,6 +219,33 @@ public class QueueLinerTest {
     public void shutdownNoJobs() throws Exception {
         final QueueLiner<Boolean> liner = new QueueLiner<>(100);
         liner.stop().toBlocking().firstOrDefault(null);
+    }
+
+    @Test
+    public void hugeQueue() throws Exception {
+        AtomicInteger result = new AtomicInteger(0);
+        AtomicInteger completed = new AtomicInteger(0);
+        AtomicInteger invokedEpiloguer = new AtomicInteger(0);
+        CountDownLatch cd = new CountDownLatch(1);
+        final QueueLiner<Boolean> liner = new QueueLiner<>(100);
+        QueueLiner.QueueEpilogued epi1 = liner.createEpiloguer(() -> Observable.create(subscriber -> {
+            invokedEpiloguer.incrementAndGet();
+            subscriber.onNext(true);
+            subscriber.onCompleted();
+        }));
+        final int i1 = 9999;
+        IntStream.range(0, i1).forEach(i -> epi1.call(timer(1, MILLISECONDS).map(y -> {
+            result.incrementAndGet();
+            return true;
+        }).subscribeOn(Schedulers.io()))
+                .doOnCompleted(() -> {
+                    if (completed.incrementAndGet() == i1) {
+                        cd.countDown();
+                    }
+                })
+                .subscribe());
+
+        assertThat(cd.await(20, SECONDS)).isTrue();
 
 
     }

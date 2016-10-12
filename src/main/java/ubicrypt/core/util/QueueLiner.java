@@ -29,6 +29,7 @@ import rx.Observable;
 import rx.Subscriber;
 import rx.functions.Func1;
 import rx.internal.operators.BufferUntilSubscriber;
+import rx.schedulers.Schedulers;
 import rx.subjects.Subject;
 import ubicrypt.core.IStoppable;
 
@@ -143,7 +144,9 @@ public class QueueLiner<T> implements IStoppable {
             log.trace("skip epiloguer");
             instance.skippedEpilogue.set(true);
             spool(instance, enqued.getT2());
-        }).subscribe(enqued.getT2()::onNext, enqued.getT2()::onError);
+        })
+                .subscribeOn(Schedulers.io())
+                .subscribe(enqued.getT2()::onNext, enqued.getT2()::onError);
     }
 
     public class QueueEpilogued implements Func1<Observable<T>, Observable<T>> {
