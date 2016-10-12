@@ -13,6 +13,8 @@
  */
 package ubicrypt.ui.ctrl;
 
+import com.google.common.base.Throwables;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.BeansException;
@@ -62,6 +64,7 @@ import ubicrypt.core.dto.LocalFile;
 import ubicrypt.core.dto.UbiFile;
 import ubicrypt.core.events.SyncBeginEvent;
 import ubicrypt.core.events.SynchDoneEvent;
+import ubicrypt.core.exp.AlreadyManagedException;
 import ubicrypt.core.provider.FileEvent;
 import ubicrypt.core.provider.ProviderCommander;
 import ubicrypt.core.provider.ProviderDescriptor;
@@ -175,6 +178,12 @@ public class HomeController implements Initializable, ApplicationContextAware {
                 addFiles(relPath.iterator(), basePath, filesRoot, tupla.getT1());
                 return tupla.getT2();
             })
+                    .onErrorReturn(err -> {
+                        if (err instanceof AlreadyManagedException) {
+                            return true;
+                        }
+                        throw Throwables.propagate(err);
+                    })
                     .doOnNext(result -> log.info("file:{} add result:{}", file, result));
         }).collect(toList()))
                 .doOnSubscribe(() -> gProgress.startProgress("Adding Files"))
