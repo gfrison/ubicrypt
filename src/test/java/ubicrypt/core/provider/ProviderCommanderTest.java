@@ -59,8 +59,6 @@ public class ProviderCommanderTest {
         final ProviderCommander pc = new ProviderCommander();
         final ProviderHook mock1 = mock(ProviderHook.class);
         doReturn(Optional.empty()).when(mock1).getConfig();
-//        pc.providers = Collections.singletonList(mock1);
-//        Utils.findMostRecentRemote(new LocalFile(), pc.providers);
     }
 
     @Test
@@ -82,10 +80,6 @@ public class ProviderCommanderTest {
                 }};
             }
 
-            //            @Override
-            public ProviderHook getHook() {
-                return mock1;
-            }
         })).when(mock1).getConfig();
         final RemoteRepository origin = mock(RemoteRepository.class);
         doReturn(origin).when(mock1).getRepository();
@@ -106,14 +100,6 @@ public class ProviderCommanderTest {
                 return mock2;
             }
         })).when(mock2).getConfig();
-/*
-        pc.providers = Arrays.asList(mock1, mock2);
-        final IRepository recentRemote = Utils.findMostRecentRemote(new LocalFile() {{
-            setId(uuid);
-        }}, pc.providers);
-*/
-//        assertThat(recentRemote).isNotNull();
-//        assertThat(recentRemote).isEqualTo(origin);
 
 
     }

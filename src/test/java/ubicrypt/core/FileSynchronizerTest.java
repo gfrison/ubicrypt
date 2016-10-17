@@ -38,25 +38,6 @@ public class FileSynchronizerTest {
 
     private final static int deviceId = Utils.deviceId();
 
-/*
-    @Test
-    public void syncAll1Idle() throws Exception {
-        final FileSynchronizer ifs = new FileSynchronizer();
-        ifs.synchProcessing = PublishSubject.create();
-        final FileSynchronizer spy = Mockito.spy(ifs);
-        doReturn(Observable.empty()).when(spy).syncAll();
-        final LocalConfig lc = new LocalConfig();
-        lc.getProviders().add(mock(UbiProvider.class));
-        spy.localConfig = lc;
-        final ProviderHook hook = mock(ProviderHook.class);
-        when(hook.getStatus()).thenReturn(ProviderStatus.idle);
-        spy.providerStatusEvents = Observable.just(hook);
-        spy.init();
-        verify(spy).syncAll();
-
-    }
-*/
-
     @Ignore
     @Test
     public void packFiles() throws Exception {
@@ -69,26 +50,6 @@ public class FileSynchronizerTest {
                 getVclock().increment(deviceId);
             }});
         }};
-/*
-        ifs.statusProvider.put(new ProviderHook(mock(UbiProvider.class)) {
-            @Override
-            public Observable.OnSubscribe<AcquirerReleaser> getAcquirer() {
-                return call -> new AcquirerReleaser(new RemoteConfig() {{
-                    getRemoteFiles().add(new RemoteFile() {{
-                        setId(uuid);
-                        getVclock().increment(deviceId);
-                    }});
-                }},()->{});
-            }
-
-            @Override
-            public RemoteRepository getRepository() {
-                final RemoteRepository repository = mock(RemoteRepository.class);
-                doReturn(false).when(repository).isLocal();
-                return repository;
-            }
-        },new AtomicBoolean(true));
-*/
         ifs.localRepository = new LocalRepository(TestUtils.tmp);
 
         final Multimap<UUID, FileProvenience> map = ifs.packFilesById().toBlocking().last();

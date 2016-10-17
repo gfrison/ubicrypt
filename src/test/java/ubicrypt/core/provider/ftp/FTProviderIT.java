@@ -24,7 +24,6 @@ import org.slf4j.Logger;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-import ubicrypt.core.FTPTestServer;
 import ubicrypt.core.TestUtils;
 import ubicrypt.core.provider.ProviderStatus;
 

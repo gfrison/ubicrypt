@@ -103,10 +103,8 @@ public class InitFileSyncronizerIT implements ApplicationContextAware {
         syncronizer.setOnComplete(cd::countDown);
         final FileProvider fp1 = TestUtils.fileProvider(TestUtils.tmp2);
         final ProviderHook hk1 = ctx.getBean(ProviderHook.class, fp1);
-//        hk1.getStatusEvents().subscribe(status -> providerStatusEvents.onNext(hk1), providerStatusEvents::onError, providerStatusEvents::onCompleted);
 
         assertThat(cd.await(4, SECONDS)).isTrue();
-//        assertThat(hk1.getConfig().get().getRemoteFiles()).hasSize(1);
         assertThat(IOUtils.readLines(hk1.getRepository().get(origin).toBlocking().last())).contains("ciao");
     }
 
@@ -124,13 +122,9 @@ public class InitFileSyncronizerIT implements ApplicationContextAware {
         final FileProvider fp2 = TestUtils.fileProvider(TestUtils.tmp2);
         final ProviderHook hk1 = ctx.getBean(ProviderHook.class, fp1);
         final ProviderHook hk2 = ctx.getBean(ProviderHook.class, fp2);
-//        hk1.getStatusEvents().subscribe(status -> providerStatusEvents.onNext(hk1), providerStatusEvents::onError, providerStatusEvents::onCompleted);
-//        hk2.getStatusEvents().subscribe(status -> providerStatusEvents.onNext(hk2), providerStatusEvents::onError, providerStatusEvents::onCompleted);
 
         assertThat(cd.await(4, SECONDS)).isTrue();
         Thread.sleep(100);
-//        assertThat(hk1.getConfig().get().getRemoteFiles()).hasSize(1);
-//        assertThat(hk2.getConfig().get().getRemoteFiles()).hasSize(1);
         assertThat(IOUtils.readLines(hk1.getRepository().get(origin).toBlocking().first())).contains("ciao");
         assertThat(IOUtils.readLines(hk2.getRepository().get(origin).toBlocking().first())).contains("ciao");
     }
@@ -148,10 +142,8 @@ public class InitFileSyncronizerIT implements ApplicationContextAware {
         syncronizer.setOnComplete(cd::countDown);
         final FileProvider fp1 = TestUtils.fileProvider(TestUtils.tmp2);
         final ProviderHook hk1 = ctx.getBean(ProviderHook.class, fp1);
-//        hk1.getStatusEvents().subscribe(status -> providerStatusEvents.onNext(hk1), providerStatusEvents::onError, providerStatusEvents::onCompleted);
 
         assertThat(cd.await(4, SECONDS)).isTrue();
-//        assertThat(hk1.getConfig().get().getRemoteFiles()).hasSize(0);
     }
 
     @Test
@@ -170,8 +162,6 @@ public class InitFileSyncronizerIT implements ApplicationContextAware {
             getRemoteFiles().add(remoteFile);
         }}, fp1.getConfFile()).toBlocking().last();
         final ProviderHook hk1 = ctx.getBean(ProviderHook.class, fp1);
-
-//        hk1.getStatusEvents().subscribe(status -> providerStatusEvents.onNext(hk1), providerStatusEvents::onError, providerStatusEvents::onCompleted);
         assertThat(cd.await(4, SECONDS)).isTrue();
         assertThat(localConfig.getLocalFiles()).hasSize(1);
     }
@@ -204,7 +194,6 @@ public class InitFileSyncronizerIT implements ApplicationContextAware {
         }}, fp1.getConfFile()).toBlocking().last();
         final ProviderHook hk1 = ctx.getBean(ProviderHook.class, fp1);
 
-//        hk1.getStatusEvents().subscribe(status -> providerStatusEvents.onNext(hk1), providerStatusEvents::onError, providerStatusEvents::onCompleted);
         assertThat(cd.await(4, SECONDS)).isTrue();
         assertThat(localConfig.getLocalFiles()).hasSize(1);
         assertThat(localConfig.getLocalFiles().iterator().next().isRemoved()).isTrue();

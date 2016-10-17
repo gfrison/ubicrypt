@@ -106,7 +106,6 @@ public class FileCommanderIT implements ApplicationContextAware {
 
     @After
     public void tearDown() throws Exception {
-//        providers.stream().forEach(hook -> hook.getRepository().clearAll().toBlocking().firstOrDefault(null));
         TestUtils.deleteR(localRepository.getBasePath());
         TestUtils.deleteDirs();
     }
@@ -126,7 +125,6 @@ public class FileCommanderIT implements ApplicationContextAware {
         addFile();
         fileCommander.removeFile(localRepository.getBasePath().resolve(localConfig.getLocalFiles().iterator().next().getPath())).toBlocking().singleOrDefault(null);
         assertThat(localConfig.getLocalFiles().iterator().next().isRemoved()).isTrue();
-//        assertThat(providers.get(0).getConfig().get().getRemoteFiles().iterator().next().isRemoved()).isTrue();
     }
 
     @Test
@@ -134,25 +132,9 @@ public class FileCommanderIT implements ApplicationContextAware {
         addFile();
         fileCommander.deleteFile(localRepository.getBasePath().resolve(localConfig.getLocalFiles().iterator().next().getPath())).toBlocking().lastOrDefault(null);
         assertThat(localConfig.getLocalFiles().iterator().next().isDeleted()).isTrue();
-//        assertThat(providers.get(0).getConfig().get().getRemoteFiles().iterator().next().isDeleted()).isTrue();
 
     }
 
-/*    @Test
-    public void ghost() throws Exception {
-        final String name = RandomStringUtils.randomAlphabetic(3);
-        //save
-        assertThat(fileCommander.saveGhostFile(name, new ByteArrayInputStream("ciao".getBytes())).toBlocking().single()).isTrue();
-//        assertThat(providers.get(0).getConfig().get().getRemoteFiles()).hasSize(1);
-        //get
-//        assertThat(IOUtils.readLines(fileCommander.getGhostFile(name).toBlocking().first())).contains("ciao");
-        //delete
-        assertThat(fileCommander.deleteGhost(name).toBlocking().single()).isTrue();
-//        assertThat(providers.get(0).getConfig().get().getRemoteFiles()).hasSize(1);
-//        assertThat(providers.get(0).getConfig().get().getRemoteFiles().iterator().next().isDeleted()).isTrue();
-
-
-    }*/
 
     @Test
     public void updateFile() throws Exception {
