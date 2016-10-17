@@ -136,7 +136,6 @@ public class RemoteRepository implements IRepository {
                                             return true;
                                         }))
                         .defaultIfEmpty(false)
-//                        .filter(BooleanUtils::isTrue)
                         .doOnCompleted(fileEvents(fp, fileEventType.get()));
             }
             //update already present file
@@ -159,7 +158,6 @@ public class RemoteRepository implements IRepository {
                                 }
                             })
                             .doOnError(err -> rfile.get().setError(true))
-//                            .filter(BooleanUtils::isTrue)
                             .doOnCompleted(fileEvents(fp, fileEventType.get()));
                 }
                 //update remotely
@@ -176,7 +174,6 @@ public class RemoteRepository implements IRepository {
                                         rfile.get().setKey(key);
                                     })
                                     .doOnError(err -> rfile.get().setError(true))
-//                                    .filter(BooleanUtils::isTrue)
                                     .doOnCompleted(fileEvents(fp, fileEventType.get()));
                         });
             }
