@@ -42,7 +42,6 @@ public abstract class UbiFile<T extends UbiFile> implements Comparable<UbiFile> 
     protected boolean deleted = false;
     protected boolean removed = false;
     protected boolean active = true;
-    protected boolean ghost = false;
     protected Path path;
     protected long size;
 
@@ -64,7 +63,6 @@ public abstract class UbiFile<T extends UbiFile> implements Comparable<UbiFile> 
         deleted = file.isDeleted();
         removed = file.isRemoved();
         active = file.isActive();
-        ghost = file.isGhost();
         path = file.getPath();
         size = file.getSize();
         return (T) this;
@@ -157,14 +155,6 @@ public abstract class UbiFile<T extends UbiFile> implements Comparable<UbiFile> 
 
     public void setSize(final long size) {
         this.size = size;
-    }
-
-    public boolean isGhost() {
-        return ghost;
-    }
-
-    public void setGhost(boolean ghost) {
-        this.ghost = ghost;
     }
 
     public VClock.Comparison compare(@NotNull UbiFile file) {

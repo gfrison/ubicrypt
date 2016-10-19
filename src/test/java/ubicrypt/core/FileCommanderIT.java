@@ -60,8 +60,9 @@ import ubicrypt.core.crypto.PGPService;
 import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.dto.LocalFile;
 import ubicrypt.core.dto.UbiFile;
+import ubicrypt.core.local.OnNewLocal;
 import ubicrypt.core.provider.FileEvent;
-import ubicrypt.core.provider.LocalRepository;
+import ubicrypt.core.local.LocalRepository;
 import ubicrypt.core.provider.ProviderEvent;
 import ubicrypt.core.provider.ProviderHook;
 import ubicrypt.core.provider.ProviderLifeCycle;
@@ -220,6 +221,11 @@ public class FileCommanderIT implements ApplicationContextAware {
             }
             return path;
 
+        }
+
+        @Bean
+        public OnNewLocal onNewFileLocal() {
+            return new OnNewLocal();
         }
 
         @Bean

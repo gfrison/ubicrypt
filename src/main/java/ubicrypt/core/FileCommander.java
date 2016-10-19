@@ -35,7 +35,7 @@ import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.dto.LocalFile;
 import ubicrypt.core.dto.VClock;
 import ubicrypt.core.exp.AlreadyManagedException;
-import ubicrypt.core.provider.LocalRepository;
+import ubicrypt.core.local.LocalRepository;
 import ubicrypt.core.provider.ProviderLifeCycle;
 
 import static com.google.common.base.Preconditions.checkNotNull;

@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ubicrypt.core.provider;
+package ubicrypt.core.remote;
 
 import org.apache.commons.io.IOUtils;
 import org.assertj.core.api.Assertions;
@@ -24,13 +24,14 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import rx.Observable;
-import rx.internal.operators.BufferUntilSubscriber;
+import rx.Subscriber;
+import rx.Subscription;
 import rx.subjects.PublishSubject;
 import ubicrypt.core.FileProvenience;
 import ubicrypt.core.ProgressFile;
+import ubicrypt.core.RemoteIO;
 import ubicrypt.core.TestUtils;
 import ubicrypt.core.Utils;
 import ubicrypt.core.crypto.PGPEC;
@@ -39,18 +40,23 @@ import ubicrypt.core.dto.Key;
 import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.dto.LocalFile;
 import ubicrypt.core.dto.RemoteConfig;
+import ubicrypt.core.dto.RemoteFile;
 import ubicrypt.core.dto.UbiFile;
 import ubicrypt.core.dto.VClock;
 import ubicrypt.core.exp.NotFoundException;
+import ubicrypt.core.local.LocalRepository;
+import ubicrypt.core.provider.FileEvent;
 import ubicrypt.core.provider.file.FileProvider;
 import ubicrypt.core.provider.lock.AcquirerReleaser;
 import ubicrypt.core.provider.lock.ObjectIO;
 import ubicrypt.core.util.ObjectSerializer;
 import ubicrypt.core.util.QueueLiner;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.slf4j.LoggerFactory.getLogger;
 import static rx.functions.Actions.empty;
+import static ubicrypt.core.TestUtils.fileProvider;
 
 public class RemoteRepositoryIT {
 
@@ -71,6 +77,35 @@ public class RemoteRepositoryIT {
     }
 
     @Test
+    public void error() throws Exception {
+        RemoteFile rf = new RemoteFile();
+        final RemoteConfig remoteConfig = new RemoteConfig();
+        remoteConfig.getRemoteFiles().add(rf);
+        CountDownLatch cd = new CountDownLatch(1);
+        Observable.OnSubscribe<AcquirerReleaser> acquirer = subscriber -> {
+            subscriber.onNext(new AcquirerReleaser(remoteConfig, empty()));
+            subscriber.onCompleted();
+        };
+        RemoteIO<RemoteConfig> configIO = new RemoteIO<RemoteConfig>() {
+            @Override
+            public Observable<Boolean> apply(RemoteConfig remoteConfig) {
+                assertThat(remoteConfig.getRemoteFiles().iterator().next().isError()).isTrue();
+                cd.countDown();
+                return Observable.just(true);
+            }
+
+            @Override
+            public void call(Subscriber<? super RemoteConfig> subscriber) {
+
+            }
+        };
+        RemoteRepository rr = new RemoteRepository(acquirer, fileProvider(TestUtils.tmp), configIO);
+        rr.error(rf);
+        assertThat(cd.await(2, SECONDS)).isTrue();
+
+    }
+
+    @Test
     public void save() throws Exception {
         final PGPService pgp = new PGPService(PGPEC.encryptionKey(), new LocalConfig());
 
@@ -79,7 +114,7 @@ public class RemoteRepositoryIT {
             subscriber.onNext(new AcquirerReleaser(remoteConfig, empty()));
             subscriber.onCompleted();
         };
-        final FileProvider provider = TestUtils.fileProvider(TestUtils.tmp);
+        final FileProvider provider = fileProvider(TestUtils.tmp);
         final ObjectSerializer ser = new ObjectSerializer(provider) {{
             setPgpService(pgp);
         }};
@@ -91,24 +126,33 @@ public class RemoteRepositoryIT {
         final LocalRepository localRepository = new LocalRepository(TestUtils.tmp2);
         Utils.write(TestUtils.tmp2.resolve("origin"), "ciao".getBytes()).toBlocking().last();
         final PublishSubject<ProgressFile> progress = PublishSubject.create();
-        BufferUntilSubscriber<FileEvent> fileEvents = BufferUntilSubscriber.create();
+        final PublishSubject<FileEvent> fileEvents = PublishSubject.create();
 
-        final BufferUntilSubscriber<FileEvent> finalFileEvents = fileEvents;
         final RemoteRepository repo = new RemoteRepository(acquirer, provider, new ObjectIO<>(ser, provider.getConfFile(), RemoteConfig.class)) {{
             setProgressEvents(progress);
-            setFileEvents(finalFileEvents);
+            setFileEvents(fileEvents);
             setQueueLiner(new QueueLiner<>(1000));
         }};
+        repo.setOnUpdate(new OnUpdateRemote(provider, repo) {{
+            setProgressEvents(progress);
+            setFileEvents(fileEvents);
+        }});
         repo.init();
 
         final LocalFile localFile = new LocalFile() {{
             setPath(Paths.get("origin"));
         }};
-        localRepository.localConfig.getLocalFiles().add(localFile);
+        localRepository.getLocalConfig().getLocalFiles().add(localFile);
         final ArrayList<ProgressFile> progresses = new ArrayList<>();
         progress.subscribe(progresses::add);
 
         //create
+        CountDownLatch cd1 = new CountDownLatch(1);
+        Subscription sub = fileEvents.subscribe(fileEvent -> {
+            assertThat(fileEvent.getType()).isEqualTo(FileEvent.Type.created);
+            assertThat(fileEvent.getFile()).isEqualTo(localFile);
+            cd1.countDown();
+        });
         assertThat(repo.save(new FileProvenience(localFile, localRepository)).toBlocking().last()).isTrue();
         assertThat(remoteConfig.getRemoteFiles()).hasSize(1);
         assertThat(IOUtils.readLines(repo.get(remoteConfig.getRemoteFiles().iterator().next()).toBlocking().first())).contains("ciao");
@@ -119,12 +163,25 @@ public class RemoteRepositoryIT {
         assertThat(next.getChunk()).isGreaterThan(0);
         assertThat(it.next().isCompleted()).isTrue();
         progresses.clear();
-        FileEvent fileEvent = fileEvents.toBlocking().first();
-        assertThat(fileEvent.getType()).isEqualTo(FileEvent.Type.created);
-        assertThat(fileEvent.getFile()).isEqualTo(localFile);
+        assertThat(cd1.await(2, SECONDS)).isTrue();
+        sub.unsubscribe();
 
         //update
-        fileEvents = BufferUntilSubscriber.create();
+//        fileEvents = BufferUntilSubscriber.create();
+/*
+        CountDownLatch cd2 = new CountDownLatch(1);
+        fileEvents.subscribe(fileEvent2 -> {
+            System.out.println("incoming filevent");
+
+            cd2.countDown();
+        }, Utils.logError);
+*/
+        CountDownLatch cd2 = new CountDownLatch(1);
+        sub = fileEvents.subscribe(fileEvent -> {
+            assertThat(fileEvent.getType()).isEqualTo(FileEvent.Type.updated);
+            assertThat(fileEvent.getFile()).isEqualTo(localFile);
+            cd2.countDown();
+        });
         repo.setFileEvents(fileEvents);
         Utils.write(TestUtils.tmp2.resolve("origin"), "ciao2".getBytes()).toBlocking().last();
         localFile.getVclock().increment(deviceId);
@@ -137,12 +194,10 @@ public class RemoteRepositoryIT {
         assertThat(next.getChunk()).isGreaterThan(0);
         assertThat(it.next().isCompleted()).isTrue();
         progresses.clear();
-        fileEvent = fileEvents.toBlocking().first();
-        assertThat(fileEvent.getType()).isEqualTo(FileEvent.Type.updated);
-        assertThat(fileEvent.getFile()).isEqualTo(localFile);
+        assertThat(cd2.await(2, SECONDS)).isTrue();
+        sub.unsubscribe();
 
         //not update
-        fileEvents = BufferUntilSubscriber.create();
         repo.setFileEvents(fileEvents);
         final VClock vClock = (VClock) localFile.getVclock().clone();
         assertThat(repo.save(new FileProvenience(localFile, localRepository)).toBlocking().last()).isFalse();
@@ -150,12 +205,17 @@ public class RemoteRepositoryIT {
         assertThat(progresses).isEmpty();
         final CountDownLatch cd = new CountDownLatch(1);
         fileEvents.subscribe(event -> cd.countDown());
-        if (cd.await(1, TimeUnit.SECONDS)) {
+        if (cd.await(1, SECONDS)) {
             Assertions.fail("update event not expected");
         }
 
         //delete
-        fileEvents = BufferUntilSubscriber.create();
+        CountDownLatch cd3 = new CountDownLatch(1);
+        sub = fileEvents.subscribe(fileEvent -> {
+            assertThat(fileEvent.getType()).isEqualTo(FileEvent.Type.deleted);
+            assertThat(fileEvent.getFile()).isEqualTo(localFile);
+            cd3.countDown();
+        });
         repo.setFileEvents(fileEvents);
         localFile.setDeleted(true);
         localFile.getVclock().increment(deviceId);
@@ -167,9 +227,8 @@ public class RemoteRepositoryIT {
         } catch (final NotFoundException e) {
 
         }
-        fileEvent = fileEvents.toBlocking().first();
-        assertThat(fileEvent.getType()).isEqualTo(FileEvent.Type.deleted);
-        assertThat(fileEvent.getFile()).isEqualTo(localFile);
+        assertThat(cd3.await(2, SECONDS)).isTrue();
+        sub.unsubscribe();
 
 
     }

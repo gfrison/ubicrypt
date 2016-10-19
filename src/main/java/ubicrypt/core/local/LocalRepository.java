@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ubicrypt.core.provider;
+package ubicrypt.core.local;
 
 import com.google.common.base.Throwables;
 
@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -37,17 +36,19 @@ import javax.annotation.Resource;
 import javax.inject.Inject;
 
 import rx.Observable;
+import rx.functions.Func1;
 import rx.subjects.Subject;
 import ubicrypt.core.FileProvenience;
+import ubicrypt.core.IRepository;
 import ubicrypt.core.Utils;
 import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.dto.LocalFile;
 import ubicrypt.core.dto.UbiFile;
 import ubicrypt.core.dto.VClock;
 import ubicrypt.core.exp.NotFoundException;
+import ubicrypt.core.provider.FileEvent;
 import ubicrypt.core.util.CopyFile;
 import ubicrypt.core.util.StoreTempFile;
-import ubicrypt.core.util.SupplierExp;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -55,7 +56,7 @@ public class LocalRepository implements IRepository {
 
     private static final Logger log = LoggerFactory.getLogger(LocalRepository.class);
     @Inject
-    final LocalConfig localConfig = new LocalConfig();
+    private LocalConfig localConfig = new LocalConfig();
     private final Path basePath;
     @Resource
     @Qualifier("fileEvents")
@@ -63,6 +64,9 @@ public class LocalRepository implements IRepository {
     @Resource
     @Qualifier("conflictEvents")
     private Subject<UbiFile, UbiFile> conflictEvents;
+    @Resource
+    @Qualifier("onNewLocal")
+    Func1<FileProvenience, Observable<Boolean>> onNewFileLocal;
 
 
     public LocalRepository(final Path basePath) {
@@ -81,46 +85,13 @@ public class LocalRepository implements IRepository {
             check(fp);
             final UbiFile rfile = fp.getFile();
             final Optional<LocalFile> lfile = localConfig.getLocalFiles().stream().filter(lf -> lf.equals(rfile)).findFirst();
+/*
             //if path not set, take the getName()
             final Path path = rfile.getPath() != null ? rfile.getPath() : Paths.get(rfile.getName());
-            if (!lfile.isPresent()) {
-                if (!rfile.isDeleted() && !rfile.isRemoved()) {
-                    log.info("copy to:{} from repo:{}, file:{} ", basePath.resolve(path), fp.getOrigin(), rfile.getPath());
-                    final LocalFile lc = new LocalFile();
-                    lc.copyFrom(rfile);
-                    localConfig.getLocalFiles().add(lc);
-                    if (Files.exists(basePath.resolve(path))) {
-                        final BasicFileAttributes attrs = SupplierExp.silent(() -> Files.readAttributes(basePath.resolve(path), BasicFileAttributes.class));
-                        if (attrs.isDirectory()) {
-                            log.info("can't import file, a folder already exists with the same name:{}", path);
-                            return Observable.just(false);
-                        }
-                        if (attrs.size() == rfile.getSize()) {
-                            log.info("identical file already present locally:{}", path);
-                            localConfig.getLocalFiles().add(LocalFile.copy(rfile));
-                            return Observable.just(true).doOnCompleted(() -> fileEvents.onNext(new FileEvent(rfile, FileEvent.Type.created, FileEvent.Location.local)));
-                        }
-                        log.info("conflicting file already present locally:{}", path);
-                        conflictEvents.onNext(rfile);
-                        return Observable.just(false);
-                    }
-                    AtomicReference<Path> tempFile = new AtomicReference<>();
-                    return fp.getOrigin().get(rfile)
-                            .flatMap(new StoreTempFile())
-                            .doOnNext(tempFile::set)
-                            .map(new CopyFile(rfile.getSize(), basePath.resolve(path), true, fp.getFile().getLastModified()))
-                            .doOnCompleted(() -> {
-                                if (tempFile.get() != null) {
-                                    try {
-                                        Files.delete(tempFile.get());
-                                    } catch (IOException e) {
-                                    }
-                                }
-                            })
-                            .doOnCompleted(() -> localConfig.getLocalFiles().add(LocalFile.copy(rfile)))
-                            .doOnCompleted(() -> fileEvents.onNext(new FileEvent(rfile, FileEvent.Type.created, FileEvent.Location.local)));
-                }
-                //if present
+*/
+            if (!lfile.filter(Utils.trackedFile).isPresent()) {
+                //new file
+                return onNewFileLocal.call(fp);
             } else {
                 if (rfile.getVclock().compare(lfile.get().getVclock()) == VClock.Comparison.newer) {
                     lfile.get().copyFrom(rfile);
@@ -129,7 +100,7 @@ public class LocalRepository implements IRepository {
                         AtomicReference<Path> tempFile = new AtomicReference<>();
                         return fp.getOrigin().get(fp.getFile())
                                 .flatMap(new StoreTempFile())
-                                .map(new CopyFile(rfile.getSize(), basePath.resolve(path), false, fp.getFile().getLastModified()))
+                                .map(new CopyFile(rfile.getSize(), basePath.resolve(rfile.getPath()), false, fp.getFile().getLastModified()))
                                 .doOnCompleted(() -> {
                                     if (tempFile.get() != null) {
                                         try {
@@ -178,6 +149,14 @@ public class LocalRepository implements IRepository {
     }
 
 
+    public LocalConfig getLocalConfig() {
+        return localConfig;
+    }
+
+    public void setLocalConfig(LocalConfig localConfig) {
+        this.localConfig = localConfig;
+    }
+
     public BasicFileAttributes attributes(final Path path) {
         try {
             return Files.readAttributes(basePath.resolve(path), BasicFileAttributes.class);
@@ -193,6 +172,10 @@ public class LocalRepository implements IRepository {
 
     public void setFileEvents(final Subject<FileEvent, FileEvent> fileEvents) {
         this.fileEvents = fileEvents;
+    }
+
+    public void setOnNewFileLocal(Func1<FileProvenience, Observable<Boolean>> onNewFileLocal) {
+        this.onNewFileLocal = onNewFileLocal;
     }
 
     @Override

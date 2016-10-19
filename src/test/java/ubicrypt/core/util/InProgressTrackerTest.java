@@ -11,7 +11,7 @@ import ubicrypt.core.FileProvenience;
 import ubicrypt.core.ProgressFile;
 import ubicrypt.core.dto.LocalFile;
 import ubicrypt.core.dto.UbiFile;
-import ubicrypt.core.provider.IRepository;
+import ubicrypt.core.IRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

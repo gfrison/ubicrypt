@@ -27,6 +27,7 @@ import ubicrypt.core.dto.RemoteConfig;
 import ubicrypt.core.dto.RemoteFile;
 import ubicrypt.core.provider.ftp.FTPConf;
 import ubicrypt.core.provider.ftp.FTProvider;
+import ubicrypt.core.remote.RemoteRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;

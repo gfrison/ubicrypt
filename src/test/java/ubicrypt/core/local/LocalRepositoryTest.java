@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ubicrypt.core.provider;
+package ubicrypt.core.local;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
@@ -39,6 +39,8 @@ import ubicrypt.core.dto.Key;
 import ubicrypt.core.dto.RemoteConfig;
 import ubicrypt.core.dto.RemoteFile;
 import ubicrypt.core.dto.VClock;
+import ubicrypt.core.provider.FileEvent;
+import ubicrypt.core.remote.RemoteRepository;
 import ubicrypt.core.provider.file.FileProvider;
 import ubicrypt.core.provider.lock.AcquirerReleaser;
 import ubicrypt.core.provider.lock.ObjectIO;
@@ -46,6 +48,7 @@ import ubicrypt.core.util.ObjectSerializer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static ubicrypt.core.TestUtils.tmp;
 import static ubicrypt.core.provider.FileEvent.Type.created;
 import static ubicrypt.core.provider.FileEvent.Type.updated;
 
@@ -54,24 +57,30 @@ public class LocalRepositoryTest {
 
     @Before
     public void setUp() throws Exception {
-        TestUtils.deleteR(TestUtils.tmp);
+        TestUtils.deleteR(tmp);
         TestUtils.deleteR(TestUtils.tmp2);
-        Files.createDirectories(TestUtils.tmp);
+        Files.createDirectories(tmp);
         Files.createDirectories(TestUtils.tmp2);
     }
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.deleteR(TestUtils.tmp);
+        TestUtils.deleteR(tmp);
         TestUtils.deleteR(TestUtils.tmp2);
 
     }
 
     @Test
     public void save() throws Exception {
-        final LocalRepository lr = new LocalRepository(TestUtils.tmp);
+        final LocalRepository lr = new LocalRepository(tmp);
         final Subject<FileEvent, FileEvent> fevents = PublishSubject.create();
         lr.setFileEvents(fevents);
+        lr.setOnNewFileLocal(new OnNewLocal() {{
+            setFileEvents(fevents);
+            setBasePath(tmp);
+            setLocalConfig(lr.getLocalConfig());
+        }});
+
         final byte[] key = AESGCM.rndKey();
         final FileProvider provider = TestUtils.fileProvider(TestUtils.tmp2);
         Utils.write(TestUtils.tmp2.resolve("origin"), AESGCM.encryptIs(key, new DeflaterInputStream(new ByteArrayInputStream("ciao".getBytes())))).toBlocking().last();
@@ -107,7 +116,7 @@ public class LocalRepositoryTest {
         });
         assertThat(lr.save(new FileProvenience(rf, repo)).toBlocking().last()).isTrue();
         assertThat(IOUtils.readLines(lr.get(rf).toBlocking().last())).contains("ciao");
-        assertThat(lr.localConfig.getLocalFiles()).hasSize(1);
+        assertThat(lr.getLocalConfig().getLocalFiles()).hasSize(1);
         assertThat(cd3.await(2, TimeUnit.SECONDS)).isTrue();
         sub.unsubscribe();
 
@@ -123,16 +132,16 @@ public class LocalRepositoryTest {
         Utils.write(TestUtils.tmp2.resolve("origin"), AESGCM.encryptIs(key, new DeflaterInputStream(new ByteArrayInputStream("ciao2".getBytes())))).toBlocking().last();
         assertThat(lr.save(new FileProvenience(rf, repo)).toBlocking().last()).isTrue();
         assertThat(IOUtils.readLines(lr.get(rf).toBlocking().last())).contains("ciao2");
-        assertThat(lr.localConfig.getLocalFiles()).hasSize(1);
-        assertThat(lr.localConfig.getLocalFiles().iterator().next().compare(rf)).isEqualTo(VClock.Comparison.equal);
+        assertThat(lr.getLocalConfig().getLocalFiles()).hasSize(1);
+        assertThat(lr.getLocalConfig().getLocalFiles().iterator().next().compare(rf)).isEqualTo(VClock.Comparison.equal);
         assertThat(cd3.await(2, TimeUnit.SECONDS)).isTrue();
         sub.unsubscribe();
 
         //not update
         assertThat(lr.save(new FileProvenience(rf, repo)).toBlocking().first()).isFalse();
         assertThat(IOUtils.readLines(lr.get(rf).toBlocking().first())).contains("ciao2");
-        assertThat(lr.localConfig.getLocalFiles()).hasSize(1);
-        assertThat(lr.localConfig.getLocalFiles().iterator().next().compare(rf)).isEqualTo(VClock.Comparison.equal);
+        assertThat(lr.getLocalConfig().getLocalFiles()).hasSize(1);
+        assertThat(lr.getLocalConfig().getLocalFiles().iterator().next().compare(rf)).isEqualTo(VClock.Comparison.equal);
 
     }
 }

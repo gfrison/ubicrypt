@@ -45,8 +45,7 @@ import ubicrypt.core.dto.RemoteConfig;
 import ubicrypt.core.dto.VClock;
 import ubicrypt.core.events.SyncBeginEvent;
 import ubicrypt.core.events.SynchDoneEvent;
-import ubicrypt.core.provider.IRepository;
-import ubicrypt.core.provider.LocalRepository;
+import ubicrypt.core.local.LocalRepository;
 import ubicrypt.core.provider.ProviderEvent;
 import ubicrypt.core.provider.ProviderHook;
 import ubicrypt.core.provider.ProviderLifeCycle;
@@ -158,10 +157,7 @@ public class FileSynchronizer implements Observable.OnSubscribe<Boolean> {
     private Observable<Boolean> providerChain(final Set<Map.Entry<UUID, FileProvenience>> entries,
                                               final ProviderHook hook) {
         return Observable.merge(entries.stream()
-                .map(entry -> {
-                    final IRepository repo = entry.getValue().getFile().isGhost() ? entry.getValue().getOrigin() : localRepository;
-                    return hook.getRepository().save(new FileProvenience(entry.getValue().getFile(), repo));
-                })
+                .map(entry -> hook.getRepository().save(new FileProvenience(entry.getValue().getFile(), localRepository)))
                 .collect(Collectors.toList()));
     }
 
@@ -171,7 +167,7 @@ public class FileSynchronizer implements Observable.OnSubscribe<Boolean> {
             return observable.defaultIfEmpty(false).last();
         }
         final Map.Entry<UUID, FileProvenience> entry = it.next();
-        return localChain(it, observable.flatMap(n -> (entry.getValue().getOrigin().isLocal() || entry.getValue().getFile().isGhost())
+        return localChain(it, observable.flatMap(n -> (entry.getValue().getOrigin().isLocal())
                 ? Observable.just(true) : localRepository.save(entry.getValue())));
     }
 

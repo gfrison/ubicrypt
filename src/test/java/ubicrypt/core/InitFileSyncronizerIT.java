@@ -51,7 +51,7 @@ import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.dto.LocalFile;
 import ubicrypt.core.dto.RemoteConfig;
 import ubicrypt.core.dto.RemoteFile;
-import ubicrypt.core.provider.LocalRepository;
+import ubicrypt.core.local.LocalRepository;
 import ubicrypt.core.provider.ProviderEvent;
 import ubicrypt.core.provider.ProviderHook;
 import ubicrypt.core.provider.RemoteCtxConf;

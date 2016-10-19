@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ubicrypt.core.provider;
+package ubicrypt.core.remote;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import java.io.InputStream;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterInputStream;
 import java.util.zip.InflaterInputStream;
@@ -34,6 +35,7 @@ import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 import rx.subjects.Subject;
 import ubicrypt.core.FileProvenience;
+import ubicrypt.core.IRepository;
 import ubicrypt.core.MonitorInputStream;
 import ubicrypt.core.ProgressFile;
 import ubicrypt.core.RemoteIO;
@@ -44,6 +46,9 @@ import ubicrypt.core.dto.RemoteConfig;
 import ubicrypt.core.dto.RemoteFile;
 import ubicrypt.core.dto.UbiFile;
 import ubicrypt.core.dto.VClock;
+import ubicrypt.core.provider.FileEvent;
+import ubicrypt.core.provider.RemoteFileGetter;
+import ubicrypt.core.provider.UbiProvider;
 import ubicrypt.core.provider.lock.AcquirerReleaser;
 import ubicrypt.core.util.QueueLiner;
 
@@ -66,6 +71,7 @@ public class RemoteRepository implements IRepository {
     private QueueLiner<Boolean> queueLiner;
     private Func1<Observable<Boolean>, Observable<Boolean>> epilogued;
     private RemoteFileGetter fileGetter;
+    private BiFunction<FileProvenience, RemoteFile, Observable<Boolean>> onUpdate;
 
 
     public RemoteRepository(final Observable.OnSubscribe<AcquirerReleaser> acquirer, final UbiProvider provider, final RemoteIO<RemoteConfig> configIO) {
@@ -83,6 +89,25 @@ public class RemoteRepository implements IRepository {
     }
 
     @Override
+    public void error(UbiFile file) {
+        AtomicReference<Action0> releaser = new AtomicReference<>();
+        create(acquirer)
+                .doOnNext(acquirerReleaser -> releaser.set(acquirerReleaser.getReleaser()))
+                .map(AcquirerReleaser::getRemoteConfig)
+                .flatMap(rc -> {
+                    rc.getRemoteFiles().stream()
+                            .filter(f -> f.equals(file))
+                            .findFirst()
+                            .ifPresent(rcf -> rcf.setError(true));
+                    return saveConf(rc);
+                })
+                .doOnError(err -> releaser.get().call())
+                .doOnCompleted(() -> releaser.get().call())
+                .subscribe(Actions.empty(), Utils.logError);
+
+    }
+
+    @Override
     public Observable<InputStream> get(final UbiFile file) {
         return fileGetter.call(file, (rfile, is) -> monitor(new FileProvenience(file, this), new InflaterInputStream(AESGCM.decryptIs(rfile.getKey().getBytes(), is))));
     }
@@ -93,7 +118,7 @@ public class RemoteRepository implements IRepository {
                 .doOnNext(acquirerReleaser -> releaser.set(acquirerReleaser.getReleaser()))
                 .flatMap(rel -> configIO.apply(remoteConfig)
                         .doOnError(err -> releaser.get().call())
-                        .doOnCompleted(releaser.get()));
+                        .doOnCompleted(() -> releaser.get().call()));
     }
 
 
@@ -141,41 +166,7 @@ public class RemoteRepository implements IRepository {
             //update already present file
             if (file.compare(rfile.get()) == VClock.Comparison.newer) {
                 //coming file is new version
-                log.debug("file:{} newer than:{} on provider:{}", file.getPath(), rfile.get(), provider);
-                if (!Utils.trackedFile.test(file)) {
-                    //delete remotely
-                    if (file.isRemoved()) {
-                        fileEventType.set(FileEvent.Type.removed);
-                    }
-                    if (file.isDeleted()) {
-                        fileEventType.set(FileEvent.Type.deleted);
-                    }
-                    return provider.delete(rfile.get().getName())
-                            .doOnNext(saved -> log.info("deleted:{} file:{}, to provider:{}", saved, rfile.get().getPath(), provider))
-                            .doOnNext(saved -> {
-                                if (saved) {
-                                    rfile.get().copyFrom(file);
-                                }
-                            })
-                            .doOnError(err -> rfile.get().setError(true))
-                            .doOnCompleted(fileEvents(fp, fileEventType.get()));
-                }
-                //update remotely
-                fileEventType.set(FileEvent.Type.updated);
-                return fp.getOrigin().get(file)
-                        .flatMap(is -> {
-                            //renew encryption key
-                            final Key key = new Key(AESGCM.rndKey(), UbiFile.KeyType.aes);
-                            return provider.put(rfile.get().getName(),
-                                    AESGCM.encryptIs(key.getBytes(), new DeflaterInputStream(monitor(fp, is), new Deflater(BEST_COMPRESSION))))
-                                    .doOnNext(saved -> log.info("updated:{} file:{}, to provider:{}", saved, rfile.get().getPath(), provider))
-                                    .doOnNext(saved -> {
-                                        rfile.get().copyFrom(file);
-                                        rfile.get().setKey(key);
-                                    })
-                                    .doOnError(err -> rfile.get().setError(true))
-                                    .doOnCompleted(fileEvents(fp, fileEventType.get()));
-                        });
+                return onUpdate.apply(fp, rfile.get());
             }
             log.trace("no update file:{} for provider:{}", file.getPath(), provider);
             return Observable.just(false);
@@ -189,6 +180,7 @@ public class RemoteRepository implements IRepository {
                 })
                 .doOnCompleted(releaserRef.get() != null ? releaserRef.get().getReleaser()::call : Actions.empty());
     }
+
 
     private Action0 fileEvents(final FileProvenience fp, final FileEvent.Type fileEventType) {
         return () -> fileEvents.onNext(new FileEvent(fp.getFile(), fileEventType, FileEvent.Location.remote));
@@ -245,5 +237,9 @@ public class RemoteRepository implements IRepository {
 
     public void setQueueLiner(final QueueLiner<Boolean> queueLiner) {
         this.queueLiner = queueLiner;
+    }
+
+    public void setOnUpdate(BiFunction<FileProvenience, RemoteFile, Observable<Boolean>> onUpdate) {
+        this.onUpdate = onUpdate;
     }
 }

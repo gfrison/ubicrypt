@@ -11,13 +11,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ubicrypt.core.provider;
+package ubicrypt.core;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 import rx.Observable;
-import ubicrypt.core.FileProvenience;
 import ubicrypt.core.dto.UbiFile;
 
 public interface IRepository {
@@ -35,4 +34,6 @@ public interface IRepository {
     }
 
 
+    default void error(UbiFile file) {
+    }
 }

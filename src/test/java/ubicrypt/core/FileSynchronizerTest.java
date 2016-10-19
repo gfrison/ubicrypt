@@ -27,8 +27,7 @@ import java.util.stream.Collectors;
 import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.dto.LocalFile;
 import ubicrypt.core.dto.RemoteFile;
-import ubicrypt.core.provider.IRepository;
-import ubicrypt.core.provider.LocalRepository;
+import ubicrypt.core.local.LocalRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;

@@ -45,7 +45,8 @@ import ubicrypt.core.TestUtils;
 import ubicrypt.core.Utils;
 import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.dto.LocalFile;
-import ubicrypt.core.provider.LocalRepository;
+import ubicrypt.core.local.LocalRepository;
+import ubicrypt.core.local.OnNewLocal;
 import ubicrypt.core.provider.RemoteCtxConf;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -186,6 +187,11 @@ public class WatchReactorIT {
             }
             return path;
 
+        }
+
+        @Bean
+        public OnNewLocal onNewFileLocal() {
+            return new OnNewLocal();
         }
 
         @Bean

@@ -42,7 +42,8 @@ import rx.subjects.Subject;
 import ubicrypt.core.crypto.PGPService;
 import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.dto.UbiFile;
-import ubicrypt.core.provider.LocalRepository;
+import ubicrypt.core.local.LocalRepository;
+import ubicrypt.core.local.OnNewLocal;
 import ubicrypt.core.provider.ProviderCommander;
 import ubicrypt.core.provider.ProviderDescriptor;
 import ubicrypt.core.provider.RemoteCtxConf;
@@ -109,6 +110,11 @@ public class UbiConf {
         return new LocalConfigPersistor();
     }
 
+
+    @Bean
+    public OnNewLocal onNewLocal() {
+        return new OnNewLocal();
+    }
 
     @Bean
     public LocalRepository localRepository(final Path basePath) {
