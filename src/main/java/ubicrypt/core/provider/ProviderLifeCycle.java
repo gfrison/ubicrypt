@@ -20,6 +20,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,6 +44,7 @@ import ubicrypt.core.exp.NotFoundException;
 import ubicrypt.core.provider.lock.ConfigAcquirer;
 import ubicrypt.core.provider.lock.LockChecker;
 import ubicrypt.core.provider.lock.ObjectIO;
+import ubicrypt.core.remote.OnInsertRemote;
 import ubicrypt.core.remote.OnUpdateRemote;
 import ubicrypt.core.remote.RemoteRepository;
 import ubicrypt.core.util.InProgressTracker;
@@ -92,7 +94,8 @@ public class ProviderLifeCycle implements ApplicationContextAware {
                     ConfigAcquirer acquirer = new ConfigAcquirer(lockCheker, configIO);
                     acquirer.setProviderRef(provider.toString());
                     RemoteRepository repository = springIt(ctx, new RemoteRepository(acquirer, provider, configIO));
-                    repository.setOnUpdate(springIt(ctx, new OnUpdateRemote(provider, repository)));
+                    repository.setActions(Arrays.asList(springIt(ctx, new OnUpdateRemote(provider, repository)),
+                            springIt(ctx, new OnInsertRemote(provider, repository))));
                     ProviderHook hook = new ProviderHook(provider, acquirer, repository);
                     hook.setConfigSaver(new ProviderConfSaver(acquirer, configIO));
                     hook.setStatusEvents(acquirer.getStatuses());

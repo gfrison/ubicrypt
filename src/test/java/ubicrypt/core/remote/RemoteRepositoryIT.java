@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
 
@@ -126,17 +127,20 @@ public class RemoteRepositoryIT {
         final LocalRepository localRepository = new LocalRepository(TestUtils.tmp2);
         Utils.write(TestUtils.tmp2.resolve("origin"), "ciao".getBytes()).toBlocking().last();
         final PublishSubject<ProgressFile> progress = PublishSubject.create();
-        final PublishSubject<FileEvent> fileEvents = PublishSubject.create();
+        final PublishSubject<FileEvent> file2Events = PublishSubject.create();
 
         final RemoteRepository repo = new RemoteRepository(acquirer, provider, new ObjectIO<>(ser, provider.getConfFile(), RemoteConfig.class)) {{
             setProgressEvents(progress);
-            setFileEvents(fileEvents);
+            setFileEvents(file2Events);
             setQueueLiner(new QueueLiner<>(1000));
         }};
-        repo.setOnUpdate(new OnUpdateRemote(provider, repo) {{
+        repo.setActions(Arrays.asList(new OnUpdateRemote(provider, repo) {{
             setProgressEvents(progress);
-            setFileEvents(fileEvents);
-        }});
+            setFileEvents(file2Events);
+        }}, new OnInsertRemote(provider, repo) {{
+            setProgressEvents(progress);
+            setFileEvents(file2Events);
+        }}));
         repo.init();
 
         final LocalFile localFile = new LocalFile() {{
@@ -148,7 +152,7 @@ public class RemoteRepositoryIT {
 
         //create
         CountDownLatch cd1 = new CountDownLatch(1);
-        Subscription sub = fileEvents.subscribe(fileEvent -> {
+        Subscription sub = file2Events.subscribe(fileEvent -> {
             assertThat(fileEvent.getType()).isEqualTo(FileEvent.Type.created);
             assertThat(fileEvent.getFile()).isEqualTo(localFile);
             cd1.countDown();
@@ -167,22 +171,22 @@ public class RemoteRepositoryIT {
         sub.unsubscribe();
 
         //update
-//        fileEvents = BufferUntilSubscriber.create();
+//        file2Events = BufferUntilSubscriber.create();
 /*
         CountDownLatch cd2 = new CountDownLatch(1);
-        fileEvents.subscribe(fileEvent2 -> {
+        file2Events.subscribe(fileEvent2 -> {
             System.out.println("incoming filevent");
 
             cd2.countDown();
         }, Utils.logError);
 */
         CountDownLatch cd2 = new CountDownLatch(1);
-        sub = fileEvents.subscribe(fileEvent -> {
+        sub = file2Events.subscribe(fileEvent -> {
             assertThat(fileEvent.getType()).isEqualTo(FileEvent.Type.updated);
             assertThat(fileEvent.getFile()).isEqualTo(localFile);
             cd2.countDown();
         });
-        repo.setFileEvents(fileEvents);
+        repo.setFileEvents(file2Events);
         Utils.write(TestUtils.tmp2.resolve("origin"), "ciao2".getBytes()).toBlocking().last();
         localFile.getVclock().increment(deviceId);
         assertThat(repo.save(new FileProvenience(localFile, localRepository)).toBlocking().last()).isTrue();
@@ -198,25 +202,25 @@ public class RemoteRepositoryIT {
         sub.unsubscribe();
 
         //not update
-        repo.setFileEvents(fileEvents);
+        repo.setFileEvents(file2Events);
         final VClock vClock = (VClock) localFile.getVclock().clone();
         assertThat(repo.save(new FileProvenience(localFile, localRepository)).toBlocking().last()).isFalse();
         assertThat(remoteConfig.getRemoteFiles().iterator().next().getVclock().compare(vClock)).isEqualTo(VClock.Comparison.equal);
         assertThat(progresses).isEmpty();
         final CountDownLatch cd = new CountDownLatch(1);
-        fileEvents.subscribe(event -> cd.countDown());
+        file2Events.subscribe(event -> cd.countDown());
         if (cd.await(1, SECONDS)) {
             Assertions.fail("update event not expected");
         }
 
         //delete
         CountDownLatch cd3 = new CountDownLatch(1);
-        sub = fileEvents.subscribe(fileEvent -> {
+        sub = file2Events.subscribe(fileEvent -> {
             assertThat(fileEvent.getType()).isEqualTo(FileEvent.Type.deleted);
             assertThat(fileEvent.getFile()).isEqualTo(localFile);
             cd3.countDown();
         });
-        repo.setFileEvents(fileEvents);
+        repo.setFileEvents(file2Events);
         localFile.setDeleted(true);
         localFile.getVclock().increment(deviceId);
         assertThat(repo.save(new FileProvenience(localFile, localRepository)).toBlocking().last()).isTrue();

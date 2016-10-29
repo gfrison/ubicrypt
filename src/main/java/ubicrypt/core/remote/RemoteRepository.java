@@ -18,11 +18,9 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.slf4j.Logger;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiFunction;
-import java.util.zip.Deflater;
-import java.util.zip.DeflaterInputStream;
 import java.util.zip.InflaterInputStream;
 
 import javax.annotation.PostConstruct;
@@ -41,21 +39,16 @@ import ubicrypt.core.ProgressFile;
 import ubicrypt.core.RemoteIO;
 import ubicrypt.core.Utils;
 import ubicrypt.core.crypto.AESGCM;
-import ubicrypt.core.dto.Key;
 import ubicrypt.core.dto.RemoteConfig;
-import ubicrypt.core.dto.RemoteFile;
 import ubicrypt.core.dto.UbiFile;
-import ubicrypt.core.dto.VClock;
 import ubicrypt.core.provider.FileEvent;
 import ubicrypt.core.provider.RemoteFileGetter;
 import ubicrypt.core.provider.UbiProvider;
 import ubicrypt.core.provider.lock.AcquirerReleaser;
 import ubicrypt.core.util.QueueLiner;
 
-import static java.util.zip.Deflater.BEST_COMPRESSION;
 import static org.slf4j.LoggerFactory.getLogger;
 import static rx.Observable.create;
-import static rx.Observable.just;
 
 public class RemoteRepository implements IRepository {
     private static final Logger log = getLogger(RemoteRepository.class);
@@ -71,7 +64,7 @@ public class RemoteRepository implements IRepository {
     private QueueLiner<Boolean> queueLiner;
     private Func1<Observable<Boolean>, Observable<Boolean>> epilogued;
     private RemoteFileGetter fileGetter;
-    private BiFunction<FileProvenience, RemoteFile, Observable<Boolean>> onUpdate;
+    private List<IRemoteAction> actions;
 
 
     public RemoteRepository(final Observable.OnSubscribe<AcquirerReleaser> acquirer, final UbiProvider provider, final RemoteIO<RemoteConfig> configIO) {
@@ -140,35 +133,11 @@ public class RemoteRepository implements IRepository {
             releaserRef.set(releaser);
             final RemoteConfig remoteConfig = releaser.getRemoteConfig();
             UbiFile<UbiFile> file = fp.getFile();
-            Optional<RemoteFile> rfile = remoteConfig.getRemoteFiles().stream().filter(file1 -> file1.equals(file)).findFirst();
-            if (!rfile.isPresent()) {
-                if (!Utils.trackedFile.test(file)) {
-                    return just(false);
-                }
-                //create new one remotely
-                RemoteFile rf = RemoteFile.createFrom(file);
-                final byte[] key = AESGCM.rndKey();
-                rf.setKey(new Key(key));
-                fileEventType.set(FileEvent.Type.created);
-                return fp.getOrigin().get(file)
-                        .flatMap(is ->
-                                provider.post(AESGCM.encryptIs(key, new DeflaterInputStream(monitor(fp, is), new Deflater(BEST_COMPRESSION))))
-                                        .map(name -> {
-                                            log.info("created file:{}, to provider:{}", rf.getPath(), provider);
-                                            //add name and add to config
-                                            rf.setRemoteName(name);
-                                            remoteConfig.getRemoteFiles().add(rf);
-                                            return true;
-                                        }))
-                        .defaultIfEmpty(false)
-                        .doOnCompleted(fileEvents(fp, fileEventType.get()));
+            Optional<IRemoteAction> action = actions.stream().filter(test -> test.test(fp, remoteConfig)).findFirst();
+            if (action.isPresent()) {
+                return action.get().apply(fp, remoteConfig);
             }
-            //update already present file
-            if (file.compare(rfile.get()) == VClock.Comparison.newer) {
-                //coming file is new version
-                return onUpdate.apply(fp, rfile.get());
-            }
-            log.trace("no update file:{} for provider:{}", file.getPath(), provider);
+            log.trace("no action for file:{} provider:{}", file.getPath(), provider);
             return Observable.just(false);
         })
                 .doOnError(releaserRef.get() != null ? err -> releaserRef.get().getReleaser().call() : Actions.empty())
@@ -239,7 +208,7 @@ public class RemoteRepository implements IRepository {
         this.queueLiner = queueLiner;
     }
 
-    public void setOnUpdate(BiFunction<FileProvenience, RemoteFile, Observable<Boolean>> onUpdate) {
-        this.onUpdate = onUpdate;
+    public void setActions(List<IRemoteAction> actions) {
+        this.actions = actions;
     }
 }

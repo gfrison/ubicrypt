@@ -14,55 +14,50 @@
 package ubicrypt.core.remote;
 
 import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Qualifier;
 
-import java.io.InputStream;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiFunction;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterInputStream;
 
-import javax.annotation.Resource;
-
 import rx.Observable;
-import rx.functions.Action0;
-import rx.subjects.PublishSubject;
-import rx.subjects.Subject;
 import ubicrypt.core.FileProvenience;
 import ubicrypt.core.IRepository;
-import ubicrypt.core.MonitorInputStream;
-import ubicrypt.core.ProgressFile;
 import ubicrypt.core.Utils;
 import ubicrypt.core.crypto.AESGCM;
 import ubicrypt.core.dto.Key;
+import ubicrypt.core.dto.RemoteConfig;
 import ubicrypt.core.dto.RemoteFile;
 import ubicrypt.core.dto.UbiFile;
+import ubicrypt.core.dto.VClock;
 import ubicrypt.core.provider.FileEvent;
 import ubicrypt.core.provider.UbiProvider;
 
 import static java.util.zip.Deflater.BEST_COMPRESSION;
 import static org.slf4j.LoggerFactory.getLogger;
 
-public class OnUpdateRemote implements BiFunction<FileProvenience, RemoteFile, Observable<Boolean>> {
+public class OnUpdateRemote extends RemoteAction {
     private static final Logger log = getLogger(OnUpdateRemote.class);
-    private final UbiProvider provider;
-    private final IRepository repository;
-    @Resource
-    @Qualifier("progressEvents")
-    private PublishSubject<ProgressFile> progressEvents;
-    @Resource
-    @Qualifier("fileEvents")
-    private Subject<FileEvent, FileEvent> fileEvents;
 
     public OnUpdateRemote(UbiProvider provider, IRepository repository) {
-        this.provider = provider;
-        this.repository = repository;
+        super(provider, repository);
     }
 
+    @Override
+    public boolean test(FileProvenience fileProvenience, RemoteConfig remoteConfig) {
+        UbiFile file = fileProvenience.getFile();
+        Optional<RemoteFile> rfile = remoteConfig.getRemoteFiles().stream().filter(file1 -> file1.equals(file)).findFirst();
+        if (!rfile.isPresent()) {
+            return false;
+        }
+        return file.compare(rfile.get()) == VClock.Comparison.newer;
+    }
 
     @Override
-    public Observable<Boolean> apply(FileProvenience fp, RemoteFile rfile) {
+    public Observable<Boolean> apply(FileProvenience fp, RemoteConfig rconfig) {
         UbiFile file = fp.getFile();
+        RemoteFile rfile = rconfig.getRemoteFiles().stream().filter(file1 -> file1.equals(file)).findFirst().get();
+
         log.debug("file:{} newer than:{} on provider:{}", file.getPath(), rfile, provider);
         final AtomicReference<FileEvent.Type> fileEventType = new AtomicReference<>();
         if (!Utils.trackedFile.test(file)) {
@@ -101,29 +96,5 @@ public class OnUpdateRemote implements BiFunction<FileProvenience, RemoteFile, O
                 });
     }
 
-    private Action0 fileEvents(final FileProvenience fp, final FileEvent.Type fileEventType) {
-        return () -> fileEvents.onNext(new FileEvent(fp.getFile(), fileEventType, FileEvent.Location.remote));
-    }
 
-    private InputStream monitor(final FileProvenience fp, final InputStream inputStream) {
-        final MonitorInputStream mis = new MonitorInputStream(inputStream);
-        mis.monitor().subscribe(chunk -> progressEvents.onNext(new ProgressFile(fp, repository, chunk)),
-                err -> {
-                    log.error(err.getMessage(), err);
-                    progressEvents.onNext(new ProgressFile(fp, repository, false, true));
-                },
-                () -> {
-                    log.debug("send complete progress file:{}", fp.getFile());
-                    progressEvents.onNext(new ProgressFile(fp, repository, true, false));
-                });
-        return mis;
-    }
-
-    public void setProgressEvents(PublishSubject<ProgressFile> progressEvents) {
-        this.progressEvents = progressEvents;
-    }
-
-    public void setFileEvents(Subject<FileEvent, FileEvent> fileEvents) {
-        this.fileEvents = fileEvents;
-    }
 }
