@@ -44,6 +44,7 @@ import ubicrypt.core.exp.NotFoundException;
 import ubicrypt.core.provider.lock.ConfigAcquirer;
 import ubicrypt.core.provider.lock.LockChecker;
 import ubicrypt.core.provider.lock.ObjectIO;
+import ubicrypt.core.remote.OnErrorRemote;
 import ubicrypt.core.remote.OnInsertRemote;
 import ubicrypt.core.remote.OnUpdateRemote;
 import ubicrypt.core.remote.RemoteRepository;
@@ -95,7 +96,8 @@ public class ProviderLifeCycle implements ApplicationContextAware {
                     acquirer.setProviderRef(provider.toString());
                     RemoteRepository repository = springIt(ctx, new RemoteRepository(acquirer, provider, configIO));
                     repository.setActions(Arrays.asList(springIt(ctx, new OnUpdateRemote(provider, repository)),
-                            springIt(ctx, new OnInsertRemote(provider, repository))));
+                            springIt(ctx, new OnInsertRemote(provider, repository)),
+                            springIt(ctx, new OnErrorRemote(provider, repository))));
                     ProviderHook hook = new ProviderHook(provider, acquirer, repository);
                     hook.setConfigSaver(new ProviderConfSaver(acquirer, configIO));
                     hook.setStatusEvents(acquirer.getStatuses());
