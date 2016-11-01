@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 
 import java.io.InputStream;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.InflaterInputStream;
 
@@ -49,6 +48,7 @@ import ubicrypt.core.util.QueueLiner;
 
 import static org.slf4j.LoggerFactory.getLogger;
 import static rx.Observable.create;
+import static rx.Observable.just;
 
 public class RemoteRepository implements IRepository {
     private static final Logger log = getLogger(RemoteRepository.class);
@@ -133,12 +133,14 @@ public class RemoteRepository implements IRepository {
             releaserRef.set(releaser);
             final RemoteConfig remoteConfig = releaser.getRemoteConfig();
             UbiFile<UbiFile> file = fp.getFile();
-            Optional<IRemoteAction> action = actions.stream().filter(test -> test.test(fp, remoteConfig)).findFirst();
-            if (action.isPresent()) {
-                return action.get().apply(fp, remoteConfig);
-            }
-            log.trace("no action for file:{} provider:{}", file.getPath(), provider);
-            return Observable.just(false);
+            return actions.stream()
+                    .filter(test -> test.test(fp, remoteConfig))
+                    .map(action -> action.apply(fp, remoteConfig))
+                    .findFirst()
+                    .orElseGet(() -> {
+                        log.trace("no action for file:{} provider:{}", file.getPath(), provider);
+                        return just(false);
+                    });
         })
                 .doOnError(releaserRef.get() != null ? err -> releaserRef.get().getReleaser().call() : Actions.empty())
                 .doOnError(err -> progressEvents.onNext(new ProgressFile(fp, this, false, true)))
