@@ -31,6 +31,7 @@ import ubicrypt.core.dto.RemoteFile;
 import ubicrypt.core.dto.UbiFile;
 import ubicrypt.core.dto.VClock;
 import ubicrypt.core.provider.FileEvent;
+import ubicrypt.core.provider.TransferParams;
 import ubicrypt.core.provider.UbiProvider;
 
 import static java.util.zip.Deflater.BEST_COMPRESSION;
@@ -84,8 +85,9 @@ public class OnUpdateRemote extends RemoteAction {
                 .flatMap(is -> {
                     //renew encryption key
                     final Key key = new Key(AESGCM.rndKey(), UbiFile.KeyType.aes);
-                    return provider.put(rfile.getName(),
-                            AESGCM.encryptIs(key.getBytes(), new DeflaterInputStream(monitor(fp, is), new Deflater(BEST_COMPRESSION))))
+                    return provider.putLarge(rfile.getName(),
+                            AESGCM.encryptIs(key.getBytes(), new DeflaterInputStream(monitor(fp, is), new Deflater(BEST_COMPRESSION))),
+                            new TransferParams(file.getSize() + AESGCM.blockSize))
                             .doOnNext(saved -> log.info("updated:{} file:{}, to provider:{}", saved, rfile.getPath(), provider))
                             .doOnNext(saved -> {
                                 rfile.copyFrom(file);

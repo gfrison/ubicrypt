@@ -26,6 +26,7 @@ import java.util.UUID;
 import rx.Observable;
 import ubicrypt.core.Utils;
 import ubicrypt.core.provider.ProviderStatus;
+import ubicrypt.core.provider.TransferParams;
 import ubicrypt.core.provider.UbiProvider;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -41,6 +42,11 @@ public class FileProvider extends UbiProvider {
         final String id = UUID.randomUUID().toString();
         return Observable.concat(Utils.write(conf.getPath().resolve(id), is).map(i -> (String) null), Observable.just(id))
                 .doOnSubscribe(() -> log.debug("post {}", conf.getPath().resolve(id))).last();
+    }
+
+    @Override
+    public Observable<String> postLarge(InputStream is, TransferParams params) {
+        return post(is);
     }
 
     @Override
@@ -64,6 +70,11 @@ public class FileProvider extends UbiProvider {
         checkNotNull(is, "input stream must be not null");
         return Utils.write(conf.getPath().resolve(pid), is)
                 .doOnSubscribe(() -> log.debug("put {}", conf.getPath().resolve(pid))).last().map(l -> true).defaultIfEmpty(false);
+    }
+
+    @Override
+    public Observable<Boolean> putLarge(String pid, InputStream is, TransferParams params) {
+        return put(pid, is);
     }
 
     @Override

@@ -29,6 +29,7 @@ import ubicrypt.core.dto.RemoteConfig;
 import ubicrypt.core.dto.RemoteFile;
 import ubicrypt.core.dto.UbiFile;
 import ubicrypt.core.provider.FileEvent;
+import ubicrypt.core.provider.TransferParams;
 import ubicrypt.core.provider.UbiProvider;
 
 import static java.util.zip.Deflater.BEST_COMPRESSION;
@@ -41,6 +42,7 @@ public class OnInsertRemote extends RemoteAction {
     public OnInsertRemote(UbiProvider provider, IRepository repository) {
         super(provider, repository);
     }
+
     @Override
     public boolean test(FileProvenience fileProvenience, RemoteConfig remoteConfig) {
         UbiFile file = fileProvenience.getFile();
@@ -62,7 +64,8 @@ public class OnInsertRemote extends RemoteAction {
         fileEventType.set(FileEvent.Type.created);
         return fp.getOrigin().get(file)
                 .flatMap(is ->
-                        provider.post(AESGCM.encryptIs(key, new DeflaterInputStream(monitor(fp, is), new Deflater(BEST_COMPRESSION))))
+                        provider.postLarge(AESGCM.encryptIs(key, new DeflaterInputStream(monitor(fp, is), new Deflater(BEST_COMPRESSION))),
+                                new TransferParams(file.getSize() + AESGCM.blockSize))
                                 .map(name -> {
                                     log.info("created file:{}, to provider:{}", rf.getPath(), provider);
                                     //add name and add to config

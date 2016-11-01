@@ -43,9 +43,13 @@ public abstract class UbiProvider {
 
     public abstract Observable<String> post(InputStream is);
 
+    public abstract Observable<String> postLarge(InputStream is, final TransferParams params);
+
     public abstract Observable<Boolean> delete(final String pid);
 
     public abstract Observable<Boolean> put(final String pid, final InputStream is);
+
+    public abstract Observable<Boolean> putLarge(final String pid, final InputStream is, final TransferParams params);
 
     public abstract Observable<InputStream> get(final String pid);
 

@@ -31,6 +31,7 @@ import rx.Observable;
 import rx.schedulers.Schedulers;
 import ubicrypt.core.exp.NotFoundException;
 import ubicrypt.core.provider.ProviderStatus;
+import ubicrypt.core.provider.TransferParams;
 import ubicrypt.core.provider.UbiProvider;
 
 import static org.apache.commons.lang3.StringUtils.defaultString;
@@ -128,6 +129,11 @@ public class FTProvider extends UbiProvider {
     }
 
     @Override
+    public Observable<String> postLarge(InputStream is, TransferParams params) {
+        return post(is);
+    }
+
+    @Override
     public Observable<Boolean> delete(final String pid) {
         return connect().flatMap(client -> Observable.<Boolean>create(subscriber -> {
             try {
@@ -162,6 +168,11 @@ public class FTProvider extends UbiProvider {
                 }
             }
         }).subscribeOn(Schedulers.io()));
+    }
+
+    @Override
+    public Observable<Boolean> putLarge(String pid, InputStream is, TransferParams params) {
+        return put(pid, is);
     }
 
     @Override

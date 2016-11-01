@@ -49,6 +49,7 @@ import ubicrypt.core.provider.ProviderDescriptor;
 import ubicrypt.core.provider.RemoteCtxConf;
 import ubicrypt.core.provider.file.FileProvider;
 import ubicrypt.core.provider.ftp.FTProvider;
+import ubicrypt.core.provider.s3.S3Provider;
 import ubicrypt.core.util.FileInSync;
 import ubicrypt.core.util.StreamAppender;
 import ubicrypt.core.watch.WatchConf;
@@ -127,7 +128,9 @@ public class UbiConf {
     @Bean
     public List<ProviderDescriptor> providerDescriptors() {
         return ImmutableList.of(new ProviderDescriptor(FileProvider.class, "file", "local folder", new ImageView("images/folder-48.png")),
-                new ProviderDescriptor(FTProvider.class, "ftp", "ftp repository", new ImageView("images/Ftp-48.png")));
+                new ProviderDescriptor(FTProvider.class, "ftp", "ftp repository", new ImageView("images/Ftp-48.png")),
+                new ProviderDescriptor(S3Provider.class, "s3", "Amazon S3", new ImageView("images/Amazon-48.png"))
+        );
     }
 
     @Bean

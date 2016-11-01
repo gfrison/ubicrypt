@@ -38,6 +38,12 @@
     -fx-max-height: 20px;
 }
 
+.tree-provider-s3 {
+    -fx-image: url("images/Amazon-48.png");
+    -fx-max-width: 20px;
+    -fx-max-height: 20px;
+}
+
 .tree-provider-ftp-error {
     -fx-image: url("images/burning-folder.png");
     -fx-max-width: 20px;
