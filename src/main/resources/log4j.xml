@@ -27,6 +27,15 @@
     <category name="org.springframework">
         <level value="WARN"/>
     </category>
+    <category name="org.apache.http.wire">
+        <level value="ERROR"/>
+    </category>
+    <category name="org.apache.http">
+        <level value="ERROR"/>
+    </category>
+    <category name="com.amazonaws">
+        <level value="ERROR"/>
+    </category>
     <root>
         <priority value="debug"/>
         <appender-ref ref="console"/>

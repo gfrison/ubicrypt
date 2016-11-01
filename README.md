@@ -28,8 +28,18 @@ _Cloud storage is pervasive and cheap, but it raises concerns on privacy, securi
 
 Prerequisites:
 
-  - Java JDK 8
+  - Java 8
   - If OpenJDK installed, javafx should be [installed separately](http://chriswhocodes.com/).
+  
+By *appdater*:
+
+`wget https://bintray.com/gfrison/maven/download_file?file_path=appdater-0.3-all.jar -O appdater-0.3-all.jar`
+
+`java -jar appdater-0.3-all.jar`
+
+By source:
+
+Clone this repo and then:
 
 `./gradlew run`
 

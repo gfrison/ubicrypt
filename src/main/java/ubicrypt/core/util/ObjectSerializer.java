@@ -30,6 +30,7 @@ import ubicrypt.core.Utils;
 import ubicrypt.core.crypto.AESGCM;
 import ubicrypt.core.crypto.IPGPService;
 import ubicrypt.core.dto.RemoteFile;
+import ubicrypt.core.exp.NotFoundException;
 import ubicrypt.core.provider.UbiProvider;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -55,8 +56,13 @@ public class ObjectSerializer implements IObjectSerializer, EnvironmentAware {
     @Override
     public <T> Observable<T> putObject(final T obj, final RemoteFile descriptor) {
         checkNotNull(descriptor, "file descriptor must not be null");
-        checkNotNull(descriptor.getName(), "file name must not be null");
         checkNotNull(obj, "object must not be null");
+        if (descriptor.getName() == null) {
+            return provider.post(encrypt(descriptor, marshallIs(obj))).doOnNext(descriptor::setRemoteName)
+                    .last()
+                    .map(i -> obj)
+                    .defaultIfEmpty(obj);
+        }
         return provider.put(descriptor.getName(),
                 encrypt(descriptor, marshallIs(obj))).last().map(i -> obj)
                 .defaultIfEmpty(obj);
@@ -65,8 +71,12 @@ public class ObjectSerializer implements IObjectSerializer, EnvironmentAware {
     @Override
     public Observable<Boolean> put(final Object obj, final RemoteFile descriptor) {
         checkNotNull(descriptor, "file descriptor must not be null");
-        checkNotNull(descriptor.getName(), "file name must not be null");
         checkNotNull(obj, "object must not be null");
+        if (descriptor.getName() == null) {
+            return provider.post(encrypt(descriptor, marshallIs(obj)))
+                    .doOnNext(descriptor::setRemoteName)
+                    .map(str -> true);
+        }
         return provider.put(descriptor.getName(),
                 encrypt(descriptor, marshallIs(obj)));
     }
@@ -74,8 +84,10 @@ public class ObjectSerializer implements IObjectSerializer, EnvironmentAware {
     @Override
     public <T> Observable<T> getObject(final RemoteFile descriptor, final Class<T> type) {
         checkNotNull(descriptor, "file descriptor must not be null");
-        checkNotNull(descriptor.getName(), "file name must not be null");
         checkNotNull(type, "type must not be null");
+        if (descriptor.getName() == null) {
+            return Observable.error(new NotFoundException("pid null"));
+        }
         return provider.get(descriptor.getName())
                 .map(is -> Utils.unmarshall(decrypt(descriptor, is), type));
     }

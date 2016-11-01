@@ -41,6 +41,7 @@ public class OnInsertRemote extends RemoteAction {
     public OnInsertRemote(UbiProvider provider, IRepository repository) {
         super(provider, repository);
     }
+
     @Override
     public boolean test(FileProvenience fileProvenience, RemoteConfig remoteConfig) {
         UbiFile file = fileProvenience.getFile();

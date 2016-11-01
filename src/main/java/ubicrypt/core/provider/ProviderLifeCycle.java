@@ -42,6 +42,7 @@ import ubicrypt.core.dto.ProviderLock;
 import ubicrypt.core.dto.RemoteConfig;
 import ubicrypt.core.exp.NotFoundException;
 import ubicrypt.core.provider.lock.ConfigAcquirer;
+import ubicrypt.core.provider.lock.InitLockChecker;
 import ubicrypt.core.provider.lock.LockChecker;
 import ubicrypt.core.provider.lock.ObjectIO;
 import ubicrypt.core.remote.OnErrorRemote;
@@ -80,47 +81,47 @@ public class ProviderLifeCycle implements ApplicationContextAware {
 
 
     public Observable<Boolean> activateProvider(UbiProvider provider) {
-        return provider.init(Utils.deviceId()).flatMap(pstatus -> {
-            log.info("initialize {}, status:{}", provider, pstatus);
-            return Observable.create(subscriber -> {
-                try {
-                    ObjectSerializer serializer = springIt(ctx, new ObjectSerializer(provider));
-                    ObjectIO<ProviderLock> lockIO = new ObjectIO(serializer, provider.getLockFile(), ProviderLock.class);
-                    LockChecker lockCheker = new LockChecker(deviceId, lockIO, lockIO, provider.getDurationLockMs(), provider.getDelayAcquiringLockMs());
-                    /**
-                     * renew lock when download/upload in progress
-                     */
-                    lockCheker.setShouldExtendLock(() -> inProgressTracker.inProgress());
-                    ObjectIO<RemoteConfig> configIO = new ObjectIO<>(serializer, provider.getConfFile(), RemoteConfig.class);
-                    ConfigAcquirer acquirer = new ConfigAcquirer(lockCheker, configIO);
-                    acquirer.setProviderRef(provider.toString());
-                    RemoteRepository repository = springIt(ctx, new RemoteRepository(acquirer, provider, configIO));
-                    repository.setActions(Arrays.asList(springIt(ctx, new OnUpdateRemote(provider, repository)),
-                            springIt(ctx, new OnInsertRemote(provider, repository)),
-                            springIt(ctx, new OnErrorRemote(provider, repository))));
-                    ProviderHook hook = new ProviderHook(provider, acquirer, repository);
-                    hook.setConfigSaver(new ProviderConfSaver(acquirer, configIO));
-                    hook.setStatusEvents(acquirer.getStatuses());
-                    hook.setConfLockRewriter(new RewriteConfLock(configIO, lockIO));
-                    //broadcast events for this provider
-                    acquirer.getStatuses().map(status -> new ProviderEvent(status, hook)).subscribe(providerEvents);
-                    final AtomicBoolean active = new AtomicBoolean(false);
-                    statusProvider.put(hook, active);
-                    providerListeners.put(hook, hook.getStatusEvents().subscribe(status ->
-                            active.set(status != ProviderStatus.error)
-                    ));
-                    create(acquirer).subscribe(releaser -> {
-                        releaser.getReleaser().call();
-                        subscriber.onNext(true);
-                        providerEvents.onNext(new ProviderEvent(ProviderStatus.added, hook));
-                    }, err -> {
-                        log.error("error on provider:{}", provider);
-                        subscriber.onError(err);
-                    }, subscriber::onCompleted);
-                } catch (Exception e) {
-                    subscriber.onError(e);
-                }
-            });
+        return Observable.create(subscriber -> {
+            try {
+                ObjectSerializer serializer = springIt(ctx, new ObjectSerializer(provider));
+                ObjectIO<ProviderLock> lockIO = new ObjectIO(serializer, provider.getLockFile(), ProviderLock.class);
+                LockChecker lockCheker = new LockChecker(deviceId, lockIO, lockIO, provider.getDurationLockMs(), provider.getDelayAcquiringLockMs());
+                /**
+                 * renew lock when download/upload in progress
+                 */
+                lockCheker.setShouldExtendLock(() -> inProgressTracker.inProgress());
+                InitLockChecker initLock = new InitLockChecker(lockCheker, provider, Utils.deviceId());
+                ObjectIO<RemoteConfig> configIO = new ObjectIO<>(serializer, provider.getConfFile(), RemoteConfig.class);
+                ConfigAcquirer acquirer = new ConfigAcquirer(initLock, configIO);
+                acquirer.setProviderRef(provider.toString());
+                RemoteRepository repository = springIt(ctx, new RemoteRepository(acquirer, provider, configIO));
+                repository.setActions(Arrays.asList(springIt(ctx, new OnUpdateRemote(provider, repository)),
+                        springIt(ctx, new OnInsertRemote(provider, repository)),
+                        springIt(ctx, new OnErrorRemote(provider, repository))));
+                ProviderHook hook = new ProviderHook(provider, acquirer, repository);
+                hook.setConfigSaver(new ProviderConfSaver(acquirer, configIO));
+                hook.setStatusEvents(acquirer.getStatuses());
+                hook.setConfLockRewriter(new RewriteConfLock(configIO, lockIO));
+                //close provider when expired
+                acquirer.getStatuses().filter(status -> status == ProviderStatus.expired).subscribe(status -> provider.close());
+                //broadcast events for this provider
+                acquirer.getStatuses().map(status -> new ProviderEvent(status, hook)).subscribe(providerEvents);
+                final AtomicBoolean active = new AtomicBoolean(false);
+                statusProvider.put(hook, active);
+                providerListeners.put(hook, hook.getStatusEvents().subscribe(status ->
+                        active.set(status != ProviderStatus.error)
+                ));
+                create(acquirer).subscribe(releaser -> {
+                    releaser.getReleaser().call();
+                    subscriber.onNext(true);
+                    providerEvents.onNext(new ProviderEvent(ProviderStatus.added, hook));
+                }, err -> {
+                    log.error("error on provider:{}", provider);
+                    subscriber.onError(err);
+                }, subscriber::onCompleted);
+            } catch (Exception e) {
+                subscriber.onError(e);
+            }
         });
     }
 

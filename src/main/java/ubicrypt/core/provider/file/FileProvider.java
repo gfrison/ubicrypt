@@ -66,6 +66,7 @@ public class FileProvider extends UbiProvider {
                 .doOnSubscribe(() -> log.debug("put {}", conf.getPath().resolve(pid))).last().map(l -> true).defaultIfEmpty(false);
     }
 
+
     @Override
     public Observable<InputStream> get(final String pid) {
         checkNotNull(pid, "pid must be not null");

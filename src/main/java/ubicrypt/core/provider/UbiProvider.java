@@ -19,7 +19,6 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.io.InputStream;
-import java.util.UUID;
 
 import rx.Observable;
 import ubicrypt.core.dto.Key;
@@ -29,13 +28,11 @@ import ubicrypt.core.dto.UbiFile;
 public abstract class UbiProvider {
     private transient long userId = -1;
     private RemoteFile confFile = new RemoteFile() {{
-        setRemoteName(UUID.randomUUID().toString());
         setKey(new Key() {{
             setType(UbiFile.KeyType.pgp);
         }});
     }};
     private RemoteFile lockFile = new RemoteFile() {{
-        setRemoteName(UUID.randomUUID().toString());
         setKey(new Key() {{
             setType(UbiFile.KeyType.pgp);
         }});
@@ -102,6 +99,10 @@ public abstract class UbiProvider {
     public long getDurationLockMs() {
         //5mins
         return 5 * 60 * 1000;
+    }
+
+    public void close() {
+
     }
 
 }

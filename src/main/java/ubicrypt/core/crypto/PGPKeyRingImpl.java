@@ -83,7 +83,6 @@ class PGPKeyRingImpl {
             final Iterator userids = sec.getPublicKey().getUserIDs();
             while (userids.hasNext()) {
                 final String uid = (String) userids.next();
-                System.out.println("userid:" + uid);
             }
         }
         secretKey = collection.getSecretKey(Long.valueOf(getSecretAliasId()));

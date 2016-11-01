@@ -93,6 +93,7 @@ public class PGPEC {
 
     static {
         Security.addProvider(new BouncyCastleProvider());
+/*
         try {
             final Field field = Class.forName("javax.crypto.JceSecurity").getDeclaredField("isRestricted");
             field.setAccessible(true);
@@ -100,6 +101,7 @@ public class PGPEC {
         } catch (final Exception ex) {
             ex.printStackTrace();
         }
+*/
     }
 
     public static PGPKeyPair masterKey() {
