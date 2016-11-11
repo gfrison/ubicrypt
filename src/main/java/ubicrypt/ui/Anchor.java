@@ -197,11 +197,11 @@ public class Anchor {
     }
 
 
-    private static class ResourceBundleWrapper extends ResourceBundle {
+    public static class ResourceBundleWrapper extends ResourceBundle {
 
         private final ResourceBundle bundle;
 
-        ResourceBundleWrapper(final ResourceBundle bundle) {
+        public ResourceBundleWrapper(final ResourceBundle bundle) {
             this.bundle = bundle;
         }
 

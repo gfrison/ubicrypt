@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.SeparatorMenuItem?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<VBox id="vbox" prefHeight="500.0" prefWidth="500.0" xmlns="http://javafx.com/javafx/8.0.65"
+      xmlns:fx="http://javafx.com/fxml/1" fx:controller="ubicrypt.ui.ctrl.MainController">
+    <MenuBar fx:id="menuBar">
+        <menus>
+            <Menu text="File">
+                <items>
+                    <MenuItem text="New"/>
+                    <MenuItem text="Open"/>
+                    <MenuItem text="Save"/>
+                    <MenuItem text="Save As"/>
+                    <SeparatorMenuItem/>
+                    <MenuItem text="Exit"/>
+                </items>
+            </Menu>
+            <Menu text="Edit">
+                <items>
+                    <MenuItem text="Copy"/>
+                    <MenuItem text="Cut"/>
+                    <MenuItem text="Paste"/>
+                </items>
+            </Menu>
+            <Menu text="Help">
+                <items>
+                    <MenuItem disable="true" text="Search"/>
+                    <MenuItem text="Online Manual" visible="false"/>
+                    <SeparatorMenuItem/>
+                    <MenuItem text="About"/>
+                </items>
+            </Menu>
+        </menus>
+    </MenuBar>
+    <BorderPane prefHeight="500.0">
+        <top>
+            <HBox prefHeight="25.0" BorderPane.alignment="CENTER">
+                <children>
+                    <ProgressIndicator/>
+                    <Label text="Synchronizing Cloud Storages">
+                        <HBox.margin>
+                            <Insets top="4.0"/>
+                        </HBox.margin>
+                    </Label>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <ImageView fitHeight="25.0" fitWidth="36.0" pickOnBounds="true"
+                               preserveRatio="true">
+                        <Image url="@../images/warning.png"/>
+                    </ImageView>
+                    <Label text="Amazon S3 is unavailable">
+                        <HBox.margin>
+                            <Insets top="4.0"/>
+                        </HBox.margin>
+                    </Label>
+                </children>
+                <opaqueInsets>
+                    <Insets bottom="2.0"/>
+                </opaqueInsets>
+            </HBox>
+        </top>
+        <opaqueInsets>
+            <Insets/>
+        </opaqueInsets>
+        <VBox.margin>
+            <Insets top="5.0"/>
+        </VBox.margin>
+        <center>
+            <TabPane tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+                <tabs>
+                    <Tab text="Files">
+                        <content>
+                            <Pane>
+                                <fx:include source="files.fxml" userData="files"/>
+                            </Pane>
+                        </content>
+                    </Tab>
+                    <Tab text="Cloud Storages">
+                        <content>
+                            <StackPane>
+                                <fx:include source="providers.fxml" userData="providers"/>
+                            </StackPane>
+                        </content>
+                    </Tab>
+                </tabs>
+            </TabPane>
+        </center>
+        <bottom>
+            <HBox>
+                <Label prefHeight="16.0" prefWidth="228.0" text="Image.jpg -&gt; s3//ubicrypt">
+                    <HBox.margin>
+                        <Insets left="5.0"/>
+                    </HBox.margin>
+                </Label>
+                <Region prefWidth="30"/>
+                <ProgressBar prefHeight="20.0" prefWidth="234.0" progress="0.9"
+                             HBox.hgrow="ALWAYS"/>
+
+            </HBox>
+        </bottom>
+    </BorderPane>
+
+</VBox>

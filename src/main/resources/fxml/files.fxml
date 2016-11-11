@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.control.TreeItem?>
+<?import javafx.scene.control.TreeView?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.VBox?>
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity"
+      prefHeight="400.0" prefWidth="600.0" stylesheets="../main.css"
+      xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="ubicrypt.ui.ctrl.FilesController">
+    <children>
+        <ToolBar prefHeight="40.0" prefWidth="200.0">
+            <items>
+                <Button mnemonicParsing="false">
+                    <graphic>
+                        <ImageView fitWidth="30.0" pickOnBounds="true" preserveRatio="true">
+                            <image>
+                                <Image url="@../images/add-file.png"/>
+                            </image>
+                        </ImageView>
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Add Files"/>
+                    </tooltip>
+                </Button>
+                <Button mnemonicParsing="false">
+                    <graphic>
+                        <ImageView fitWidth="30.0" pickOnBounds="true" preserveRatio="true">
+                            <image>
+                                <Image url="@../images/add-folder.png"/>
+                            </image>
+                        </ImageView>
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Add Folders"/>
+                    </tooltip>
+                </Button>
+            </items>
+        </ToolBar>
+        <ScrollPane>
+            <content>
+                <TreeView prefHeight="340.0" prefWidth="580.0" showRoot="false" VBox.vgrow="ALWAYS">
+                    <TreeItem expanded="true" value="Root">
+                        <children>
+                            <TreeItem expanded="true" value="Pictures">
+                                <graphic>
+                                    <ImageView>
+                                        <image>
+                                            <Image requestedHeight="20" requestedWidth="20"
+                                                   url="@../images/folder.png"/>
+                                        </image>
+                                    </ImageView>
+                                </graphic>
+                                <children>
+                                    <TreeItem expanded="false" value="Photo1.png">
+                                        <graphic>
+                                            <ImageView>
+                                                <image>
+                                                    <Image requestedHeight="20" requestedWidth="20"
+                                                           url="@../images/file.png"/>
+                                                </image>
+                                            </ImageView>
+                                        </graphic>
+                                    </TreeItem>
+                                </children>
+                            </TreeItem>
+                            <TreeItem expanded="false" value="Documents">
+                                <graphic>
+                                    <ImageView>
+                                        <image>
+                                            <Image requestedHeight="20" requestedWidth="20"
+                                                   url="@../images/folder.png"/>
+                                        </image>
+                                    </ImageView>
+                                </graphic>
+                            </TreeItem>
+                            <TreeItem expanded="false" value="Videos">
+                                <graphic>
+                                    <ImageView>
+                                        <image>
+                                            <Image requestedHeight="20" requestedWidth="20"
+                                                   url="@../images/folder.png"/>
+                                        </image>
+                                    </ImageView>
+                                </graphic>
+                            </TreeItem>
+                        </children>
+                    </TreeItem>
+                </TreeView>
+            </content>
+        </ScrollPane>
+    </children>
+</VBox>
