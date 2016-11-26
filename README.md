@@ -37,7 +37,7 @@ UbiCrypt stores and replicates your data in many storage types. So far it connec
 Prerequisites:
 
   - Java 8
-  - Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy [download](http://www.oracle.com/technetwork/java/javase/downloads/jce-6-download-429243.html)
+  - Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy [download](http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html)
   - If OpenJDK installed, javafx should be [installed separately](http://chriswhocodes.com/).
   
 By *appdater*:

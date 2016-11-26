@@ -13,15 +13,20 @@
  */
 package ubicrypt;
 
+import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.openpgp.PGPKeyPair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Lazy;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.jar.Manifest;
@@ -29,6 +34,8 @@ import java.util.jar.Manifest;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.stage.Stage;
 import rx.subjects.Subject;
 import ubicrypt.core.FixPassPhraseInitializer;
@@ -42,6 +49,8 @@ import ubicrypt.ui.StackNavigator;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static ubicrypt.core.Utils.securityFile;
 import static ubicrypt.core.Utils.ubiqFolder;
+import static ubicrypt.core.crypto.PGPEC.encrypt;
+import static ubicrypt.core.crypto.PGPEC.encryptionKey;
 import static ubicrypt.ui.Anchor.anchor;
 
 @Lazy
@@ -103,6 +112,27 @@ public class UbiCrypt extends Application {
         setUserAgentStylesheet(STYLESHEET_MODENA);
         stage.setTitle("UbiCrypt");
         anchor().setStage(stage);
+        try {
+            final PGPKeyPair kp = encryptionKey();
+            encrypt(Collections.singletonList(kp.getPublicKey()), new ByteArrayInputStream(StringUtils.repeat("ciao", 1).getBytes()));
+        } catch (Exception e) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Strong Encryption Unsupported");
+            alert.setHeaderText("JCE Unlimited Strength Jurisdiction policy files required");
+            alert.setContentText("You can install the Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy Files, which are required to use strong encryption.\n" +
+                    "Download the files and instructions for Java 8.\n" +
+                    "Locate the jre\\lib\\security directory for the Java instance that the UbiCrypt is using.\n" +
+                    "For example, this location might be: C:\\Program Files\\Java\\jre8\\lib\\security.\n" +
+                    "Replace these two files with the .jar files included in the JCE Unlimited Strength Jurisdiction Policy Files download.\n" +
+                    "Stop and restart the UbiCrypt.\n\n\n\n\n\n");
+            ButtonType icePage = new ButtonType("Go to JCE download Page");
+            alert.getButtonTypes().addAll(icePage);
+            Optional<ButtonType> result = alert.showAndWait();
+            if (result.get() == icePage) {
+                getHostServices().showDocument("http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html");
+            }
+            Platform.exit();
+        }
         final File file = securityFile().toFile();
         stage.setScene(anchor().showScene(file.exists() ? "login" : "createKey"));
 /*
