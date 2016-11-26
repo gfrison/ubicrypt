@@ -57,7 +57,7 @@ public class ProviderCommander {
             providerLifeCycle.activateProvider(provider).doOnCompleted(() -> {
                 localConfig.getProviders().add(provider);
                 subscriber.onNext(true);
-                providerLifeCycle.currentlyActiveProviders().stream()
+                providerLifeCycle.enabledProviders().stream()
                         .filter(hook -> !hook.getProvider().equals(provider))
                         .forEach(hook -> hook.getConfigSaver().apply(rconf -> {
                             //add provider
@@ -74,7 +74,7 @@ public class ProviderCommander {
             if (!localConfig.getProviders().remove(provider)) {
                 return error(new NotFoundException(provider));
             }
-            providerLifeCycle.currentlyActiveProviders().stream()
+            providerLifeCycle.enabledProviders().stream()
                     .filter(hook -> !hook.getProvider().equals(provider))
                     .forEach(hook -> hook.getConfigSaver().apply(rconf -> {
                         //remove provider
@@ -89,7 +89,7 @@ public class ProviderCommander {
 
     public Observable<Boolean> addOwnedPK(final PGPPublicKey pgpPublicKey) {
         localConfig.getOwnedPKs().add(new PGPKValue(pgpPublicKey));
-        return Observable.merge(providerLifeCycle.currentlyActiveProviders().stream()
+        return Observable.merge(providerLifeCycle.enabledProviders().stream()
                 .map(ProviderHook::getConfLockRewriter)
                 .map(Observable::create)
                 .collect(Collectors.toList()));

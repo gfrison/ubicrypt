@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ubicrypt.ui.tree;
+package ubicrypt.ui.files;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -29,12 +29,6 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class FileItem extends FolderItem {
     private static final Logger log = getLogger(FileItem.class);
     private final UbiFile file;
-    @Resource(name = "fileInSync")
-    private Func1<UbiFile, Observable.OnSubscribe<Boolean>> fileInSync = file -> (subscriber1 -> {
-        subscriber1.onNext(true);
-        subscriber1.onCompleted();
-    });
-    private Observable.OnSubscribe<Boolean> subscriber;
 
     public FileItem(final UbiFile file) {
         super(file.getPath());
@@ -43,17 +37,13 @@ public class FileItem extends FolderItem {
         imageView.getStyleClass().add("tree-file");
     }
 
-    public FileItem(final UbiFile file, final Func1<UbiFile, Observable.OnSubscribe<Boolean>> fileInSync) {
-        this(file);
-        this.fileInSync = fileInSync;
-    }
-
 
     @Override
     public boolean isFile() {
         return true;
     }
 
+/*
     @PostConstruct
     public void isUp2date() {
         subscriber = fileInSync.call(file);
@@ -69,6 +59,7 @@ public class FileItem extends FolderItem {
                     }
                 }, err -> log.error(err.getMessage(), err));
     }
+*/
 
     @Override
     public boolean equals(final Object o) {

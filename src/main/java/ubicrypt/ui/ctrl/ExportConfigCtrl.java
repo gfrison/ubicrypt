@@ -37,12 +37,11 @@ import ubicrypt.core.Utils;
 import ubicrypt.core.crypto.PGPService;
 import ubicrypt.core.dto.ExportConfig;
 import ubicrypt.core.dto.LocalConfig;
-import ubicrypt.ui.Anchor;
-import ubicrypt.ui.OnShow;
+import ubicrypt.ui.StackNavigator;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
-public class ExportConfigCtrl implements Initializable, OnShow {
+public class ExportConfigCtrl implements Initializable {
     private static final Logger log = getLogger(ExportConfigCtrl.class);
     @Inject
     PGPService pgpService;
@@ -57,9 +56,10 @@ public class ExportConfigCtrl implements Initializable, OnShow {
     Button copy;
     @FXML
     Button cancel;
+    StackNavigator navigator;
 
     @Override
-    public void onShow() {
+    public void initialize(final URL location, final ResourceBundle resources) {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final ArmoredOutputStream armor = new ArmoredOutputStream(out);
         try {
@@ -75,12 +75,7 @@ public class ExportConfigCtrl implements Initializable, OnShow {
             content.putString(out.toString());
             clipboard.setContent(content);
         });
-        cancel.setOnMouseClicked(event -> Anchor.anchor().popScene());
-    }
-
-    @Override
-    public void initialize(final URL location, final ResourceBundle resources) {
-        Anchor.anchor().registerController(this);
+        cancel.setOnMouseClicked(event -> navigator.popLayer());
     }
 
 }

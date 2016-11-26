@@ -30,12 +30,11 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import ubicrypt.core.crypto.PGPEC;
-import ubicrypt.ui.OnShow;
+import ubicrypt.ui.StackNavigator;
 
 import static org.slf4j.LoggerFactory.getLogger;
-import static ubicrypt.ui.Anchor.anchor;
 
-public class AddPKController implements Initializable, OnShow {
+public class AddPKController implements Initializable {
     private static final Logger log = getLogger(AddPKController.class);
     @FXML
     Button add;
@@ -43,16 +42,12 @@ public class AddPKController implements Initializable, OnShow {
     Button cancel;
     @FXML
     TextArea text;
+    StackNavigator navigator;
 
     @Override
     public void initialize(final URL location, final ResourceBundle resources) {
-        anchor().getControllerPublisher().onNext(this);
-    }
-
-    @Override
-    public void onShow() {
         add.setDisable(true);
-        cancel.setOnMouseClicked(event -> anchor().popScene());
+        cancel.setOnMouseClicked(event -> navigator.popLayer());
         text.setOnKeyTyped(event -> {
             if (StringUtils.isEmpty(text.getText())) {
                 add.setDisable(true);
@@ -64,7 +59,7 @@ public class AddPKController implements Initializable, OnShow {
             try {
                 final ArmoredInputStream is = new ArmoredInputStream(new ByteArrayInputStream(text.getText().getBytes()));
                 final PGPPublicKey newPK = PGPEC.decodePK(is);
-                anchor().browse("confirmNewPK", newPK);
+                navigator.browse("confirmNewPK", newPK);
             } catch (final IOException e) {
                 Throwables.propagate(e);
             }

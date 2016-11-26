@@ -89,11 +89,12 @@ public class LocalRepository implements IRepository {
             //if path not set, take the getName()
             final Path path = rfile.getPath() != null ? rfile.getPath() : Paths.get(rfile.getName());
 */
-            if (!lfile.filter(Utils.trackedFile).isPresent()) {
+            if (!lfile.isPresent()) {
                 //new file
                 return onNewFileLocal.call(fp);
             } else {
-                if (rfile.getVclock().compare(lfile.get().getVclock()) == VClock.Comparison.newer) {
+                final VClock.Comparison comparison = rfile.getVclock().compare(lfile.get().getVclock());
+                if (comparison == VClock.Comparison.newer) {
                     lfile.get().copyFrom(rfile);
                     if (!rfile.isDeleted() && !rfile.isRemoved()) {
                         log.info("update file:{} locally from repo:{}", rfile.getPath(), fp.getOrigin());

@@ -23,11 +23,10 @@ import java.util.Optional;
 
 import javafx.scene.control.TreeItem;
 import ubicrypt.core.dto.LocalFile;
-import ubicrypt.ui.tree.FileItem;
-import ubicrypt.ui.tree.ITreeItem;
+import ubicrypt.ui.files.FileItem;
+import ubicrypt.ui.files.ITreeItem;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static ubicrypt.core.Utils.emptySubject;
 
 public class AnchorTest {
     @Before
@@ -42,7 +41,7 @@ public class AnchorTest {
             setPath(Paths.get("prova"));
         }};
         final TreeItem<ITreeItem> treeItem = new TreeItem<>();
-        treeItem.getChildren().add(new TreeItem<>(new FileItem(file, file1 -> emptySubject())));
+        treeItem.getChildren().add(new TreeItem<>(new FileItem(file)));
         final Optional<TreeItem<ITreeItem>> opt = UItils.searchFile(treeItem, file);
         assertThat(opt).isPresent();
     }
@@ -55,8 +54,8 @@ public class AnchorTest {
         final TreeItem<ITreeItem> treeItem = new TreeItem<>();
         treeItem.getChildren().add(new TreeItem<>(new FileItem(new LocalFile() {{
             setPath(Paths.get("nonprova"));
-        }}, file1 -> emptySubject())));
-        treeItem.getChildren().add(new TreeItem<>(new FileItem(file, file1 -> emptySubject())));
+        }})));
+        treeItem.getChildren().add(new TreeItem<>(new FileItem(file)));
         final Optional<TreeItem<ITreeItem>> opt = UItils.searchFile(treeItem, file);
         assertThat(opt).isPresent();
     }

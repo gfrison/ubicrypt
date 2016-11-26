@@ -37,7 +37,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class AESGCM {
     private final static int keyLenght = 32;//256 bits
-    public final static int blockSize = 16;
     private static final AtomicLong ivl = new AtomicLong(System.currentTimeMillis());
 
     static {

@@ -7,8 +7,8 @@ _Cloud storage is pervasive and cheap, but it raises concerns on privacy, securi
 *UbiCrypt* is a desktop application that allows you to keep your data secret and safely stored in multiple locations.
 
 [![Build Status](https://travis-ci.org/gfrison/ubicrypt.svg?branch=master)](https://travis-ci.org/gfrison/ubicrypt)
-[![codecov](https://codecov.io/gh/gfrison/ubicrypt/branch/master/graph/badge.svg)](https://codecov.io/gh/gfrison/ubicrypt)
 [![Join the chat at https://gitter.im/ubicryp/Lobby](https://badges.gitter.im/ubicryp/Lobby.svg)](https://gitter.im/ubicryp/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 
 ### Ubicrypt encrypts your files and keeps them to any cloud storage
 #### Key features:
@@ -18,17 +18,26 @@ _Cloud storage is pervasive and cheap, but it raises concerns on privacy, securi
   - Sharing between multiple devices (Computer at home, at work, etc)
   - File Versioning and synchronization with [Vector Clocks](https://en.wikipedia.org/wiki/Vector_clock)
 
+![Files Tab screenshot](screenshot.png)
+
 #### Software Stack:
   - [BouncyCastle](https://www.bouncycastle.org/). PGP/AES Encryption.
   - [Spring Boot](https://projects.spring.io/spring-boot/). Application container.
   - [RxJava](https://github.com/ReactiveX/RxJava). Asyncronous and event-based framework.
   - [JavaFX](http://docs.oracle.com/javase/8/javase-clienttechnologies.htm). Java UI library
 
+
+### Cloud Storages
+UbiCrypt stores and replicates your data in many storage types. So far it connects to:
+  - Amazon S3.
+  - Local Filesystem.
+
 #### Run UbiCrypt 
 
 Prerequisites:
 
   - Java 8
+  - Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy [download](http://www.oracle.com/technetwork/java/javase/downloads/jce-6-download-429243.html)
   - If OpenJDK installed, javafx should be [installed separately](http://chriswhocodes.com/).
   
 By *appdater*:

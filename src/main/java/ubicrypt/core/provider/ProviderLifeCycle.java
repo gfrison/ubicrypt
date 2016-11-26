@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -62,6 +63,7 @@ public class ProviderLifeCycle implements ApplicationContextAware {
     private static final Logger log = getLogger(ProviderLifeCycle.class);
     final Map<ProviderHook, Subscription> providerListeners = new ConcurrentHashMap<>();
     final Map<ProviderHook, AtomicBoolean> statusProvider = new ConcurrentHashMap<>();
+    final List<ProviderHook> currentlyActiveProviders = new CopyOnWriteArrayList<>();
     @Resource
     @Qualifier("providerEvent")
     private Subject<ProviderEvent, ProviderEvent> providerEvents = BufferUntilSubscriber.create();
@@ -108,9 +110,14 @@ public class ProviderLifeCycle implements ApplicationContextAware {
                 acquirer.getStatuses().map(status -> new ProviderEvent(status, hook)).subscribe(providerEvents);
                 final AtomicBoolean active = new AtomicBoolean(false);
                 statusProvider.put(hook, active);
-                providerListeners.put(hook, hook.getStatusEvents().subscribe(status ->
-                        active.set(status != ProviderStatus.error)
-                ));
+                providerListeners.put(hook, hook.getStatusEvents().subscribe(status -> {
+                    active.set(status != ProviderStatus.error);
+                    if (status == ProviderStatus.active) {
+                        currentlyActiveProviders.add(hook);
+                    } else {
+                        currentlyActiveProviders.remove(hook);
+                    }
+                }));
                 create(acquirer).subscribe(releaser -> {
                     releaser.getReleaser().call();
                     subscriber.onNext(true);
@@ -136,8 +143,12 @@ public class ProviderLifeCycle implements ApplicationContextAware {
         }
     }
 
-    public List<ProviderHook> currentlyActiveProviders() {
+    public List<ProviderHook> enabledProviders() {
         return statusProvider.entrySet().stream().filter(entry -> entry.getValue().get()).map(Map.Entry::getKey).collect(Collectors.toList());
+    }
+
+    public List<ProviderHook> currentlyActiveProviders() {
+        return currentlyActiveProviders.stream().collect(Collectors.toList());
     }
 
     @Override

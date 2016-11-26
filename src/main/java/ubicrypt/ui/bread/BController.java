@@ -26,29 +26,22 @@ import java.util.ResourceBundle;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.TreeItem;
-import ubicrypt.ui.OnShow;
 
 import static org.slf4j.LoggerFactory.getLogger;
 import static ubicrypt.ui.Anchor.anchor;
 
-public class BController implements Initializable, EnvironmentAware, OnShow {
+public class BController implements Initializable, EnvironmentAware {
     private static final Logger log = getLogger(BController.class);
     @FXML
     BreadCrumbBar<BCItem> breadcrumb;
     private Environment env;
 
     @Override
-    public void onShow() {
+    public void initialize(final URL location, final ResourceBundle resources) {
         final List<String> stackScene = anchor().getSceneStack();
         final TreeItem<BCItem> treeItem = breadCrumbTree(stackScene.iterator(), null, stackScene.size());
         breadcrumb.selectedCrumbProperty().set(treeItem);
         breadcrumb.setOnCrumbAction(event -> anchor().popScene(event.getSelectedCrumb().getValue().getLevel()));
-    }
-
-    @Override
-    public void initialize(final URL location, final ResourceBundle resources) {
-        anchor().getControllerPublisher().onNext(this);
-        anchor().getShowStream().subscribe(controller -> onShow());
     }
 
     private TreeItem<BCItem> breadCrumbTree(final Iterator<String> it, final TreeItem<BCItem> root, int level) {

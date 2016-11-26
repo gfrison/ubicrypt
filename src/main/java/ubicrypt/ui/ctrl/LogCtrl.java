@@ -28,6 +28,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import rx.Observable;
+import ubicrypt.ui.StackNavigator;
 
 import static ubicrypt.ui.Anchor.anchor;
 
@@ -41,6 +42,7 @@ public class LogCtrl implements Initializable {
     @Qualifier("systemOut")
     private Observable<String> logStream;
     private AtomicBoolean init = new AtomicBoolean(false);
+    StackNavigator navigator;
 
     @PostConstruct
     public void init() {
@@ -53,9 +55,7 @@ public class LogCtrl implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         anchor().registerController(this);
-        back.setOnMouseClicked(mouseEvent -> {
-            anchor().popScene();
-        });
+        back.setOnMouseClicked(mouseEvent -> navigator.popLayer());
     }
 
 

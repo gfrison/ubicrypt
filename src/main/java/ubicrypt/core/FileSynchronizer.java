@@ -22,7 +22,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,6 +45,7 @@ import ubicrypt.core.dto.VClock;
 import ubicrypt.core.events.SyncBeginEvent;
 import ubicrypt.core.events.SynchDoneEvent;
 import ubicrypt.core.local.LocalRepository;
+import ubicrypt.core.provider.FileEvent;
 import ubicrypt.core.provider.ProviderEvent;
 import ubicrypt.core.provider.ProviderHook;
 import ubicrypt.core.provider.ProviderLifeCycle;
@@ -70,6 +70,9 @@ public class FileSynchronizer implements Observable.OnSubscribe<Boolean> {
     @Autowired(required = false)
     @Qualifier("appEvents")
     private Subject<Object, Object> appEvents = PublishSubject.create();
+    @Resource
+    @Qualifier("fileEvents")
+    Subject<FileEvent, FileEvent> fileEvents = PublishSubject.create();
 
     /**
      * return only files which are not in conflict
@@ -144,10 +147,10 @@ public class FileSynchronizer implements Observable.OnSubscribe<Boolean> {
             final Map<UUID, FileProvenience> max = FileSynchronizer.max(noConflicts);
 
             //overwrite file to local
-            return localChain(max.entrySet().iterator(), Observable.just(true))
+            return localChain(max.entrySet())
                     .flatMap(aVoid ->
                             //copy to all other providers
-                            Observable.merge(providers.currentlyActiveProviders().stream()
+                            Observable.merge(providers.enabledProviders().stream()
                                     .map(hook -> providerChain(max.entrySet(), hook))
                                     .collect(Collectors.toList()))
                                     .doOnCompleted(() -> log.info("file synchronization completed")));
@@ -161,18 +164,33 @@ public class FileSynchronizer implements Observable.OnSubscribe<Boolean> {
                 .collect(Collectors.toList()));
     }
 
-    private Observable<Boolean> localChain(final Iterator<Map.Entry<UUID, FileProvenience>> it,
-                                           final Observable<Boolean> observable) {
-        if (!it.hasNext()) {
-            return observable.defaultIfEmpty(false).last();
-        }
-        final Map.Entry<UUID, FileProvenience> entry = it.next();
-        return localChain(it, observable.flatMap(n -> (entry.getValue().getOrigin().isLocal())
-                ? Observable.just(true) : localRepository.save(entry.getValue())));
+    private Observable<Boolean> localChain(final Set<Map.Entry<UUID, FileProvenience>> maps) {
+        return Observable.merge(maps.stream()
+                .map(entry -> {
+                    if (entry.getValue().getOrigin().isLocal()) {
+                        fileEvents.onNext(new FileEvent(entry.getValue().getFile(), FileEvent.Type.synched, FileEvent.Location.local));
+                        return Observable.just(true);
+                    } else {
+                        if (Utils.trackedFile.test(entry.getValue().getFile())) {
+                            localConfig.getLocalFiles().stream()
+                                    .filter(localFile -> entry.getValue().getFile().equals(localFile))
+                                    .findFirst()
+                                    .ifPresent(localFile -> {
+                                        VClock.Comparison comparison = localFile.compare(entry.getValue().getFile());
+                                        fileEvents.onNext(new FileEvent(localFile,
+                                                comparison == VClock.Comparison.older ? FileEvent.Type.unsynched : FileEvent.Type.synched,
+                                                FileEvent.Location.local));
+                                    });
+                        }
+                        return localRepository.save(entry.getValue());
+                    }
+                })
+                .collect(Collectors.toList()))
+                .defaultIfEmpty(false).last();
     }
 
     public Observable<Multimap<UUID, FileProvenience>> packFilesById() {
-        List<Observable<Tuple2<ProviderHook, RemoteConfig>>> obconfigs = providers.currentlyActiveProviders().stream().map(provider -> Observable.create(provider.getAcquirer()).map(releaser -> {
+        List<Observable<Tuple2<ProviderHook, RemoteConfig>>> obconfigs = providers.enabledProviders().stream().map(provider -> Observable.create(provider.getAcquirer()).map(releaser -> {
             releaser.getReleaser().call();
             return Tuple.of(provider, releaser.getRemoteConfig());
         })).collect(Collectors.toList());

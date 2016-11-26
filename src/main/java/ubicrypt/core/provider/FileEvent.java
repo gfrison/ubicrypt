@@ -50,7 +50,7 @@ public class FileEvent {
                 .toString();
     }
 
-    public enum Type {updated, removed, deleted, created, error}
+    public enum Type {updated, removed, deleted, created, error, synched, unsynched}
 
     public enum Location {local, remote}
 }

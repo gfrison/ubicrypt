@@ -22,9 +22,9 @@ import java.util.Optional;
 
 import javafx.scene.control.TreeItem;
 import ubicrypt.core.dto.UbiFile;
-import ubicrypt.ui.tree.FileItem;
-import ubicrypt.ui.tree.FolderItem;
-import ubicrypt.ui.tree.ITreeItem;
+import ubicrypt.ui.files.FileItem;
+import ubicrypt.ui.files.FolderItem;
+import ubicrypt.ui.files.ITreeItem;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -39,8 +39,10 @@ public class UItils {
     private static Optional<TreeItem<ITreeItem>> searchFile(final TreeItem<ITreeItem> filesRoot, final UbiFile file, final Iterator<Path> it,
                                                             final Path basePath) {
         if (!it.hasNext()) {
-            if (((FileItem) filesRoot.getValue()).getFile().equals(file)) {
-                return Optional.of(filesRoot);
+            if (filesRoot.getValue() instanceof FileItem) {
+                if (((FileItem) filesRoot.getValue()).getFile().equals(file)) {
+                    return Optional.of(filesRoot);
+                }
             }
             return Optional.empty();
         }

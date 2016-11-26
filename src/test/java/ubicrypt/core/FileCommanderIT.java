@@ -44,11 +44,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.annotation.Resource;
 import javax.inject.Inject;
 
 import rx.Observable;
+import rx.Subscriber;
 import rx.Subscription;
 import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
@@ -59,14 +63,16 @@ import ubicrypt.core.crypto.PGPEC;
 import ubicrypt.core.crypto.PGPService;
 import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.dto.LocalFile;
+import ubicrypt.core.dto.RemoteConfig;
 import ubicrypt.core.dto.UbiFile;
+import ubicrypt.core.local.LocalRepository;
 import ubicrypt.core.local.OnNewLocal;
 import ubicrypt.core.provider.FileEvent;
-import ubicrypt.core.local.LocalRepository;
 import ubicrypt.core.provider.ProviderEvent;
 import ubicrypt.core.provider.ProviderHook;
 import ubicrypt.core.provider.ProviderLifeCycle;
 import ubicrypt.core.provider.ProviderStatus;
+import ubicrypt.core.provider.lock.AcquirerReleaser;
 import ubicrypt.core.util.InProgressTracker;
 import ubicrypt.core.util.QueueLiner;
 
@@ -118,14 +124,37 @@ public class FileCommanderIT implements ApplicationContextAware {
         assertThat(fileCommander.addFile(localRepository.getBasePath().resolve(name)).toBlocking().last().getT2().toBlocking().single()).isTrue();
         final LocalFile file = localConfig.getLocalFiles().stream().filter(ffile -> ffile.getPath().equals(Paths.get(name))).findFirst().get();
         assertThat(file.getPath()).isEqualTo(Paths.get(name));
-        assertThat(IOUtils.readLines(providerLifeCycle.currentlyActiveProviders().get(0).getRepository().get(file).toBlocking().last())).contains("ciao");
+        assertThat(IOUtils.readLines(providerLifeCycle.enabledProviders().get(0).getRepository().get(file).toBlocking().last())).contains("ciao");
     }
 
     @Test
     public void removeFile() throws Exception {
         addFile();
+        assertThat(localConfig.getLocalFiles().iterator().next().isRemoved()).isFalse();
         fileCommander.removeFile(localRepository.getBasePath().resolve(localConfig.getLocalFiles().iterator().next().getPath())).toBlocking().singleOrDefault(null);
         assertThat(localConfig.getLocalFiles().iterator().next().isRemoved()).isTrue();
+        ProviderHook hook = providerLifeCycle.currentlyActiveProviders().get(0);
+        CountDownLatch cd = new CountDownLatch(1);
+        AtomicReference<RemoteConfig> rconfig = new AtomicReference<>();
+        hook.getAcquirer().call(new Subscriber<AcquirerReleaser>() {
+            @Override
+            public void onCompleted() {
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onNext(AcquirerReleaser acquirerReleaser) {
+                rconfig.set(acquirerReleaser.getRemoteConfig());
+                cd.countDown();
+            }
+        });
+        assertThat(cd.await(10, TimeUnit.SECONDS)).isTrue();
+        assertThat(rconfig.get().getRemoteFiles().iterator().next().isRemoved()).isTrue();
     }
 
     @Test
@@ -152,7 +181,7 @@ public class FileCommanderIT implements ApplicationContextAware {
         assertThat(progresses).hasSize(2);
         assertThat(progresses.get(0).getChunk()).isEqualTo(5L);
         assertThat(progresses.get(1).isCompleted()).isTrue();
-        assertThat(IOUtils.readLines(providerLifeCycle.currentlyActiveProviders().get(0).getRepository().get(localConfig.getLocalFiles().iterator().next()).toBlocking().last())).contains("ciao2");
+        assertThat(IOUtils.readLines(providerLifeCycle.enabledProviders().get(0).getRepository().get(localConfig.getLocalFiles().iterator().next()).toBlocking().last())).contains("ciao2");
         sub.unsubscribe();
 
     }

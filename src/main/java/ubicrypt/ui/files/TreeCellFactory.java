@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ubicrypt.ui.tree;
+package ubicrypt.ui.files;
 
 import org.slf4j.Logger;
 
@@ -27,13 +27,8 @@ import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import rx.Observable;
-import rx.functions.Action1;
 import rx.functions.Actions;
 import ubicrypt.core.dto.UbiFile;
-import ubicrypt.core.events.SyncBeginEvent;
-import ubicrypt.core.events.SynchDoneEvent;
-import ubicrypt.core.util.ClassMatcher;
-import ubicrypt.ui.ctrl.GeneralProgress;
 
 import static javafx.application.Platform.runLater;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -45,7 +40,7 @@ public class TreeCellFactory extends TreeCell<ITreeItem> implements ListChangeLi
     private final ContextMenu menu;
     private final MenuItem remove;
 
-    public TreeCellFactory(TreeView<ITreeItem> treeView1, Function<UbiFile, Observable<Boolean>> fileUntracker, Observable<Object> appEvents, GeneralProgress gProgress) {
+    public TreeCellFactory(TreeView<ITreeItem> treeView1, Function<UbiFile, Observable<Boolean>> fileUntracker, Observable<Object> appEvents) {
         treeView = treeView1;
         treeView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         //multi selection listener for tree view
@@ -61,21 +56,15 @@ public class TreeCellFactory extends TreeCell<ITreeItem> implements ListChangeLi
                 })
                 .collect(Collectors.toList()))
                 .doOnSubscribe(() -> {
-                    gProgress.startProgress("Untracking Files");
                     runLater(() -> remove.setDisable(true));
                 })
                 .subscribe(Actions.empty(), err -> {
                     runLater(() -> remove.setDisable(false));
                     log.error(err.getMessage(), err);
-                    gProgress.stopProgress();
                 }, () -> {
                     runLater(() -> remove.setDisable(false));
-                    gProgress.stopProgress();
                 }));
         menu.getItems().add(remove);
-        appEvents.subscribe(ClassMatcher.newMatcher()
-                .on(SyncBeginEvent.class, (Action1<SyncBeginEvent>) event -> runLater(() -> remove.setDisable(true)))
-                .on(SynchDoneEvent.class, (Action1<SynchDoneEvent>) event -> runLater(() -> remove.setDisable(false))));
 
     }
 

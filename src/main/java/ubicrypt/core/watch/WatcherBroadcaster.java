@@ -18,8 +18,10 @@ import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.scheduling.annotation.Async;
 
 import java.io.IOException;
+import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -58,14 +60,13 @@ public class WatcherBroadcaster {
     private final AtomicBoolean filesChanging = new AtomicBoolean(false);
     private final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(10);
     private final Path basePath;
-    private final Map<Path, WatchService> watchers = new ConcurrentHashMap<>();
+    private final Map<WatchKey, Path> watchers = new ConcurrentHashMap<>();
+    final WatchService watchService = FileSystems.getDefault().newWatchService();
     private final Consumer<Path> register = (dir) -> {
         try {
             if (!watchers.containsKey(dir)) {
                 log.info("watching folder:{}", dir);
-                final WatchService watchService = FileSystems.getDefault().newWatchService();
-                watchers.put(dir, watchService);
-                dir.register(watchService, ENTRY_DELETE, ENTRY_MODIFY, ENTRY_CREATE);
+                watchers.put(dir.register(watchService, ENTRY_DELETE, ENTRY_MODIFY, ENTRY_CREATE), dir);
             }
         } catch (IOException e) {
             Throwables.propagate(e);
@@ -82,7 +83,7 @@ public class WatcherBroadcaster {
     Subject<Boolean, Boolean> synchProcessing;
     private boolean active = true;
 
-    public WatcherBroadcaster(final Path basePath) {
+    public WatcherBroadcaster(final Path basePath) throws IOException {
         this.basePath = basePath;
     }
 
@@ -112,6 +113,7 @@ public class WatcherBroadcaster {
     }
 
     @PostConstruct
+    @Async
     public void init() throws IOException {
         log.info("watching for tracked files, basePath:{}", basePath);
         registerFileFolders();
@@ -124,33 +126,33 @@ public class WatcherBroadcaster {
         return () -> {
             while (active) {
                 try {
-                    watchers.entrySet().forEach(entry -> {
-                        final WatchKey key = entry.getValue().poll();
-                        if (key == null) {
-                            return;
+                    WatchKey key = watchService.take();
+                    if (key == null) {
+                        return;
+                    }
+                    for (final WatchEvent event : key.pollEvents()) {
+                        if (filesChanging.get()) {
+                            continue;
                         }
-                        for (final WatchEvent event : key.pollEvents()) {
-                            if (filesChanging.get()) {
-                                continue;
-                            }
-                            final WatchEvent<Path> ev = (WatchEvent<Path>) event;
-                            final Path path = basePath.relativize(entry.getKey().resolve(ev.context()));
-                            if (ev.kind() != ENTRY_DELETE && isDoubleEvent(path)) {
-                                continue;
-                            }
-                            log.debug("watcher event kind:{}, path:{}", ev.kind(), path);
-                            if (ev.kind() == ENTRY_CREATE) {
-                                filterDeleteThenCreate(PathEvent.Event.create, path);
-                            } else if (ev.kind() == ENTRY_DELETE) {
-                                filterDeleteThenCreate(PathEvent.Event.delete, path);
-                            } else if (ev.kind() == ENTRY_MODIFY) {
-                                filterDeleteThenCreate(PathEvent.Event.update, path);
-                            }
+                        final WatchEvent<Path> ev = (WatchEvent<Path>) event;
+                        final Path path = basePath.relativize(watchers.get(key).resolve(ev.context()));
+                        if (ev.kind() != ENTRY_DELETE && isDoubleEvent(path)) {
+                            continue;
                         }
-                        if (!key.reset()) {
-                            log.error("watcher key not valid, quit");
+                        log.debug("watcher event kind:{}, path:{}", ev.kind(), path);
+                        if (ev.kind() == ENTRY_CREATE) {
+                            filterDeleteThenCreate(PathEvent.Event.create, path);
+                        } else if (ev.kind() == ENTRY_DELETE) {
+                            filterDeleteThenCreate(PathEvent.Event.delete, path);
+                        } else if (ev.kind() == ENTRY_MODIFY) {
+                            filterDeleteThenCreate(PathEvent.Event.update, path);
                         }
-                    });
+                    }
+                    if (!key.reset()) {
+                        log.error("watcher key not valid, quit");
+                    }
+                } catch (ClosedWatchServiceException e) {
+                    //ignore
                 } catch (final Exception e) {
                     log.error(e.getMessage(), e);
                 }
@@ -227,6 +229,10 @@ public class WatcherBroadcaster {
     @PreDestroy
     public void close() {
         active = false;
+        try {
+            watchService.close();
+        } catch (IOException e) {
+        }
         executorService.shutdownNow();
     }
 

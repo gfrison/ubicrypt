@@ -33,6 +33,7 @@ import ubicrypt.core.Utils;
 import ubicrypt.core.crypto.PGPEC;
 import ubicrypt.core.crypto.PGPService;
 import ubicrypt.core.provider.ProviderCommander;
+import ubicrypt.ui.StackNavigator;
 
 import static org.slf4j.LoggerFactory.getLogger;
 import static ubicrypt.ui.Anchor.anchor;
@@ -53,6 +54,7 @@ public class ConfirmPKController implements Initializable, Consumer<PGPPublicKey
     Button cancel;
     @FXML
     Button add;
+    StackNavigator navigator;
 
     @Override
     public void accept(final PGPPublicKey pgpPublicKey) {
@@ -63,13 +65,12 @@ public class ConfirmPKController implements Initializable, Consumer<PGPPublicKey
         cancel.setOnMouseClicked(event -> anchor().popScene());
         add.setOnMouseClicked(event -> providerCommander.addOwnedPK(pgpPublicKey)
                 .doOnError(err -> log.error(err.getMessage(), err))
-                .doOnCompleted(() -> Platform.runLater(() -> anchor().browse("exportConfig")))
+                .doOnCompleted(() -> Platform.runLater(() -> navigator.browse("exportConfig")))
                 .subscribe());
     }
 
     @Override
     public void initialize(final URL location, final ResourceBundle resources) {
-        anchor().getControllerPublisher().onNext(this);
 
     }
 }

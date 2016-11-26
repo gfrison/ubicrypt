@@ -22,7 +22,6 @@ import java.net.URL;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import javafx.application.Platform;
@@ -38,7 +37,7 @@ import ubicrypt.core.dto.ExportConfig;
 import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.provider.ProviderCommander;
 import ubicrypt.core.util.PGPKValue;
-import ubicrypt.ui.Anchor;
+import ubicrypt.ui.StackNavigator;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -59,10 +58,11 @@ public class ImportConfigCtrl implements Initializable {
     @FXML
     private
     Button cancel;
+    StackNavigator navigator;
 
-    @PostConstruct
-    public void init() {
-        cancel.setOnMouseClicked(event -> Anchor.anchor().popScene());
+    @Override
+    public void initialize(final URL location, final ResourceBundle resources) {
+        cancel.setOnMouseClicked(event -> navigator.popLayer());
         importConfig.setOnMouseClicked(event -> {
             try {
                 final ExportConfig ret = loadConfig();
@@ -74,7 +74,7 @@ public class ImportConfigCtrl implements Initializable {
                         .map(providerCommander::register)
                         .collect(Collectors.toList()));
                 pksObservable.concatWith(proObservable)
-                        .doOnNext(next -> Platform.runLater(() -> Anchor.anchor().popHome()))
+                        .doOnNext(next -> Platform.runLater(() -> navigator.popHome()))
                         .subscribe(Actions.empty(), err -> log.error(err.getMessage(), err));
             } catch (final IOException e) {
                 log.error(e.getMessage(), e);
@@ -87,8 +87,4 @@ public class ImportConfigCtrl implements Initializable {
         return Utils.unmarshall(pgpService.decrypt(is), ExportConfig.class);
     }
 
-    @Override
-    public void initialize(final URL location, final ResourceBundle resources) {
-        Anchor.anchor().registerController(this);
-    }
 }

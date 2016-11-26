@@ -31,57 +31,48 @@ import javafx.stage.Stage;
 import ubicrypt.core.provider.ProviderCommander;
 import ubicrypt.core.provider.file.FileConf;
 import ubicrypt.core.provider.file.FileProvider;
-import ubicrypt.ui.Anchor;
-import ubicrypt.ui.OnShow;
+import ubicrypt.ui.StackNavigator;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
-public class FileProviderController implements Initializable, OnShow {
+public class FileProviderController implements Initializable {
     private static final Logger log = getLogger(FileProviderController.class);
 
     @Inject
     ProviderCommander providerCommander;
     @Inject
     Stage stage;
-    @Inject
-    Anchor ctx;
     @FXML
     Button selectFolder;
     @FXML
-    Button submit;
+    Button finish;
     @FXML
     TextField textFolder;
     @FXML
     Button back;
+    StackNavigator navigator;
 
     @Override
     public void initialize(final URL location, final ResourceBundle resources) {
-        Anchor.anchor().getControllerPublisher().onNext(this);
-
-    }
-
-    @Override
-    public void onShow() {
         textFolder.setText(null);
-        submit.setDisable(true);
+        finish.setDisable(true);
         selectFolder.setOnMouseClicked(event -> {
             final DirectoryChooser fc = new DirectoryChooser();
             final File dir = fc.showDialog(stage);
             if (dir != null) {
                 textFolder.setText(dir.toString());
-                submit.setDisable(false);
+                finish.setDisable(false);
             }
         });
-        submit.setOnMouseClicked(event -> {
+        back.setOnMouseClicked(mouseEvent -> navigator.popLayer());
+        finish.setOnMouseClicked(mouseEvent -> {
             final FileProvider provider = new FileProvider();
             provider.setConf(new FileConf(Paths.get(textFolder.getText())));
             providerCommander.register(provider)
                     .filter(Boolean::booleanValue)
                     .subscribe(res -> log.info("new provider:{}, add result:{}", provider, res), err -> log.error(err.getMessage(), err));
-            ctx.popHome();
-
+            navigator.popHome();
         });
-        back.setOnMouseClicked(event -> ctx.popScene());
-
     }
+
 }

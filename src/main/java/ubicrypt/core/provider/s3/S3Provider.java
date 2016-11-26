@@ -93,7 +93,9 @@ public class S3Provider extends UbiProvider {
                 }
                 prefix = Long.toString(userId, MAX_RADIX) + "/";
                 try {
-                    client.createBucket(conf.getBucket());
+                    if (!client.doesBucketExist(conf.getBucket())) {
+                        client.createBucket(conf.getBucket());
+                    }
                 } catch (AmazonS3Exception e) {
                     S3Error error = S3Error.from(e.getErrorResponseXml());
                     switch (error.getCode()) {

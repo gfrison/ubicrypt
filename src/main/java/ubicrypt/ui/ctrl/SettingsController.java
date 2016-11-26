@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import javafx.fxml.FXML;
@@ -37,11 +36,13 @@ import javafx.scene.control.Button;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import ubicrypt.core.crypto.PGPEC;
-import ubicrypt.ui.Anchor;
+import ubicrypt.ui.ControllerFactory;
+import ubicrypt.ui.StackNavigator;
 
+import static org.apache.commons.lang3.StringUtils.substringAfterLast;
+import static org.apache.commons.lang3.StringUtils.substringBefore;
 import static org.slf4j.LoggerFactory.getLogger;
 
 public class SettingsController implements Initializable {
@@ -65,11 +66,15 @@ public class SettingsController implements Initializable {
     @FXML
     AnchorPane anchor;
     @FXML
-    private
-    BorderPane mainPane;
+    VBox main;
+    @Inject
+    ControllerFactory controllerFactory;
 
-    @PostConstruct
-    public void init() {
+    @Override
+    public void initialize(final URL location, final ResourceBundle resources) {
+        String fxml = substringBefore(substringAfterLast(location.getFile(), "/"), ".fxml");
+        StackNavigator navigator = new StackNavigator(main, fxml, controllerFactory);
+
         copyPKClipboard.setOnMouseClicked(event -> {
             try {
                 final ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -81,7 +86,7 @@ public class SettingsController implements Initializable {
                 content.putString(new String(out.toByteArray()));
                 clipboard.setContent(content);
 //                anchor.getChildren().add(notification);
-                final NotificationPane notification = new NotificationPane(mainPane);
+                final NotificationPane notification = new NotificationPane(main);
                 notification.setText("Public Key copied in clipboard");
                 notification.show();
                 log.info("public key copied into clipboard");
@@ -90,14 +95,10 @@ public class SettingsController implements Initializable {
             }
         });
 
-        addNewPK.setOnMouseClicked(event -> Anchor.anchor().browse("addNewPK"));
-        importConfig.setOnMouseClicked(event -> Anchor.anchor().browse("importConfig"));
-        exportConfig.setOnMouseClicked(event -> Anchor.anchor().browse("exportConfig"));
+        addNewPK.setOnMouseClicked(event -> navigator.browse("addNewPK"));
+        importConfig.setOnMouseClicked(event -> navigator.browse("importConfig"));
+        exportConfig.setOnMouseClicked(event -> navigator.browse("exportConfig"));
 
     }
 
-    @Override
-    public void initialize(final URL location, final ResourceBundle resources) {
-        Anchor.anchor().getControllerPublisher().onNext(this);
-    }
 }

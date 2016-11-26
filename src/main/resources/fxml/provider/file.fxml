@@ -5,39 +5,32 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
-<BorderPane xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8.0.72"
-            fx:controller="ubicrypt.ui.ctrl.FileProviderController">
+<BorderPane xmlns="http://javafx.com/javafx/8.0.65"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="ubicrypt.ui.ctrl.FileProviderController" VBox.vgrow="ALWAYS">
     <top>
-        <VBox fx:id="topbox" spacing="10.0">
+        <VBox fx:id="topbox" alignment="CENTER" prefHeight="24.0" prefWidth="180.0" spacing="10.0">
             <children>
-                <Label text="%title.addNewPK" textAlignment="CENTER">
+                <Label contentDisplay="CENTER" text="%title.provider.file" textAlignment="CENTER">
                     <font>
                         <Font size="17.0"/>
                     </font>
                 </Label>
-                <fx:include source="../header-bc.fxml"/>
-                <Label text="Configure File Provider">
-                    <font>
-                        <Font size="12.0"/>
-                    </font>
-                </Label>
             </children>
             <BorderPane.margin>
-                <Insets bottom="10.0" right="10.0" top="10.0"/>
+                <Insets top="10.0"/>
             </BorderPane.margin>
         </VBox>
     </top>
     <center>
-        <VBox alignment="CENTER" spacing="20.0" BorderPane.alignment="TOP_CENTER">
+        <VBox alignment="CENTER" BorderPane.alignment="TOP_CENTER"
+              VBox.vgrow="ALWAYS">
             <children>
                 <Label text="Specify Directory"/>
-                <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
+                <HBox alignment="CENTER">
                     <children>
                         <Button fx:id="selectFolder" mnemonicParsing="false" text="Select"/>
                         <TextField fx:id="textFolder" editable="false"/>
@@ -47,21 +40,14 @@
         </VBox>
     </center>
     <bottom>
-        <GridPane BorderPane.alignment="CENTER">
-            <columnConstraints>
-                <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0"
-                                   prefWidth="100.0"/>
-                <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0"
-                                   prefWidth="100.0"/>
-            </columnConstraints>
-            <rowConstraints>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
-            </rowConstraints>
+        <HBox alignment="CENTER_RIGHT" styleClass="backnext">
             <children>
-                <Button fx:id="back" cancelButton="true" mnemonicParsing="false" text="Back"/>
-                <Button fx:id="submit" defaultButton="true" mnemonicParsing="false" text="Add"
-                        GridPane.columnIndex="1"/>
+                <Button fx:id="back" mnemonicParsing="false" text="Back"/>
+                <Button fx:id="finish" mnemonicParsing="false" text="Finish"/>
             </children>
-        </GridPane>
+            <padding>
+                <Insets bottom="12.0" left="12.0" right="12.0" top="12.0"/>
+            </padding>
+        </HBox>
     </bottom>
 </BorderPane>

@@ -49,8 +49,12 @@ public class FileFacade implements IFileCommander {
                 .filter(lfile -> lfile.getPath().equals(relPath)).findFirst();
         if (optFile.isPresent()) {
             log.debug("file already present:{} ", optFile.get());
-            if (optFile.get().isRemoved()) {
+            final LocalFile localFile = optFile.get();
+            if (localFile.isRemoved()) {
                 return Observable.just(Tuple.of(optFile.get(), fileCommander.update(absolutePath, (file) -> file.setRemoved(false))));
+            }
+            if (localFile.isDeleted()) {
+                return Observable.just(Tuple.of(optFile.get(), fileCommander.update(absolutePath, (file) -> file.setDeleted(false))));
             }
         }
         return fileCommander.addFile(absolutePath).map(ret -> Tuple.of(ret.getT1(), ret.getT2().doOnNext(res -> {

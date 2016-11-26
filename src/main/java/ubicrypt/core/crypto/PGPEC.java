@@ -65,7 +65,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.lang.reflect.Field;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
@@ -93,15 +92,6 @@ public class PGPEC {
 
     static {
         Security.addProvider(new BouncyCastleProvider());
-/*
-        try {
-            final Field field = Class.forName("javax.crypto.JceSecurity").getDeclaredField("isRestricted");
-            field.setAccessible(true);
-            field.set(null, Boolean.FALSE);
-        } catch (final Exception ex) {
-            ex.printStackTrace();
-        }
-*/
     }
 
     public static PGPKeyPair masterKey() {

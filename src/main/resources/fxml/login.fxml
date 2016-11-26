@@ -8,7 +8,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 <BorderPane xmlns:fx="http://javafx.com/fxml/1" fx:id="loginPane"
-            xmlns="http://javafx.com/javafx/8.0.72"
+            xmlns="http://javafx.com/javafx/8.0.72" prefHeight="500.0" prefWidth="500.0"
             fx:controller="ubicrypt.ui.ctrl.LoginController">
     <center>
         <VBox alignment="CENTER" spacing="20.0" BorderPane.alignment="TOP_CENTER">

@@ -54,7 +54,7 @@ public class OnUpdateRemote extends RemoteAction {
     }
 
     @Override
-    public Observable<Boolean> apply(FileProvenience fp, RemoteConfig rconfig) {
+    public Observable<Boolean> apply(final FileProvenience fp, final RemoteConfig rconfig) {
         UbiFile file = fp.getFile();
         RemoteFile rfile = rconfig.getRemoteFiles().stream().filter(file1 -> file1.equals(file)).findFirst().get();
 

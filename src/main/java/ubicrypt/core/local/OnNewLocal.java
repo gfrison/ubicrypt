@@ -30,6 +30,7 @@ import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 import rx.subjects.Subject;
 import ubicrypt.core.FileProvenience;
+import ubicrypt.core.Utils;
 import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.dto.LocalFile;
 import ubicrypt.core.dto.UbiFile;
@@ -53,6 +54,9 @@ public class OnNewLocal implements Func1<FileProvenience, Observable<Boolean>> {
 
     @Override
     public Observable<Boolean> call(FileProvenience fp) {
+        if (!Utils.trackedFile.test(fp.getFile())) {
+            return Observable.just(false);
+        }
         UbiFile<UbiFile> rfile = fp.getFile();
         final Path path = basePath.resolve(rfile.getPath());
         log.info("copy to:{} from repo:{}", path, fp.getOrigin());

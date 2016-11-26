@@ -39,6 +39,7 @@ import rx.schedulers.Schedulers;
 import ubicrypt.core.provider.ProviderCommander;
 import ubicrypt.core.provider.s3.S3Conf;
 import ubicrypt.core.provider.s3.S3Provider;
+import ubicrypt.ui.StackNavigator;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -53,15 +54,18 @@ public class S3ProviderController implements Initializable {
     @FXML
     Label error;
     @FXML
-    Button next;
+    Button finish;
     @FXML
-    Button add;
+    Button back;
+    @FXML
+    Button listBuckets;
     @FXML
     ChoiceBox buckets;
     @FXML
     ChoiceBox regions;
     @Inject
     ProviderCommander providerCommander;
+    StackNavigator navigator;
 
     private final EventHandler<? super KeyEvent> onKeyPressed;
 
@@ -70,8 +74,8 @@ public class S3ProviderController implements Initializable {
             if (!checkInputs()) {
                 return;
             }
-            if (event instanceof KeyEvent && event.getCode() == KeyCode.ENTER && !next.isDisabled()) {
-                next();
+            if (event instanceof KeyEvent && event.getCode() == KeyCode.ENTER && !listBuckets.isDisabled()) {
+                listBuckets();
 
             }
 
@@ -91,14 +95,14 @@ public class S3ProviderController implements Initializable {
             disableControls();
             return false;
         }
-        next.setDisable(false);
+        listBuckets.setDisable(false);
         return true;
     }
 
     private void disableControls() {
-        next.setDisable(true);
+        finish.setDisable(true);
         buckets.setDisable(true);
-        add.setDisable(true);
+        listBuckets.setDisable(true);
     }
 
     private void clearInputs() {
@@ -113,13 +117,13 @@ public class S3ProviderController implements Initializable {
         anchor().getControllerPublisher().onNext(this);
         accessKey.setOnKeyPressed(onKeyPressed);
         secret.setOnKeyPressed(onKeyPressed);
-        next.setOnMouseClicked(event -> next());
         regions.setOnMouseClicked(mouseEvent -> checkInputs());
         regions.setOnKeyPressed(onKeyPressed);
         regions.setOnAction(actionEvent -> checkInputs());
+        back.setOnMouseClicked(mouseEvent -> navigator.popLayer());
     }
 
-    private void next() {
+    public void listBuckets() {
         AmazonS3Client client = new AmazonS3Client(new AWSCredentials() {
             @Override
             public String getAWSAccessKeyId() {
@@ -142,8 +146,8 @@ public class S3ProviderController implements Initializable {
             error.setText(e.getMessage());
         }
         buckets.setDisable(false);
-        add.setDisable(false);
-        add.setOnMouseClicked(addEvent -> {
+        finish.setDisable(false);
+        finish.setOnMouseClicked(addEvent -> {
             S3Provider provider = new S3Provider();
             S3Conf conf = new S3Conf();
             conf.setAccessKeyId(accessKey.getText());
@@ -154,7 +158,7 @@ public class S3ProviderController implements Initializable {
             providerCommander.register(provider).subscribeOn(Schedulers.io()).subscribe(result -> {
                         log.info("provider s3:{} registered:{}", conf.getBucket(), result);
                         clearInputs();
-                        anchor().popHome();
+                        navigator.popHome();
                     },
                     err -> {
                         log.error("error on adding s3 provider", err);
@@ -166,4 +170,5 @@ public class S3ProviderController implements Initializable {
 
         });
     }
+
 }

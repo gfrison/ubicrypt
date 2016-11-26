@@ -32,7 +32,7 @@ public class FileInSync implements Func1<UbiFile, Observable.OnSubscribe<Boolean
 
     public Observable.OnSubscribe<Boolean> call(UbiFile file) {
         return subscriber -> {
-            Observable.merge(providerLifeCycle.currentlyActiveProviders().stream()
+            Observable.merge(providerLifeCycle.enabledProviders().stream()
                     .map(ProviderHook::getAcquirer)
                     .map(Observable::create)
                     .collect(Collectors.toList()))

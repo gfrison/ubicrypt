@@ -11,14 +11,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ubicrypt.ui.tree;
+package ubicrypt.ui.files;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -46,13 +45,15 @@ public class FolderItem implements ITreeItem {
         label = null;
     }
 
-    public FolderItem(final Path path, final EventHandler<ActionEvent> onAddHandler) {
+    public FolderItem(final Path path, final EventHandler<ActionEvent> onAddHandler, final EventHandler<ActionEvent> onAddFolder) {
         checkArgument(path != null, "path must not be null");
         this.path = path;
         label = null;
-        final MenuItem add = new MenuItem("Add File");
+        final MenuItem add = new MenuItem("Add Files");
         add.setOnAction(onAddHandler);
-        menu.getItems().add(add);
+        final MenuItem addFolder = new MenuItem("Add Folder");
+        addFolder.setOnAction(onAddFolder);
+        menu.getItems().addAll(add, addFolder);
 
     }
 

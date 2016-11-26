@@ -29,12 +29,10 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.TextArea;
 import ubicrypt.core.Utils;
 import ubicrypt.core.dto.LocalConfig;
-import ubicrypt.ui.Anchor;
-import ubicrypt.ui.OnShow;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
-public class ShowConfigCtrl implements Initializable, OnShow {
+public class ShowConfigCtrl implements Initializable {
     private static final Logger log = getLogger(ShowConfigCtrl.class);
     private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -48,13 +46,9 @@ public class ShowConfigCtrl implements Initializable, OnShow {
     @FXML
     private TextArea text;
 
-    @Override
-    public void initialize(final URL location, final ResourceBundle resources) {
-        Anchor.anchor().registerController(this);
-    }
 
     @Override
-    public void onShow() {
+    public void initialize(final URL location, final ResourceBundle resources) {
         try {
             text.setText(mapper.writeValueAsString(localConfig));
         } catch (final IOException e) {

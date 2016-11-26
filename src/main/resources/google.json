@@ -1,0 +1,14 @@
+{
+  "installed": {
+    "client_id": "731478770488-5p3adsdef2qtp8q10100cijp65el4i59.apps.googleusercontent.com",
+    "project_id": "ubicrypt-146414",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://accounts.google.com/o/oauth2/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_secret": "R7WPtrAnJb8taBvJEy-tb1YP",
+    "redirect_uris": [
+      "urn:ietf:wg:oauth:2.0:oob",
+      "http://localhost"
+    ]
+  }
+}

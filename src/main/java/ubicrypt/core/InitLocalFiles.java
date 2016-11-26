@@ -15,6 +15,7 @@ package ubicrypt.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Async;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -42,6 +43,7 @@ public class InitLocalFiles implements Consumer<LocalFile> {
     int deviceId;
 
     @PostConstruct
+    @Async
     public void init() {
         localConfig.getLocalFiles().stream().forEach(this);
     }
@@ -65,8 +67,10 @@ public class InitLocalFiles implements Consumer<LocalFile> {
             }
         } catch (final NoSuchFileException e) {
             log.info("file:{} has been deleted", localFile.getPath());
-            localFile.setDeleted(true);
-            modified = true;
+            if (!localFile.isDeleted()) {
+                localFile.setDeleted(true);
+                modified = true;
+            }
         } catch (final IOException e) {
             log.error(e.getMessage(), e);
         }

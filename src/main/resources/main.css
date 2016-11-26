@@ -16,38 +16,38 @@
 
 .tree-providers {
     -fx-image: url("images/upload-cloud.png");
-    -fx-max-width: 20px;
-    -fx-max-height: 20px;
+    -fx-max-width: 40px;
+    -fx-max-height: 40px;
 }
 
 .tree-provider-file {
     -fx-image: url("images/archive-folder.png");
-    -fx-max-width: 20px;
-    -fx-max-height: 20px;
+    -fx-max-width: 40px;
+    -fx-max-height: 40px;
 }
 
 .tree-provider-file-error {
     -fx-image: url("images/burning-folder.png");
-    -fx-max-width: 20px;
-    -fx-max-height: 20px;
+    -fx-max-width: 40px;
+    -fx-max-height: 40px;
 }
 
 .tree-provider-ftp {
     -fx-image: url("images/ftp.png");
-    -fx-max-width: 20px;
-    -fx-max-height: 20px;
+    -fx-max-width: 40px;
+    -fx-max-height: 40px;
 }
 
 .tree-provider-s3 {
     -fx-image: url("images/Amazon-48.png");
-    -fx-max-width: 20px;
-    -fx-max-height: 20px;
+    -fx-max-width: 40px;
+    -fx-max-height: 40px;
 }
 
 .tree-provider-ftp-error {
     -fx-image: url("images/burning-folder.png");
-    -fx-max-width: 20px;
-    -fx-max-height: 20px;
+    -fx-max-width: 40px;
+    -fx-max-height: 40px;
 }
 
 .tree-folder {
@@ -118,4 +118,10 @@
     -fx-font-style: italic;
     /*-fx-font-scale: 110%;*/
     /*-fx-font-weight: bold;*/
+}
+
+.backnext {
+    -fx-background-color: darkgray;
+    -fx-spacing: 12.0;
+    -fx-border-insets: 12.0, 12.0, 12.0, 12.0;
 }

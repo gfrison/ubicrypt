@@ -16,6 +16,7 @@ package ubicrypt.core.watch;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.io.IOException;
 import java.nio.file.Path;
 
 import rx.subjects.PublishSubject;
@@ -24,7 +25,7 @@ import rx.subjects.PublishSubject;
 public class WatchConf {
 
     @Bean
-    public WatcherBroadcaster watcher(final Path basePath) {
+    public WatcherBroadcaster watcher(final Path basePath) throws IOException {
         return new WatcherBroadcaster(basePath);
     }
 

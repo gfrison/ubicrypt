@@ -28,6 +28,7 @@ import java.util.jar.Manifest;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.scene.Scene;
 import javafx.stage.Stage;
 import rx.subjects.Subject;
 import ubicrypt.core.FixPassPhraseInitializer;
@@ -35,6 +36,8 @@ import ubicrypt.core.UbiConf;
 import ubicrypt.core.Utils;
 import ubicrypt.core.events.ShutdownOK;
 import ubicrypt.core.events.ShutdownRequest;
+import ubicrypt.ui.ControllerFactory;
+import ubicrypt.ui.StackNavigator;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static ubicrypt.core.Utils.securityFile;
@@ -98,12 +101,14 @@ public class UbiCrypt extends Application {
     @Override
     public void start(final Stage stage) throws Exception {
         setUserAgentStylesheet(STYLESHEET_MODENA);
-        stage.setTitle("UbiCrypt v" + getVersion());
+        stage.setTitle("UbiCrypt");
         anchor().setStage(stage);
         final File file = securityFile().toFile();
         stage.setScene(anchor().showScene(file.exists() ? "login" : "createKey"));
-        stage.setWidth(350);
-        stage.setHeight(700);
+/*
+        stage.setWidth(500);
+        stage.setHeight(500);
+*/
         stage.show();
         final UbiCrypt ubiCrypt = this;
         anchor().getPasswordStream().subscribe(pwd -> {
@@ -112,14 +117,13 @@ public class UbiCrypt extends Application {
             app.addInitializers(new FixPassPhraseInitializer(pwd));
             app.setLogStartupInfo(true);
             ctx = app.run(arguments);
+
             ctx.getAutowireCapableBeanFactory().autowireBean(ubiCrypt);
             ctx.getBeanFactory().registerSingleton("stage", stage);
             ctx.getBeanFactory().registerSingleton("ctx", anchor());
-            anchor().showScene("home");
-            anchor().getControllerStream().subscribe(initializable -> {
-                log.debug("register in spring:{}", initializable);
-                Utils.springIt(ctx, initializable);
-            });
+            ControllerFactory cfactory = new ControllerFactory(ctx);
+            StackNavigator navigator = new StackNavigator(null, "main", cfactory);
+            stage.setScene(new Scene(navigator.open()));
         });
 
         stage.setOnCloseRequest(windowEvent -> shutdown.run());
@@ -128,7 +132,7 @@ public class UbiCrypt extends Application {
 
     }
 
-    private static String getVersion() {
+    public static String getVersion() {
         String version = null;
         // try to load from maven properties first
         try {

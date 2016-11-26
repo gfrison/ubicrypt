@@ -23,12 +23,11 @@ import java.util.Optional;
 import javafx.scene.control.TreeItem;
 import ubicrypt.core.dto.LocalFile;
 import ubicrypt.ui.UItils;
-import ubicrypt.ui.tree.FileItem;
-import ubicrypt.ui.tree.FolderItem;
-import ubicrypt.ui.tree.ITreeItem;
+import ubicrypt.ui.files.FileItem;
+import ubicrypt.ui.files.FolderItem;
+import ubicrypt.ui.files.ITreeItem;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static ubicrypt.core.Utils.emptySubject;
 
 public class HomeControllerTest {
 
@@ -37,12 +36,12 @@ public class HomeControllerTest {
         PlatformImpl.startup(() -> {
         });
         final TreeItem<ITreeItem> filesRoot = new TreeItem<>();
-        final TreeItem<ITreeItem> dirA = new TreeItem<>(new FolderItem(Paths.get("dirA"), null));
+        final TreeItem<ITreeItem> dirA = new TreeItem<>(new FolderItem(Paths.get("dirA"), null, null));
         filesRoot.getChildren().add(dirA);
         final LocalFile fileA = new LocalFile() {{
             setPath(Paths.get("dirA/fileA"));
         }};
-        dirA.getChildren().add(new TreeItem<>(new FileItem(fileA, file1 -> emptySubject())));
+        dirA.getChildren().add(new TreeItem<>(new FileItem(fileA)));
 
         final Optional<TreeItem<ITreeItem>> opt = UItils.searchFile(filesRoot, fileA);
         assertThat(opt).isPresent();
