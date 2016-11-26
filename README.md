@@ -42,9 +42,9 @@ Prerequisites:
   
 By *appdater*:
 
-`wget https://bintray.com/gfrison/maven/download_file?file_path=appdater-0.3-all.jar -O appdater-0.3-all.jar`
+`wget https://bintray.com/gfrison/maven/download_file?file_path=appdater-0.4-all.jar -O appdater-0.4.jar`
 
-`java -jar appdater-0.3-all.jar`
+`java -jar appdater-0.4.jar`
 
 By source:
 
