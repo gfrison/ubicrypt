@@ -155,7 +155,7 @@ public class S3ProviderController implements Initializable {
             conf.setRegion(Regions.fromName((String) regions.getSelectionModel().getSelectedItem()));
             conf.setBucket((String) buckets.getSelectionModel().getSelectedItem());
             provider.setConf(conf);
-            providerCommander.register(provider).subscribeOn(Schedulers.io()).subscribe(result -> {
+            providerCommander.register(provider).subscribe(result -> {
                         log.info("provider s3:{} registered:{}", conf.getBucket(), result);
                         clearInputs();
                         navigator.popHome();

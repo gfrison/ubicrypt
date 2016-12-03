@@ -27,6 +27,7 @@ import rx.subjects.PublishSubject;
 import ubicrypt.UbiCrypt;
 import ubicrypt.core.ProgressFile;
 import ubicrypt.core.crypto.PGPService;
+import ubicrypt.ui.ctrl.providers.ProvidersController;
 import ubicrypt.ui.files.FilesController;
 
 import static org.apache.commons.lang3.StringUtils.abbreviate;
@@ -122,5 +123,10 @@ public class MainController implements Initializable {
     public void addS3Provider(ActionEvent actionEvent) {
         tabs.getSelectionModel().select(1);
         providersController.getNavigator().browse("provider/s3", "s3");
+    }
+
+    public void addGdriveProvider(ActionEvent actionEvent) {
+        tabs.getSelectionModel().select(1);
+        providersController.getNavigator().browse("provider/gdrive", "gdrive");
     }
 }

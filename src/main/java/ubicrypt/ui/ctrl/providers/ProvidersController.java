@@ -1,4 +1,4 @@
-package ubicrypt.ui.ctrl;
+package ubicrypt.ui.ctrl.providers;
 
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -23,7 +23,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 import rx.Observable;
-import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.provider.ProviderCommander;
 import ubicrypt.core.provider.ProviderDescriptor;
 import ubicrypt.core.provider.ProviderEvent;
@@ -51,8 +50,6 @@ public class ProvidersController implements Initializable {
     @Qualifier("providerEvent")
     Observable<ProviderEvent> providerEvent;
     @Inject
-    private LocalConfig localConfig;
-    @Inject
     private ControllerFactory controllerFactory;
     @Inject
     private ProviderCommander providerCommander;
@@ -74,14 +71,15 @@ public class ProvidersController implements Initializable {
         navigator = new StackNavigator(root, fxml, controllerFactory);
         providers.setCellFactory(listView -> new ListCell<ProviderItem>() {
             @Override
-            protected void updateItem(ProviderItem provider, boolean empty) {
-                super.updateItem(provider, empty);
+            protected void updateItem(ProviderItem pi, boolean empty) {
+                super.updateItem(pi, empty);
                 if (empty) {
                     setText(null);
                     setGraphic(null);
                     return;
                 }
-                Platform.runLater(() -> setGraphic(provider.getGraphics()));
+                setContextMenu(pi.getContextMenu());
+                Platform.runLater(() -> setGraphic(pi.getGraphics()));
             }
         });
         providerDescriptors.stream().forEach(pd -> {
@@ -96,49 +94,39 @@ public class ProvidersController implements Initializable {
                 log.debug("adding provider :{}", pd.getCode());
                 navigator.browse(format("provider/%s", pd.getCode()));
             });
-            button.setTooltip(new Tooltip(pd.getDescription()));
+            button.setTooltip(new Tooltip("Add " + pd.getDescription()));
             availableProviders.getItems().add(button);
         });
 
         //provider status events
         providerEvent.subscribe(pevent -> {
             UbiProvider provider = pevent.getHook().getProvider();
+            if (!providers.getItems().stream()
+                    .filter(pi -> pi.getProvider().equals(provider))
+                    .findFirst()
+                    .isPresent()) {
+                log.info("add new provider:{}", pevent.getHook().getProvider());
+                String code = providerDescriptors.stream()
+                        .filter(pd -> pd.getType() == provider.getClass())
+                        .map(ProviderDescriptor::getCode)
+                        .findFirst().get();
+                final ProviderItem providerItem = new ProviderItem(provider, providerDescriptors.stream()
+                        .filter(pd -> pd.getType() == provider.getClass()).findFirst().get(), providerRemover, navigator);
+                providers.getItems().add(providerItem);
+                pevent.getHook().getStatusEvents().subscribe(providerItem::changeStatus);
+            }
             switch (pevent.getEvent()) {
-                case added:
-                    log.info("new provider added:{}", pevent.getHook().getProvider());
-                    String code = providerDescriptors.stream()
-                            .filter(pd -> pd.getType() == provider.getClass())
-                            .map(ProviderDescriptor::getCode)
-                            .findFirst().get();
-
-                    final ProviderItem providerItem = new ProviderItem(provider, providerDescriptors.stream()
-                            .filter(pd -> pd.getType() == provider.getClass()).findFirst().get(), providerRemover);
-                    providers.getItems().add(providerItem);
-
-/*
-                    pevent.getHook().getStatusEvents().subscribe(event -> {
-                        String classLabel;
-                        log.info("provider status {}:{}", event, provider);
-                        switch (event) {
-                            case error:
-                                classLabel = format("tree-provider-%s-error", code);
-                                break;
-                            default:
-                                //TODO:labels for other statuses
-                                classLabel = format("tree-provider-%s", code);
-                        }
-                        final Node graphics = providerItem.getGraphics();
-                        graphics.getStyleClass().clear();
-                        graphics.getStyleClass().add(classLabel);
-                    });
-*/
-                    break;
                 case removed:
                     //TODO: remove provider
                     break;
                 default:
                     log.warn("unmanaged event:{}", pevent.getEvent());
             }
+            providers.getItems().stream()
+                    .filter(pi -> pi.getProvider().equals(provider))
+                    .findFirst()
+                    .ifPresent(pi -> pi.changeStatus(pevent.getEvent()));
+
         });
     }
 

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import org.controlsfx.glyphfont.Glyph?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
@@ -23,7 +24,11 @@
                     </font>
                 </Label>
                 <Button id="submit" fx:id="submit" defaultButton="true" mnemonicParsing="false"
-                        text="Login"/>
+                        text="Login">
+                    <graphic>
+                        <Glyph fontFamily="FontAwesome" icon="SIGN_IN"/>
+                    </graphic>
+                </Button>
             </children>
         </VBox>
     </center>

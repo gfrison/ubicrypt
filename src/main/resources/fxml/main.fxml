@@ -32,6 +32,7 @@
                 <items>
                     <MenuItem text="Add Local Folder" onAction="#addFileProvider"/>
                     <MenuItem text="Add Amazon S3" onAction="#addS3Provider"/>
+                    <MenuItem text="Add Google Drive" onAction="#addGdriveProvider"/>
                 </items>
             </Menu>
             <Menu text="Help">

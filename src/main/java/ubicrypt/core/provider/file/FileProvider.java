@@ -13,8 +13,6 @@
  */
 package ubicrypt.core.provider.file;
 
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +27,9 @@ import ubicrypt.core.provider.ProviderStatus;
 import ubicrypt.core.provider.UbiProvider;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static rx.Observable.just;
+import static ubicrypt.core.provider.ProviderStatus.error;
+import static ubicrypt.core.provider.ProviderStatus.initialized;
 
 public class FileProvider extends UbiProvider {
     private final static transient Logger log = LoggerFactory.getLogger(FileProvider.class);
@@ -39,7 +40,7 @@ public class FileProvider extends UbiProvider {
     public Observable<String> post(final InputStream is) {
         checkNotNull(is, "input stream must be not null");
         final String id = UUID.randomUUID().toString();
-        return Observable.concat(Utils.write(conf.getPath().resolve(id), is).map(i -> (String) null), Observable.just(id))
+        return Observable.concat(Utils.write(conf.getPath().resolve(id), is).map(i -> (String) null), just(id))
                 .doOnSubscribe(() -> log.debug("post {}", conf.getPath().resolve(id))).last();
     }
 
@@ -83,12 +84,12 @@ public class FileProvider extends UbiProvider {
 
     @Override
     public String providerId() {
-        return "file:/" + conf.getPath().toString();
+        return "file://" + conf.getPath().toString();
     }
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE).append("dir", conf.getPath()).build();
+        return providerId();
     }
 
     @Override
@@ -97,12 +98,18 @@ public class FileProvider extends UbiProvider {
             try {
                 log.warn("folder:{} does not exist", getConf().getPath());
                 Files.createDirectories(getConf().getPath());
+                return just(initialized);
             } catch (IOException e) {
                 log.error("unable to create directories", e);
-                return Observable.just(ProviderStatus.error);
+                return just(error);
             }
         }
         return super.init(userId);
+    }
+
+    @Override
+    public String code() {
+        return "file";
     }
 
     public FileConf getConf() {

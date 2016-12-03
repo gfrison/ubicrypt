@@ -4,18 +4,18 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
-<BorderPane fx:id="mainPane" xmlns="http://javafx.com/javafx/8.0.65"
-            xmlns:fx="http://javafx.com/fxml/1" fx:controller="ubicrypt.ui.ctrl.AddPKController"
-            prefHeight="420.0" prefWidth="303.0">
+<BorderPane fx:id="mainPane" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/8.0.65"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="ubicrypt.ui.ctrl.providers.GDriveController">
     <top>
         <VBox fx:id="topbox" alignment="CENTER" prefHeight="24.0" prefWidth="190.0" spacing="10.0">
             <children>
-                <Label alignment="CENTER" contentDisplay="CENTER" text="%title.addNewPK"
+                <Label alignment="CENTER" contentDisplay="CENTER" text="%title.provider.gdrive"
                        textAlignment="CENTER">
                     <font>
                         <Font size="17.0"/>
@@ -27,24 +27,34 @@
             </BorderPane.margin>
         </VBox>
     </top>
-    <padding>
-        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
-    </padding>
     <center>
-        <TextArea fx:id="text" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER"/>
+        <VBox alignment="CENTER" VBox.vgrow="ALWAYS">
+            <children>
+                <Button mnemonicParsing="false"
+                        onMouseClicked="#authorize" text="Authorize UbiCrypt to access Google Drive"
+                        fx:id="gdrive">
+                </Button>
+                <Region prefHeight="20">
+                    <opaqueInsets>
+                        <Insets top="30.0"/>
+                    </opaqueInsets>
+                </Region>
+                <Label fx:id="message"/>
+                <Region prefHeight="20">
+                    <opaqueInsets>
+                        <Insets top="30.0"/>
+                    </opaqueInsets>
+                </Region>
+                <Label styleClass="error" fx:id="error"/>
+            </children>
+        </VBox>
     </center>
     <bottom>
         <HBox alignment="CENTER_RIGHT" styleClass="backnext">
             <children>
-                <Button fx:id="cancel" mnemonicParsing="false" text="Back">
+                <Button fx:id="back" mnemonicParsing="false" text="Back" onMouseClicked="#back">
                     <graphic>
                         <Glyph fontFamily="FontAwesome" icon="BACKWARD"/>
-                    </graphic>
-                </Button>
-                <!--<Button fx:id="next" mnemonicParsing="false" text="Next" />-->
-                <Button fx:id="add" mnemonicParsing="false" text="Add">
-                    <graphic>
-                        <Glyph fontFamily="FontAwesome" icon="USER_PLUS"/>
                     </graphic>
                 </Button>
             </children>

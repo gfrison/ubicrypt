@@ -65,7 +65,7 @@ public class WatcherBroadcaster {
     private final Consumer<Path> register = (dir) -> {
         try {
             if (!watchers.containsKey(dir)) {
-                log.info("watching folder:{}", dir);
+                log.debug("watching folder:{}", dir);
                 watchers.put(dir.register(watchService, ENTRY_DELETE, ENTRY_MODIFY, ENTRY_CREATE), dir);
             }
         } catch (IOException e) {

@@ -18,11 +18,15 @@ import org.slf4j.Logger;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 
+import javafx.application.HostServices;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.input.KeyCode;
@@ -32,7 +36,7 @@ import ubicrypt.ui.Anchor;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
-public class CreateKeyController implements Initializable {
+public class CreateKeyController implements Initializable, Consumer<HostServices> {
     private static final Logger log = getLogger(CreateKeyController.class);
     @FXML
     PasswordField pwd;
@@ -59,11 +63,30 @@ public class CreateKeyController implements Initializable {
         errorLabel.setVisible(true);
 
     };
+    private HostServices hostServices;
 
     @Override
     public void initialize(final URL location, final ResourceBundle resources) {
         submit.onMouseClickedProperty().setValue(handler);
         pwd.setOnKeyPressed(handler);
         pwd2.setOnKeyPressed(handler);
+    }
+
+    public void linkLicense(ActionEvent actionEvent) {
+        hostServices.showDocument("https://github.com/gfrison/ubicrypt/blob/master/LICENSE.md");
+    }
+
+    @Override
+    public void accept(HostServices hostServices) {
+        this.hostServices = hostServices;
+    }
+
+    public void agree(ActionEvent event) {
+        CheckBox chk = (CheckBox) event.getSource();
+        if (chk.isSelected()) {
+            submit.setDisable(false);
+        } else {
+            submit.setDisable(true);
+        }
     }
 }

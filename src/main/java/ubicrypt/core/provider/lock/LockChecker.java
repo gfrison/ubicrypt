@@ -126,7 +126,7 @@ public class LockChecker implements Observable.OnSubscribe<LockStatus> {
                             log.info("lock bagged, expires on:{}", lock.getExpires());
                             subscriber.onNext(unavailable);
                             nextAttempt(subscriber, lock);
-                        });
+                        }, subscriber::onError);
                 return;
             }
             subscriber.onNext(unavailable);

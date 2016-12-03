@@ -43,23 +43,6 @@ public class FileItem extends FolderItem {
         return true;
     }
 
-/*
-    @PostConstruct
-    public void isUp2date() {
-        subscriber = fileInSync.call(file);
-        Observable.create(subscriber)
-                .subscribe(inSinch -> {
-                    log.debug("file:{} in synch:{}", file.getPath(), inSinch);
-                    if (!inSinch) {
-                        imageView.getStyleClass().clear();
-                        imageView.getStyleClass().add("tree-file-saving");
-                    } else {
-                        imageView.getStyleClass().clear();
-                        imageView.getStyleClass().add("tree-file-saved-true");
-                    }
-                }, err -> log.error(err.getMessage(), err));
-    }
-*/
 
     @Override
     public boolean equals(final Object o) {

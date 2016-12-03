@@ -17,28 +17,25 @@ import org.slf4j.Logger;
 
 import rx.Observable;
 import rx.Subscriber;
+import ubicrypt.core.provider.ProviderStatus;
 import ubicrypt.core.provider.UbiProvider;
 
 import static org.slf4j.LoggerFactory.getLogger;
-import static rx.Observable.create;
 
-public class InitLockChecker implements Observable.OnSubscribe<LockStatus> {
+public class InitLockChecker implements Observable.OnSubscribe<ProviderStatus> {
     private static final Logger log = getLogger(InitLockChecker.class);
-    private final Observable.OnSubscribe<LockStatus> proxy;
     private final UbiProvider provider;
     private final long deviceId;
 
-    public InitLockChecker(Observable.OnSubscribe<LockStatus> proxy, UbiProvider provider, int deviceId) {
-        this.proxy = proxy;
+    public InitLockChecker(UbiProvider provider, int deviceId) {
         this.provider = provider;
         this.deviceId = deviceId;
     }
 
     @Override
-    public void call(Subscriber<? super LockStatus> subscriber) {
+    public void call(Subscriber<? super ProviderStatus> subscriber) {
         provider.init(deviceId)
                 .doOnNext(status -> log.info("initialize {}, status:{}", provider, status))
-                .flatMap(status -> create(proxy))
                 .subscribe(subscriber);
     }
 }

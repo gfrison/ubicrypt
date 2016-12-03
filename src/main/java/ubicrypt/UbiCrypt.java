@@ -117,8 +117,8 @@ public class UbiCrypt extends Application {
             encrypt(Collections.singletonList(kp.getPublicKey()), new ByteArrayInputStream(StringUtils.repeat("ciao", 1).getBytes()));
         } catch (Exception e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Strong Encryption Unsupported");
-            alert.setHeaderText("JCE Unlimited Strength Jurisdiction policy files required");
+            alert.setTitle("Strong Encryption Required");
+            alert.setHeaderText("Install JCE Unlimited Strength Jurisdiction policy files");
             alert.setContentText("You can install the Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy Files, which are required to use strong encryption.\n" +
                     "Download the files and instructions for Java 8.\n" +
                     "Locate the jre\\lib\\security directory for the Java instance that the UbiCrypt is using.\n" +
@@ -134,11 +134,7 @@ public class UbiCrypt extends Application {
             Platform.exit();
         }
         final File file = securityFile().toFile();
-        stage.setScene(anchor().showScene(file.exists() ? "login" : "createKey"));
-/*
-        stage.setWidth(500);
-        stage.setHeight(500);
-*/
+        stage.setScene(anchor().show(file.exists() ? "login" : "createKey", getHostServices()));
         stage.show();
         final UbiCrypt ubiCrypt = this;
         anchor().getPasswordStream().subscribe(pwd -> {
@@ -147,10 +143,10 @@ public class UbiCrypt extends Application {
             app.addInitializers(new FixPassPhraseInitializer(pwd));
             app.setLogStartupInfo(true);
             ctx = app.run(arguments);
-
             ctx.getAutowireCapableBeanFactory().autowireBean(ubiCrypt);
             ctx.getBeanFactory().registerSingleton("stage", stage);
             ctx.getBeanFactory().registerSingleton("ctx", anchor());
+            ctx.getBeanFactory().registerSingleton("hostService", getHostServices());
             ControllerFactory cfactory = new ControllerFactory(ctx);
             StackNavigator navigator = new StackNavigator(null, "main", cfactory);
             stage.setScene(new Scene(navigator.open()));

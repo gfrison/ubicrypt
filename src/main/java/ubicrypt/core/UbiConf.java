@@ -25,7 +25,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Scope;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,20 +40,20 @@ import rx.subjects.ReplaySubject;
 import rx.subjects.Subject;
 import ubicrypt.core.crypto.PGPService;
 import ubicrypt.core.dto.LocalConfig;
-import ubicrypt.core.dto.UbiFile;
 import ubicrypt.core.local.LocalRepository;
 import ubicrypt.core.local.OnNewLocal;
 import ubicrypt.core.provider.ProviderCommander;
 import ubicrypt.core.provider.ProviderDescriptor;
 import ubicrypt.core.provider.RemoteCtxConf;
 import ubicrypt.core.provider.file.FileProvider;
+import ubicrypt.core.provider.gdrive.GDriveProvider;
 import ubicrypt.core.provider.s3.S3Provider;
 import ubicrypt.core.util.FileInSync;
 import ubicrypt.core.util.StreamAppender;
 import ubicrypt.core.watch.WatchConf;
-import ubicrypt.ui.files.FileItem;
 
 @Configuration
+@EnableAsync
 @Import({WatchConf.class, BaseConf.class, RemoteCtxConf.class})
 public class UbiConf {
     private static final Logger log = LoggerFactory.getLogger(UbiConf.class);
@@ -120,7 +120,8 @@ public class UbiConf {
     @Bean
     public List<ProviderDescriptor> providerDescriptors() {
         return ImmutableList.of(new ProviderDescriptor(FileProvider.class, "file", "local folder", new ImageView("images/folder-48.png")),
-                new ProviderDescriptor(S3Provider.class, "s3", "Amazon S3", new ImageView("images/Amazon-48.png"))
+                new ProviderDescriptor(S3Provider.class, "s3", "Amazon S3", new ImageView("images/Amazon-48.png")),
+                new ProviderDescriptor(GDriveProvider.class, "gdrive", "Google Drive", new ImageView("images/gdrive.png"))
         );
     }
 

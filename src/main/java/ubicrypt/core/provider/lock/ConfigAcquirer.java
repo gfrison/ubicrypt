@@ -28,11 +28,13 @@ import ubicrypt.core.exp.NotFoundException;
 import ubicrypt.core.provider.ProviderStatus;
 
 import static org.slf4j.LoggerFactory.getLogger;
+import static rx.Observable.create;
 import static rx.Observable.just;
 import static ubicrypt.core.provider.ProviderStatus.active;
 import static ubicrypt.core.provider.ProviderStatus.error;
 import static ubicrypt.core.provider.ProviderStatus.expired;
 import static ubicrypt.core.provider.ProviderStatus.initialized;
+import static ubicrypt.core.provider.ProviderStatus.unauthorized;
 import static ubicrypt.core.provider.ProviderStatus.unavailable;
 import static ubicrypt.core.provider.ProviderStatus.uninitialized;
 
@@ -43,47 +45,67 @@ public class ConfigAcquirer implements Observable.OnSubscribe<AcquirerReleaser> 
     private final RemoteIO<RemoteConfig> remoteIO;
     private final Subject<ProviderStatus, ProviderStatus> statusStream = PublishSubject.create();
     private final Observable<ProviderStatus> statuses = statusStream.share();
+    private final Observable.OnSubscribe<ProviderStatus> initializer;
     AtomicLong inprogress = new AtomicLong(0);
     private ProviderStatus status = uninitialized;
     private RemoteConfig config;
     private String provider = "";
+    private Observable.OnSubscribe<AcquirerReleaser> acquirer = new ActualAcquirer();
 
-    public ConfigAcquirer(Observable.OnSubscribe<LockStatus> lockChecker, RemoteIO<RemoteConfig> remoteIO) {
+    public ConfigAcquirer(Observable.OnSubscribe<ProviderStatus> initializer, Observable.OnSubscribe<LockStatus> lockChecker, RemoteIO<RemoteConfig> remoteIO) {
         this.lockChecker = lockChecker;
         this.remoteIO = remoteIO;
         statuses.subscribe(st -> log.debug("incoming status:{}", st));
+        this.initializer = initializer;
     }
 
 
     @Override
     public void call(Subscriber<? super AcquirerReleaser> subscriber) {
-        log.trace("status:{}", status);
-        switch (status) {
-            case uninitialized:
-            case expired:
-                Observable.create(lockChecker).subscribe(new LockSubscriber(subscriber));
-            case initialized:
-                statuses.filter(event -> event == error || event == unavailable || event == active).flatMap(event -> {
-                    if (event == error || event == unavailable) {
-                        log.debug("return no configuration");
-                        return just(null);
-                    }
-                    //active
+        if (status == uninitialized || status == unauthorized) {
+            create(initializer)
+                    .doOnNext(st -> {
+                        setStatus(st);
+                        statusStream.onNext(st);
+                    })
+                    .filter(st -> st == initialized)
+                    .flatMap(st -> create(acquirer))
+                    .subscribe(subscriber);
+        } else {
+            create(acquirer).subscribe(subscriber);
+        }
+    }
+
+    class ActualAcquirer implements Observable.OnSubscribe<AcquirerReleaser> {
+        @Override
+        public void call(Subscriber<? super AcquirerReleaser> subscriber) {
+            log.trace("status:{}", status);
+            switch (status) {
+                case expired:
+                case initialized:
+                    Observable.create(lockChecker).subscribe(new LockSubscriber(subscriber));
+                    statuses.filter(event -> event == error || event == unavailable || event == active).flatMap(event -> {
+                        if (event == error || event == unavailable) {
+                            log.debug("return no configuration");
+                            return just(null);
+                        }
+                        //active
+                        inprogress.incrementAndGet();
+                        return just(new AcquirerReleaser(config, () -> inprogress.decrementAndGet()));
+                    }).firstOrDefault(null).filter(Objects::nonNull).subscribe(subscriber);
+                    break;
+                case active:
                     inprogress.incrementAndGet();
-                    return just(new AcquirerReleaser(config, () -> inprogress.decrementAndGet()));
-                }).firstOrDefault(null).filter(Objects::nonNull).subscribe(subscriber);
-                break;
-            case active:
-                inprogress.incrementAndGet();
-                subscriber.onNext(new AcquirerReleaser(config, () -> inprogress.decrementAndGet()));
-                subscriber.onCompleted();
-                break;
-            case unavailable:
-            case error:
-                subscriber.onCompleted();
-                break;
-            default:
-                log.warn("unmanaged status:{}", status);
+                    subscriber.onNext(new AcquirerReleaser(config, () -> inprogress.decrementAndGet()));
+                    subscriber.onCompleted();
+                    break;
+                case unavailable:
+                case error:
+                    subscriber.onCompleted();
+                    break;
+                default:
+                    log.warn("unmanaged status:{}", status);
+            }
         }
     }
 
@@ -121,7 +143,6 @@ public class ConfigAcquirer implements Observable.OnSubscribe<AcquirerReleaser> 
             setStatus(error);
             subscriber.onError(e);
             statusStream.onNext(error);
-//            call.onNext(status);
         }
 
         @Override
@@ -129,8 +150,6 @@ public class ConfigAcquirer implements Observable.OnSubscribe<AcquirerReleaser> 
             log.debug("lock status:{}", lockStatus);
             switch (lockStatus) {
                 case available:
-                    setStatus(initialized);
-                    statusStream.onNext(initialized);
                     Observable.create(remoteIO)
                             .onErrorResumeNext(err -> {
                                 if (err instanceof NotFoundException) {

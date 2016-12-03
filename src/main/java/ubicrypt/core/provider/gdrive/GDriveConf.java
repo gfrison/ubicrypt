@@ -18,10 +18,13 @@ import java.util.stream.Collectors;
 
 public class GDriveConf implements DataStore {
     private String id;
+    private String folderName = "ubicrypt";
 
     private Map<String, byte[]> map = new ConcurrentHashMap<>();
     @JsonIgnore
     private DataStoreFactory dataStoreFactory;
+    private String folderId;
+    private String email;
 
     public GDriveConf() {
     }
@@ -120,5 +123,29 @@ public class GDriveConf implements DataStore {
 
     public void setDataStoreFactory(DataStoreFactory dataStoreFactory) {
         this.dataStoreFactory = dataStoreFactory;
+    }
+
+    public String getFolderName() {
+        return folderName;
+    }
+
+    public void setFolderName(String folderName) {
+        this.folderName = folderName;
+    }
+
+    public void setFolderId(String folderId) {
+        this.folderId = folderId;
+    }
+
+    public String getFolderId() {
+        return folderId;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

@@ -57,6 +57,11 @@ public class FTProvider extends UbiProvider {
         return connect().map(bool -> ProviderStatus.initialized);
     }
 
+    @Override
+    public String code() {
+        return "ftp";
+    }
+
     private Observable<FTPClient> connect() {
         return Observable.<FTPClient>create(subscriber -> {
             final FTPClient client = new FTPClient();

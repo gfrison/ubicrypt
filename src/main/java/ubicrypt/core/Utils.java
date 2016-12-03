@@ -477,4 +477,5 @@ public class Utils {
     public static Observable.OnSubscribe<Boolean> emptySubject() {
         return subscriber -> subscriber.onCompleted();
     }
+
 }

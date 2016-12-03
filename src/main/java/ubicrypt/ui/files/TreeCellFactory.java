@@ -15,10 +15,12 @@ package ubicrypt.ui.files;
 
 import org.slf4j.Logger;
 
+import java.nio.file.Path;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import javafx.application.HostServices;
 import javafx.collections.ListChangeListener;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
@@ -39,8 +41,12 @@ public class TreeCellFactory extends TreeCell<ITreeItem> implements ListChangeLi
     private final CopyOnWriteArrayList<TreeItem<ITreeItem>> selected = new CopyOnWriteArrayList<>();
     private final ContextMenu menu;
     private final MenuItem remove;
+    private final HostServices hostServices;
+    private final Path basePath;
 
-    public TreeCellFactory(TreeView<ITreeItem> treeView1, Function<UbiFile, Observable<Boolean>> fileUntracker, Observable<Object> appEvents) {
+    public TreeCellFactory(TreeView<ITreeItem> treeView1, Function<UbiFile, Observable<Boolean>> fileUntracker, Observable<Object> appEvents, HostServices hostServices, Path basePath) {
+        this.basePath = basePath;
+        this.hostServices = hostServices;
         treeView = treeView1;
         treeView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         //multi selection listener for tree view
@@ -79,19 +85,17 @@ public class TreeCellFactory extends TreeCell<ITreeItem> implements ListChangeLi
         } else {
             setText(getItem() == null ? "" : getItem().getLabel());
             setGraphic(item.getGraphics());
-/*
-            setOnMouseClicked(event -> {
-                if (event.getButton() == MouseButton.SECONDARY) {
-                    log.debug("right click:{}", event);
-//                    item.onMouseSecondaryClick().ifPresent(eventHandler -> eventHandler.handle(event));
-                    return;
-                }
-//                item.onMousePrimaryClick().ifPresent(eventHandler -> eventHandler.handle(event));
-
-
-            });
-*/
             if (item instanceof FileItem) {
+                setOnMouseClicked(event -> {
+                    if (event.getClickCount() == 2) {
+                        log.debug("click event file:{}", ((FileItem) item).getFile());
+                        try {
+                            hostServices.showDocument("file://" + basePath.resolve(((FileItem) item).getFile().getPath()).toString());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
                 setContextMenu(menu);
                 return;
             }
@@ -104,12 +108,6 @@ public class TreeCellFactory extends TreeCell<ITreeItem> implements ListChangeLi
         while (change.next()) {
             selected.clear();
             selected.addAll(change.getList());
-/*
-            selected.removeAll(change.getRemoved());
-            if (change.wasAdded() && change.getFrom() >= 0 && change.getTo() <= change.getList().size() && change.getFrom() <= change.getTo()) {
-                selected.addAll(change.getAddedSubList());
-            }
-*/
             if (selected.size() != change.getList().size()) {
                 log.warn("select wrong size:{} instead of:{}", selected.size(), change.getList().size());
             }

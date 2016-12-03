@@ -69,7 +69,7 @@ public class StackNavigator {
 
     public <R> Parent loadFrom(final Optional<R> data) {
         log.debug("fxml:{}", levels.peek());
-        final FXMLLoader loader = new FXMLLoader(Anchor.class.getResource(format("/fxml/%s.fxml", levels.peek())), bundle);
+        final FXMLLoader loader = new FXMLLoader(StackNavigator.class.getResource(format("/fxml/%s.fxml", levels.peek())), bundle);
         loader.setControllerFactory(controllerFactory);
         try {
             Parent parent;

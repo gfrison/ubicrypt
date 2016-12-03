@@ -233,7 +233,7 @@ public class QueueLinerTest {
             subscriber.onNext(true);
             subscriber.onCompleted();
         }));
-        final int i1 = 9999;
+        final int i1 = 999;
         IntStream.range(0, i1).forEach(i -> epi1.call(timer(1, MILLISECONDS).map(y -> {
             result.incrementAndGet();
             return true;

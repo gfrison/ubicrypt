@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import javax.inject.Inject;
 
+import javafx.application.HostServices;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -83,6 +84,8 @@ public class FilesController implements Initializable, ApplicationContextAware {
     @Inject
     @Qualifier("appEvents")
     private Observable<Object> appEvents;
+    @Inject
+    HostServices hostServices;
 
     private final Consumer<List<File>> filesAdder = files -> Observable.merge(files.stream().map(file -> {
         log.debug("adding file:{}", file);
@@ -138,7 +141,7 @@ public class FilesController implements Initializable, ApplicationContextAware {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         fxml = substringBefore(substringAfterLast(url.getFile(), "/"), ".fxml");
-        treeView.setCellFactory(treeView1 -> new TreeCellFactory(treeView1, fileUntracker, null));
+        treeView.setCellFactory(treeView1 -> new TreeCellFactory(treeView1, fileUntracker, null, hostServices,basePath));
         localConfig.getLocalFiles().stream()
                 .filter(Utils.trackedFile)
                 .forEach(localFile -> addFiles(localFile.getPath().iterator(), basePath, root, localFile));
@@ -211,11 +214,6 @@ public class FilesController implements Initializable, ApplicationContextAware {
     private static void removeItem(final TreeItem<ITreeItem> item) {
         final TreeItem<ITreeItem> parent = item.getParent();
         parent.getChildren().remove(item);
-/*
-        if (parent.getChildren().isEmpty() && !(parent.getValue() instanceof RootFilesItem)) {
-            removeItem(parent);
-        }
-*/
     }
 
     private synchronized TreeItem<ITreeItem> addFiles(final Iterator<Path> it, final Path rootPath, final TreeItem<ITreeItem> root, final LocalFile file) {

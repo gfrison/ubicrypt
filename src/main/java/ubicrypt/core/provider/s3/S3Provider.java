@@ -201,6 +201,11 @@ public class S3Provider extends UbiProvider {
     }
 
     @Override
+    public String code() {
+        return "s3";
+    }
+
+    @Override
     public String providerId() {
         return "s3://" + conf.getBucket();
     }

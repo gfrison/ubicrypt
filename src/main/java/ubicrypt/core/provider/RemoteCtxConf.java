@@ -33,6 +33,7 @@ import ubicrypt.core.InitLocalFiles;
 import ubicrypt.core.ProgressFile;
 import ubicrypt.core.dto.UbiFile;
 import ubicrypt.core.events.ShutdownRegistration;
+import ubicrypt.core.provider.gdrive.GDriveAuthorizer;
 import ubicrypt.core.provider.lock.RemoveLockOnShutdown;
 import ubicrypt.core.util.InProgressTracker;
 import ubicrypt.core.util.QueueLiner;
@@ -113,6 +114,11 @@ public class RemoteCtxConf {
     @Bean
     public QueueLiner<Boolean> queueLiner(@Value("${saveConfIntervalMs:30000}") final Long saveConfIntervalMs) {
         return new QueueLiner<>(saveConfIntervalMs);
+    }
+
+    @Bean
+    public GDriveAuthorizer gDriveAuthorizer() {
+        return new GDriveAuthorizer();
     }
 
 

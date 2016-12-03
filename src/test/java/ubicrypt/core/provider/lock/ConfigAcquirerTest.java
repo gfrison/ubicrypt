@@ -27,15 +27,18 @@ import java.util.concurrent.atomic.AtomicReference;
 import rx.Observable;
 import rx.Subscriber;
 import rx.subjects.PublishSubject;
+import ubicrypt.core.JustOnSubscribe;
 import ubicrypt.core.RemoteIO;
 import ubicrypt.core.dto.RemoteConfig;
 import ubicrypt.core.exp.NotFoundException;
+import ubicrypt.core.provider.ProviderStatus;
 import ubicrypt.core.provider.UbiProvider;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.slf4j.LoggerFactory.getLogger;
+import static ubicrypt.core.provider.ProviderStatus.initialized;
 
 public class ConfigAcquirerTest {
     private static final Logger log = getLogger(ConfigAcquirerTest.class);
@@ -68,7 +71,7 @@ public class ConfigAcquirerTest {
                 configPub.subscribe(subscriber);
             }
         };
-        acquirer = new ConfigAcquirer(lockChecker, configIO);
+        acquirer = new ConfigAcquirer(new JustOnSubscribe(ProviderStatus.initialized), lockChecker, configIO);
     }
 
     @Test

@@ -18,6 +18,8 @@ import com.google.common.collect.Lists;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.log4j.Level;
+import org.apache.log4j.LogManager;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.junit.After;
 import org.junit.Before;
@@ -109,6 +111,7 @@ public class FileCommanderIT implements ApplicationContextAware {
                 .subscribeOn(Schedulers.io())
                 .toBlocking().first();
         Files.createDirectories(localRepository.getBasePath());
+        LogManager.getLogger(QueueLiner.class).setLevel(Level.TRACE);
     }
 
     @After

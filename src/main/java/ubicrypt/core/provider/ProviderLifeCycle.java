@@ -23,6 +23,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -37,7 +38,6 @@ import rx.Subscription;
 import rx.functions.Actions;
 import rx.internal.operators.BufferUntilSubscriber;
 import rx.subjects.Subject;
-import ubicrypt.core.Utils;
 import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.dto.ProviderLock;
 import ubicrypt.core.dto.RemoteConfig;
@@ -78,12 +78,12 @@ public class ProviderLifeCycle implements ApplicationContextAware {
     @PostConstruct
     public void init() {
         log.info("init providers");
-        localConfig.getProviders().stream().forEach(provider -> activateProvider(provider).subscribe(Actions.empty(), err -> log.error("error on initializing provider:{}", provider, err)));
+        localConfig.getProviders().stream().forEach(provider -> initializeProvider(provider).subscribe(Actions.empty(), err -> log.error("error on initializing provider:{}", provider, err)));
     }
 
 
-    public Observable<Boolean> activateProvider(UbiProvider provider) {
-        return Observable.create(subscriber -> {
+    public Observable<Boolean> initializeProvider(UbiProvider provider) {
+        return create(subscriber -> {
             try {
                 ObjectSerializer serializer = springIt(ctx, new ObjectSerializer(provider));
                 ObjectIO<ProviderLock> lockIO = new ObjectIO(serializer, provider.getLockFile(), ProviderLock.class);
@@ -92,9 +92,8 @@ public class ProviderLifeCycle implements ApplicationContextAware {
                  * renew lock when download/upload in progress
                  */
                 lockCheker.setShouldExtendLock(() -> inProgressTracker.inProgress());
-                InitLockChecker initLock = new InitLockChecker(lockCheker, provider, Utils.deviceId());
                 ObjectIO<RemoteConfig> configIO = new ObjectIO<>(serializer, provider.getConfFile(), RemoteConfig.class);
-                ConfigAcquirer acquirer = new ConfigAcquirer(initLock, configIO);
+                ConfigAcquirer acquirer = new ConfigAcquirer(new InitLockChecker(provider, deviceId), lockCheker, configIO);
                 acquirer.setProviderRef(provider.toString());
                 RemoteRepository repository = springIt(ctx, new RemoteRepository(acquirer, provider, configIO));
                 repository.setActions(Arrays.asList(springIt(ctx, new OnUpdateRemote(provider, repository)),
@@ -121,7 +120,6 @@ public class ProviderLifeCycle implements ApplicationContextAware {
                 create(acquirer).subscribe(releaser -> {
                     releaser.getReleaser().call();
                     subscriber.onNext(true);
-                    providerEvents.onNext(new ProviderEvent(ProviderStatus.added, hook));
                 }, err -> {
                     log.error("error on provider:{}", provider);
                     subscriber.onError(err);
@@ -130,6 +128,22 @@ public class ProviderLifeCycle implements ApplicationContextAware {
                 subscriber.onError(e);
             }
         });
+    }
+
+    public Observable<Boolean> activateProvider(UbiProvider provider) {
+        Optional<Map.Entry<ProviderHook, AtomicBoolean>> first = statusProvider.entrySet().stream()
+                .filter(entry -> entry.getKey().getProvider().equals(provider))
+                .findFirst();
+        if (!first.isPresent()) {
+            return just(false);
+        }
+        return create(first.get().getKey().getAcquirer())
+                .map(acquirerReleaser -> {
+                    acquirerReleaser.getReleaser().call();
+                    return true;
+                })
+                .defaultIfEmpty(false);
+
     }
 
     public Observable<Boolean> deactivateProvider(UbiProvider provider) {

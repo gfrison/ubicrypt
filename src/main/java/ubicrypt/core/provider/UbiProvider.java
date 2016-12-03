@@ -105,4 +105,10 @@ public abstract class UbiProvider {
 
     }
 
+    public abstract String code();
+
+    public Observable<Long> availableSpace() {
+        return Observable.just(Long.MAX_VALUE);
+    }
+
 }

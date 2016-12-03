@@ -13,7 +13,7 @@ apply plugin: 'application'
 apply plugin: 'idea'
 apply plugin: 'jacoco'
 
-version = '0.15'
+version = '0.16'
 sourceCompatibility = 1.8
 
 project.group = 'ubicrypt'
@@ -100,7 +100,7 @@ dependencies {
     compile "com.fasterxml.jackson.dataformat:jackson-dataformat-smile:$jacksonVersion"
 
 
-    compile 'io.reactivex:rxjava:1.2.0'
+    compile 'io.reactivex:rxjava:1.2.3'
     compile 'javax.inject:javax.inject:1'
     compile 'commons-net:commons-net:3.5'
     compile 'commons-io:commons-io:2.5'

@@ -2,26 +2,44 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Hyperlink?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
-<BorderPane xmlns:fx="http://javafx.com/fxml/1" fx:id="createKeyPane"
-            xmlns="http://javafx.com/javafx/8.0.72" prefHeight="500.0" prefWidth="500.0"
-            fx:controller="ubicrypt.ui.ctrl.CreateKeyController">
+<?import javafx.scene.text.Font?>
+<?import org.controlsfx.glyphfont.Glyph?>
+
+<BorderPane fx:id="createKeyPane" prefHeight="500.0" prefWidth="500.0" xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ubicrypt.ui.ctrl.CreateKeyController">
     <center>
         <VBox alignment="CENTER" spacing="20.0" BorderPane.alignment="TOP_CENTER">
             <children>
-                <Label text="Setup Password"/>
-                <PasswordField fx:id="pwd" promptText="Set Password"/>
-                <PasswordField fx:id="pwd2" promptText="Repeat Password"/>
-                <Label fx:id="errorLabel" text="Passwords don't match" textFill="#e42611"
-                       visible="false"/>
-                <Button fx:id="submit" mnemonicParsing="false" text="Create New Key"/>
+                <Label text="Setup Password" />
+                <PasswordField fx:id="pwd" promptText="Set Password" />
+                <PasswordField fx:id="pwd2" promptText="Repeat Password" />
+            <Label text="Remember: the Password is unrecoverable" textAlignment="CENTER">
+               <font>
+                  <Font name="System Italic" size="10.0" />
+               </font>
+            </Label>
+                <Label fx:id="errorLabel" text="Passwords don't match" textFill="#e42611" visible="false" />
+            <HBox alignment="CENTER" prefHeight="15.0" prefWidth="400.0">
+               <children>
+                  <CheckBox alignment="CENTER" mnemonicParsing="false" onAction="#agree" text="I Agree on " />
+                  <Hyperlink alignment="CENTER" onAction="#linkLicense" text="UbiCrypt License" />
+               </children>
+            </HBox>
+                <Button fx:id="submit" defaultButton="true" disable="true" mnemonicParsing="false" text="Create New Key">
+                    <graphic>
+                        <Glyph fontFamily="FontAwesome" icon="USER_PLUS" />
+                    </graphic>
+                </Button>
             </children>
         </VBox>
     </center>
     <padding>
-        <Insets left="50.0" right="50.0"/>
+        <Insets left="50.0" right="50.0" />
     </padding>
 </BorderPane>

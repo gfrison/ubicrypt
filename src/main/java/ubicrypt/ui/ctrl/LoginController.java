@@ -19,7 +19,9 @@ import org.slf4j.Logger;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 
+import javafx.application.HostServices;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -34,7 +36,7 @@ import ubicrypt.ui.Anchor;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
-public class LoginController implements Initializable {
+public class LoginController implements Initializable,Consumer<HostServices> {
     private static final Logger log = getLogger(LoginController.class);
     @FXML
     Button submit;
@@ -50,12 +52,12 @@ public class LoginController implements Initializable {
         try {
             if (StringUtils.isNotEmpty(pwd.getText()) && Utils.readPrivateKey(pwd.getText().toCharArray()) != null) {
                 log.debug("password match");
+                submit.setDisable(true);
                 errorLabel.setVisible(false);
                 final PublishSubject<char[]> passwordStream = Anchor.anchor().getPasswordStream();
                 passwordStream.onNext(pwd.getText().toCharArray());
                 passwordStream.onCompleted();
                 errorLabel.setVisible(false);
-                submit.setDisable(true);
                 return;
             }
         } catch (PGPException e) {
@@ -70,5 +72,10 @@ public class LoginController implements Initializable {
         submit.setOnMouseClicked(handler);
         submit.setOnKeyPressed(handler);
         pwd.setOnKeyPressed(handler);
+    }
+
+    @Override
+    public void accept(HostServices hostServices) {
+
     }
 }

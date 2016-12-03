@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import org.controlsfx.glyphfont.Glyph?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
@@ -51,10 +52,19 @@
                 <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
             </rowConstraints>
             <children>
-                <Button fx:id="cancel" cancelButton="true" mnemonicParsing="false" text="Cancel"/>
+                <Button fx:id="cancel" cancelButton="true" mnemonicParsing="false" text="Cancel">
+                    <graphic>
+                        <Glyph fontFamily="FontAwesome" icon="BACKWARD"/>
+                    </graphic>
+                </Button>
                 <Button fx:id="importConfig" defaultButton="true" mnemonicParsing="false"
                         text="Import"
-                        GridPane.columnIndex="1"/>
+                        GridPane.columnIndex="1">
+                    <graphic>
+                        <Glyph fontFamily="FontAwesome" icon="COPY"/>
+                    </graphic>
+
+                </Button>
             </children>
         </GridPane>
     </bottom>

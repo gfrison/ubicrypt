@@ -22,20 +22,11 @@ import ubicrypt.core.provider.UbiProvider;
 
 import static ubicrypt.core.Utils.copySynchronized;
 
-public class RemoteConfig {
-    private Set<RemoteFile> remoteFiles = ConcurrentHashMap.newKeySet();
+public class RemoteConfig extends RemoteFiles{
     @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
     private Set<UbiProvider> providers = ConcurrentHashMap.newKeySet();
 
     public RemoteConfig() {
-    }
-
-    public Set<RemoteFile> getRemoteFiles() {
-        return remoteFiles;
-    }
-
-    public void setRemoteFiles(final Set<RemoteFile> remoteFiles) {
-        this.remoteFiles = copySynchronized(remoteFiles);
     }
 
     public Set<UbiProvider> getProviders() {

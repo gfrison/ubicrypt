@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import org.controlsfx.glyphfont.Glyph?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<BorderPane fx:id="mainPane" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/8.0.65"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="ubicrypt.ui.ctrl.providers.GDriveInfoController">
+    <top>
+        <VBox fx:id="topbox" alignment="CENTER" prefHeight="24.0" prefWidth="190.0" spacing="10.0">
+            <children>
+                <Label alignment="CENTER" contentDisplay="CENTER" text="%title.provider.gdrive"
+                       textAlignment="CENTER">
+                    <font>
+                        <Font size="17.0"/>
+                    </font>
+                </Label>
+            </children>
+            <BorderPane.margin>
+                <Insets top="10.0"/>
+            </BorderPane.margin>
+        </VBox>
+    </top>
+    <center>
+        <VBox alignment="TOP_CENTER" BorderPane.alignment="TOP_CENTER" VBox.vgrow="ALWAYS">
+            <children>
+                <GridPane alignment="TOP_CENTER" maxWidth="1.7976931348623157E308"
+                          VBox.vgrow="NEVER">
+                    <columnConstraints>
+                        <ColumnConstraints halignment="LEFT" hgrow="SOMETIMES" minWidth="10.0"
+                                           prefWidth="100.0"/>
+                        <ColumnConstraints halignment="LEFT" hgrow="SOMETIMES" minWidth="10.0"
+                                           prefWidth="100.0"/>
+                    </columnConstraints>
+                    <rowConstraints>
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                    </rowConstraints>
+                    <children>
+                        <Label text="Google E-Mail"/>
+                        <Label text="Status" GridPane.rowIndex="1"/>
+                        <Label text="Number of Files" GridPane.rowIndex="2"/>
+                        <Label text="Available Space" GridPane.rowIndex="3"/>
+                        <Label fx:id="email" GridPane.columnIndex="1"/>
+                        <Label fx:id="status" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                        <Label fx:id="numberFiles" text="not available" GridPane.columnIndex="1"
+                               GridPane.rowIndex="2"/>
+                        <Label fx:id="totalSize" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                    </children>
+                    <VBox.margin>
+                        <Insets left="60.0" right="60.0" top="20.0"/>
+                    </VBox.margin>
+                    <padding>
+                        <Insets bottom="30.0"/>
+                    </padding>
+                </GridPane>
+                <Button fx:id="gdrive"
+                        mnemonicParsing="false" onMouseClicked="#authorize"
+                        text="Authorize UbiCrypt to access Google Drive" visible="false">
+                </Button>
+                <Region prefHeight="20">
+                    <opaqueInsets>
+                        <Insets top="30.0"/>
+                    </opaqueInsets>
+                </Region>
+                <Label fx:id="message"/>
+                <Region prefHeight="20">
+                    <opaqueInsets>
+                        <Insets top="30.0"/>
+                    </opaqueInsets>
+                </Region>
+                <Label fx:id="error" styleClass="error"/>
+                <Region prefHeight="200.0" VBox.vgrow="ALWAYS"/>
+            </children>
+        </VBox>
+    </center>
+    <bottom>
+        <HBox alignment="CENTER_RIGHT" styleClass="backnext" BorderPane.alignment="BOTTOM_CENTER">
+            <children>
+                <Button fx:id="back" mnemonicParsing="false" onMouseClicked="#back" text="Back">
+                    <graphic>
+                        <Glyph fontFamily="FontAwesome" icon="BACKWARD"/>
+                    </graphic>
+                </Button>
+            </children>
+            <padding>
+                <Insets bottom="12.0" left="12.0" right="12.0" top="12.0"/>
+            </padding>
+        </HBox>
+    </bottom>
+</BorderPane>

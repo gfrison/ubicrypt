@@ -31,7 +31,6 @@ import ubicrypt.core.provider.ProviderEvent;
 import ubicrypt.core.provider.ProviderStatus;
 
 import static ubicrypt.core.provider.ProviderStatus.active;
-import static ubicrypt.core.provider.ProviderStatus.added;
 import static ubicrypt.core.provider.ProviderStatus.error;
 import static ubicrypt.core.provider.ProviderStatus.initialized;
 import static ubicrypt.core.provider.ProviderStatus.removed;
@@ -51,7 +50,7 @@ public class InitFileSyncronizer {
     @Qualifier("fileSynchronizer")
     Observable.OnSubscribe<Boolean> fileSynchronizer;
     private Action0 onComplete = Actions.empty();
-    private static List<ProviderStatus> ignoreStatuses = Arrays.asList(added, uninitialized, initialized, error, removed);
+    private static List<ProviderStatus> ignoreStatuses = Arrays.asList(uninitialized, initialized, error, removed);
 
     /**
      * when all provider are not uninitialized, begin the sync for all files

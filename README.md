@@ -29,8 +29,12 @@ _Cloud storage is pervasive and cheap, but it raises concerns on privacy, securi
 
 ### Cloud Storages
 UbiCrypt stores and replicates your data in many storage types. So far it connects to:
-  - Amazon S3.
-  - Local Filesystem.
+
+  - ![Google Drive](src/main/resources/images/gdrive.png) Google Drive.
+  
+  - ![Amazon S3](src/main/resources/images/Amazon-48.png) Amazon S3.
+  
+  - ![Local Filesystem](src/main/resources/images/folder.png) Local Filesystem.
 
 #### Run UbiCrypt 
 
@@ -42,9 +46,9 @@ Prerequisites:
   
 By *appdater*:
 
-`wget https://bintray.com/gfrison/maven/download_file?file_path=appdater-0.4-all.jar -O appdater-0.4.jar`
+`wget https://bintray.com/gfrison/maven/download_file?file_path=appdater-0.6-all.jar -O appdater-0.6.jar`
 
-`java -jar appdater-0.4.jar`
+`java -jar appdater-0.6.jar`
 
 By source:
 

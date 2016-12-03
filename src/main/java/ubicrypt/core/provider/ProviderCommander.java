@@ -26,6 +26,7 @@ import javax.inject.Inject;
 import rx.Observable;
 import rx.functions.Actions;
 import rx.internal.operators.BufferUntilSubscriber;
+import rx.schedulers.Schedulers;
 import rx.subjects.Subject;
 import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.exp.AlreadyManagedException;
@@ -54,7 +55,7 @@ public class ProviderCommander {
                 subscriber.onError(new AlreadyManagedException(provider));
                 return;
             }
-            providerLifeCycle.activateProvider(provider).doOnCompleted(() -> {
+            providerLifeCycle.initializeProvider(provider).doOnCompleted(() -> {
                 localConfig.getProviders().add(provider);
                 subscriber.onNext(true);
                 providerLifeCycle.enabledProviders().stream()
@@ -64,7 +65,9 @@ public class ProviderCommander {
                             rconf.getProviders().add(provider);
                             return rconf;
                         }));
-            }).subscribe(Actions.empty(), subscriber::onError, subscriber::onCompleted);
+            })
+                    .subscribeOn(Schedulers.io())
+                    .subscribe(Actions.empty(), subscriber::onError, subscriber::onCompleted);
         });
     }
 

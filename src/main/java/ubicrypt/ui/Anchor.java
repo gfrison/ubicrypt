@@ -82,8 +82,12 @@ public class Anchor {
         return levels.stream().map(Visual::getFxml).collect(Collectors.toList());
     }
 
-    public Scene showScene(final String fxml) {
+    public Scene show(final String fxml) {
         return showScene(fxml, null).getScene();
+    }
+
+    public <R> Scene show(final String fxml, final R data) {
+        return showScene(fxml, data).getScene();
     }
 
     private <R> Visual showScene(final String fxml, final R data) {
