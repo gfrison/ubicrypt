@@ -61,8 +61,9 @@ public class RemoteRepository implements IRepository {
     @Resource
     private Subject<FileEvent, FileEvent> fileEvents = PublishSubject.create();
     @Resource
-    private QueueLiner<Boolean> queueLiner;
-    private Func1<Observable<Boolean>, Observable<Boolean>> epilogued;
+    private QueueLiner queueLiner;
+    private Func1<Observable<Boolean>, Observable<Boolean>> outboundQueue;
+    private Func1<Observable<InputStream>, Observable<InputStream>> inboundQueue;
     private RemoteFileGetter fileGetter;
     private List<IRemoteAction> actions;
 
@@ -72,13 +73,14 @@ public class RemoteRepository implements IRepository {
         this.provider = provider;
         this.configIO = configIO;
         fileGetter = new RemoteFileGetter(acquirer, provider);
-        this.epilogued = (booleanObservable -> booleanObservable);
+        this.outboundQueue = (booleanObservable -> booleanObservable);
     }
 
 
     @PostConstruct
     public void init() {
-        this.epilogued = queueLiner.createEpiloguer(() -> saveConf(releaserRef.get().getRemoteConfig()));
+        this.outboundQueue = queueLiner.createEpiloguer(() -> saveConf(releaserRef.get().getRemoteConfig()));
+        this.inboundQueue = queueLiner.createEpiloguer();
     }
 
     @Override
@@ -94,7 +96,11 @@ public class RemoteRepository implements IRepository {
                             .ifPresent(rcf -> rcf.setError(true));
                     return saveConf(rc);
                 })
-                .doOnError(err -> releaser.get().call())
+                .doOnError(err -> {
+                    if (releaser.get() != null) {
+                        releaser.get().call();
+                    }
+                })
                 .doOnCompleted(() -> releaser.get().call())
                 .subscribe(Actions.empty(), Utils.logError);
 
@@ -102,7 +108,22 @@ public class RemoteRepository implements IRepository {
 
     @Override
     public Observable<InputStream> get(final UbiFile file) {
-        return fileGetter.call(file, (rfile, is) -> monitor(new FileProvenience(file, this), new InflaterInputStream(AESGCM.decryptIs(rfile.getKey().getBytes(), is))));
+        return inboundQueue.call(fileGetter.call(file,
+                (rfile, is) -> new MonitorInputStream(new InflaterInputStream(AESGCM.decryptIs(rfile.getKey().getBytes(), is))))
+                .cast(MonitorInputStream.class)
+                .flatMap(is -> create(subscriber -> {
+                    final FileProvenience fp = new FileProvenience(file, this);
+                    is.monitor().subscribe(chunk -> progressEvents.onNext(new ProgressFile(fp, chunk)),
+                            err -> {
+                                Utils.logError.call(err);
+                                progressEvents.onNext(new ProgressFile(fp, false, true));
+                                subscriber.onError(err);
+                            }, () -> {
+                                progressEvents.onNext(new ProgressFile(fp, true, false));
+                                subscriber.onCompleted();
+                            });
+                    subscriber.onNext(is);
+                })));
     }
 
     private Observable<Boolean> saveConf(final RemoteConfig remoteConfig) {
@@ -123,12 +144,11 @@ public class RemoteRepository implements IRepository {
     @Override
     public Observable<Boolean> save(final FileProvenience fp) {
         //only one remote save at time
-        return epilogued.call(saveSerial(fp));
+        return outboundQueue.call(saveSerial(fp));
     }
 
     private Observable<Boolean> saveSerial(final FileProvenience fp) {
         //acquire permission
-        final AtomicReference<FileEvent.Type> fileEventType = new AtomicReference<>();
         return create(acquirer).flatMap(releaser -> {
             releaserRef.set(releaser);
             final RemoteConfig remoteConfig = releaser.getRemoteConfig();
@@ -206,7 +226,7 @@ public class RemoteRepository implements IRepository {
     }
 
 
-    public void setQueueLiner(final QueueLiner<Boolean> queueLiner) {
+    public void setQueueLiner(final QueueLiner queueLiner) {
         this.queueLiner = queueLiner;
     }
 

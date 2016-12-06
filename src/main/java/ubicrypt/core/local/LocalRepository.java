@@ -85,10 +85,6 @@ public class LocalRepository implements IRepository {
             check(fp);
             final UbiFile rfile = fp.getFile();
             final Optional<LocalFile> lfile = localConfig.getLocalFiles().stream().filter(lf -> lf.equals(rfile)).findFirst();
-/*
-            //if path not set, take the getName()
-            final Path path = rfile.getPath() != null ? rfile.getPath() : Paths.get(rfile.getName());
-*/
             if (!lfile.isPresent()) {
                 //new file
                 return onNewFileLocal.call(fp);

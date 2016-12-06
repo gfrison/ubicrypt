@@ -26,29 +26,36 @@ import java.util.concurrent.TimeUnit;
 import java.util.zip.DeflaterInputStream;
 
 import rx.Observable;
+import rx.Subscriber;
 import rx.Subscription;
 import rx.functions.Actions;
 import rx.subjects.PublishSubject;
 import rx.subjects.Subject;
 import ubicrypt.core.FileProvenience;
+import ubicrypt.core.JustOnSubscribe;
+import ubicrypt.core.RemoteIO;
 import ubicrypt.core.TestUtils;
 import ubicrypt.core.Utils;
 import ubicrypt.core.crypto.AESGCM;
 import ubicrypt.core.crypto.IPGPService;
 import ubicrypt.core.dto.Key;
+import ubicrypt.core.dto.LocalConfig;
+import ubicrypt.core.dto.LocalFile;
 import ubicrypt.core.dto.RemoteConfig;
 import ubicrypt.core.dto.RemoteFile;
 import ubicrypt.core.dto.VClock;
 import ubicrypt.core.provider.FileEvent;
-import ubicrypt.core.remote.RemoteRepository;
 import ubicrypt.core.provider.file.FileProvider;
 import ubicrypt.core.provider.lock.AcquirerReleaser;
 import ubicrypt.core.provider.lock.ObjectIO;
+import ubicrypt.core.remote.RemoteRepository;
 import ubicrypt.core.util.ObjectSerializer;
+import ubicrypt.core.util.QueueLiner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static ubicrypt.core.TestUtils.tmp;
+import static ubicrypt.core.TestUtils.tmp2;
 import static ubicrypt.core.provider.FileEvent.Type.created;
 import static ubicrypt.core.provider.FileEvent.Type.updated;
 
@@ -58,15 +65,54 @@ public class LocalRepositoryTest {
     @Before
     public void setUp() throws Exception {
         TestUtils.deleteR(tmp);
-        TestUtils.deleteR(TestUtils.tmp2);
+        TestUtils.deleteR(tmp2);
         Files.createDirectories(tmp);
-        Files.createDirectories(TestUtils.tmp2);
+        Files.createDirectories(tmp2);
     }
 
     @After
     public void tearDown() throws Exception {
         TestUtils.deleteR(tmp);
-        TestUtils.deleteR(TestUtils.tmp2);
+        TestUtils.deleteR(tmp2);
+
+    }
+
+    @Test
+    public void inflaterException() throws Exception {
+        final LocalRepository lr = new LocalRepository(tmp);
+        lr.setOnNewFileLocal(new OnNewLocal() {{
+            setBasePath(tmp);
+            setLocalConfig(new LocalConfig());
+            setFileEvents(PublishSubject.create());
+        }});
+        final LocalFile file = new LocalFile();
+        Files.createFile(tmp2.resolve("fileName"));
+        Utils.write(tmp2.resolve("fileName"), "ciaoooooooooooooooooooooooo000000000000000000000000000000000000000000000".getBytes());
+        file.setPath(Paths.get("fileName"));
+        final FileProvider provider = TestUtils.fileProvider(tmp2);
+        RemoteConfig rconfig = new RemoteConfig();
+        rconfig.getProviders().add(provider);
+        final RemoteFile remoteFile = RemoteFile.createFrom(file);
+        remoteFile.setRemoteName("fileName");
+        rconfig.getRemoteFiles().add(remoteFile);
+        RemoteRepository repo = new RemoteRepository(new JustOnSubscribe<>(new AcquirerReleaser(rconfig, () -> {
+        })), provider, new RemoteIO<RemoteConfig>() {
+            @Override
+            public Observable<Boolean> apply(RemoteConfig remoteConfig) {
+                return Observable.just(true);
+            }
+
+            @Override
+            public void call(Subscriber<? super RemoteConfig> subscriber) {
+                subscriber.onNext(rconfig);
+                subscriber.onCompleted();
+            }
+        });
+        repo.setQueueLiner(new QueueLiner(100));
+        repo.setFileEvents(PublishSubject.create());
+        repo.init();
+        assertThat(lr.save(new FileProvenience(file, repo)).toBlocking().last()).isFalse();
+
 
     }
 
@@ -82,8 +128,8 @@ public class LocalRepositoryTest {
         }});
 
         final byte[] key = AESGCM.rndKey();
-        final FileProvider provider = TestUtils.fileProvider(TestUtils.tmp2);
-        Utils.write(TestUtils.tmp2.resolve("origin"), AESGCM.encryptIs(key, new DeflaterInputStream(new ByteArrayInputStream("ciao".getBytes())))).toBlocking().last();
+        final FileProvider provider = TestUtils.fileProvider(tmp2);
+        Utils.write(tmp2.resolve("origin"), AESGCM.encryptIs(key, new DeflaterInputStream(new ByteArrayInputStream("ciao".getBytes())))).toBlocking().last();
         final RemoteFile rf = new RemoteFile() {{
             setRemoteName("origin");
             setPath(Paths.get("local"));
@@ -105,7 +151,8 @@ public class LocalRepositoryTest {
         final RemoteRepository repo = new RemoteRepository(acquirer, provider, new ObjectIO<>(ser, provider.getConfFile(), RemoteConfig.class)) {{
 //            setSerializer(ser);
         }};
-
+        repo.setQueueLiner(new QueueLiner(100));
+        repo.init();
         assertThat(IOUtils.readLines(repo.get(rf).toBlocking().first())).contains("ciao");
 
         //create
@@ -129,7 +176,7 @@ public class LocalRepositoryTest {
             assertThat(event.getType()).isEqualTo(updated);
             cd4.countDown();
         });
-        Utils.write(TestUtils.tmp2.resolve("origin"), AESGCM.encryptIs(key, new DeflaterInputStream(new ByteArrayInputStream("ciao2".getBytes())))).toBlocking().last();
+        Utils.write(tmp2.resolve("origin"), AESGCM.encryptIs(key, new DeflaterInputStream(new ByteArrayInputStream("ciao2".getBytes())))).toBlocking().last();
         assertThat(lr.save(new FileProvenience(rf, repo)).toBlocking().last()).isTrue();
         assertThat(IOUtils.readLines(lr.get(rf).toBlocking().last())).contains("ciao2");
         assertThat(lr.getLocalConfig().getLocalFiles()).hasSize(1);

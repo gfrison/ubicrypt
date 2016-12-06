@@ -73,7 +73,7 @@ public class ProviderItem implements ITreeItem {
         info.setOnMouseClicked(event -> {
             navigator.browse("provider/" + provider.code() + "-info", Tuple.of(provider, providerRemover, status));
         });
-        if (ProviderItem.class.getResource("/fxml/provider/" + provider.code() + "-info") == null) {
+        if (ProviderItem.class.getResource("/fxml/provider/" + provider.code() + "-info.fxml") == null) {
             info.setDisable(true);
         }
 

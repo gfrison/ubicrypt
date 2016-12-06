@@ -57,8 +57,25 @@ public class QueueLinerTest {
     }
 
     @Test
+    public void exceptionHandling() throws Exception {
+        final QueueLiner liner = new QueueLiner(100);
+        final AtomicInteger counter = new AtomicInteger(0);
+        final AtomicInteger errors = new AtomicInteger(0);
+        final Action1<Throwable> error = err -> errors.addAndGet(1);
+        QueueLiner.QueueEpilogued<Integer> epi = liner.createEpiloguer();
+        range(0, 5).forEach(i -> epi.call(timer(10, MILLISECONDS).map(t -> 10)).subscribeOn(Schedulers.io()).subscribe(counter::addAndGet, error));
+        epi.call(timer(10, MILLISECONDS).map(t -> {
+            throw new RuntimeException("ehe");
+        })).subscribeOn(Schedulers.io()).subscribe(counter::addAndGet, error);
+        range(0, 5).forEach(i -> epi.call(timer(10, MILLISECONDS).map(t -> 10)).subscribeOn(Schedulers.io()).subscribe(counter::addAndGet, error));
+        Thread.sleep(200);
+        assertThat(errors.get()).isEqualTo(1);
+        assertThat(counter.get()).isEqualTo(100);
+    }
+
+    @Test
     public void oneEpiloguer() throws Exception {
-        final QueueLiner<Integer> liner = new QueueLiner<>(1000);
+        final QueueLiner liner = new QueueLiner(1000);
         final AtomicInteger epilogeCounter1 = new AtomicInteger(0);
         final QueueLiner.QueueEpilogued epi1 = liner.createEpiloguer(() -> {
             epilogeCounter1.incrementAndGet();
@@ -73,7 +90,7 @@ public class QueueLinerTest {
 
     @Test
     public void twoEpiloguers() throws Exception {
-        final QueueLiner<Integer> liner = new QueueLiner<>(1000);
+        final QueueLiner liner = new QueueLiner(1000);
         final AtomicInteger epilogeCounter1 = new AtomicInteger(0);
         final AtomicInteger epilogeCounter2 = new AtomicInteger(0);
         final QueueLiner.QueueEpilogued epi1 = liner.createEpiloguer(() -> {
@@ -98,7 +115,7 @@ public class QueueLinerTest {
 
     @Test
     public void checkComplete() throws Exception {
-        final QueueLiner<Integer> liner = new QueueLiner<>(1000);
+        final QueueLiner liner = new QueueLiner(1000);
         final AtomicInteger epilogeCounter1 = new AtomicInteger(0);
         final QueueLiner.QueueEpilogued epi1 = liner.createEpiloguer(() -> {
             epilogeCounter1.incrementAndGet();
@@ -113,7 +130,7 @@ public class QueueLinerTest {
 
     @Test
     public void check2Complete() throws Exception {
-        final QueueLiner<Integer> liner = new QueueLiner<>(1000);
+        final QueueLiner liner = new QueueLiner(1000);
         final AtomicInteger epilogeCounter1 = new AtomicInteger(0);
         final QueueLiner.QueueEpilogued epi1 = liner.createEpiloguer(() -> {
             epilogeCounter1.incrementAndGet();
@@ -134,7 +151,7 @@ public class QueueLinerTest {
 
     @Test
     public void intermediateEpilogue() throws Exception {
-        final QueueLiner<Integer> liner = new QueueLiner<>(200);
+        final QueueLiner liner = new QueueLiner(200);
         final AtomicInteger epilogeCounter1 = new AtomicInteger(0);
         final QueueLiner.QueueEpilogued epi1 = liner.createEpiloguer(() -> {
             epilogeCounter1.incrementAndGet();
@@ -152,7 +169,7 @@ public class QueueLinerTest {
     public void shutdown1() throws Exception {
         AtomicBoolean result = new AtomicBoolean(false);
         AtomicBoolean invokedEpiloguer = new AtomicBoolean(false);
-        final QueueLiner<Boolean> liner = new QueueLiner<>(100);
+        final QueueLiner liner = new QueueLiner(100);
         QueueLiner.QueueEpilogued epi1 = liner.createEpiloguer(() -> Observable.create(subscriber -> {
             invokedEpiloguer.set(true);
             subscriber.onNext(true);
@@ -175,7 +192,7 @@ public class QueueLinerTest {
         AtomicInteger result = new AtomicInteger(0);
         AtomicInteger completed = new AtomicInteger(0);
         AtomicInteger invokedEpiloguer = new AtomicInteger(0);
-        final QueueLiner<Boolean> liner = new QueueLiner<>(100);
+        final QueueLiner liner = new QueueLiner(100);
         QueueLiner.QueueEpilogued epi1 = liner.createEpiloguer(() -> Observable.create(subscriber -> {
             invokedEpiloguer.incrementAndGet();
             subscriber.onNext(true);
@@ -198,9 +215,9 @@ public class QueueLinerTest {
     public void shutdownMultiEpiloguers() throws Exception {
         AtomicInteger result = new AtomicInteger(0);
         AtomicInteger invokedEpiloguer = new AtomicInteger(0);
-        final QueueLiner<Boolean> liner = new QueueLiner<>(100);
+        final QueueLiner liner = new QueueLiner(100);
 
-        List<QueueLiner<Boolean>.QueueEpilogued> eps = IntStream.range(0, 10).mapToObj(i -> liner.createEpiloguer(() -> Observable.create(subscriber -> {
+        List<QueueLiner.QueueEpilogued> eps = IntStream.range(0, 10).mapToObj(i -> liner.createEpiloguer(() -> Observable.<Boolean>create(subscriber -> {
             invokedEpiloguer.incrementAndGet();
             subscriber.onNext(true);
             subscriber.onCompleted();
@@ -217,7 +234,7 @@ public class QueueLinerTest {
 
     @Test
     public void shutdownNoJobs() throws Exception {
-        final QueueLiner<Boolean> liner = new QueueLiner<>(100);
+        final QueueLiner liner = new QueueLiner(100);
         liner.stop().toBlocking().firstOrDefault(null);
     }
 
@@ -227,7 +244,7 @@ public class QueueLinerTest {
         AtomicInteger completed = new AtomicInteger(0);
         AtomicInteger invokedEpiloguer = new AtomicInteger(0);
         CountDownLatch cd = new CountDownLatch(1);
-        final QueueLiner<Boolean> liner = new QueueLiner<>(100);
+        final QueueLiner liner = new QueueLiner(100);
         QueueLiner.QueueEpilogued epi1 = liner.createEpiloguer(() -> Observable.create(subscriber -> {
             invokedEpiloguer.incrementAndGet();
             subscriber.onNext(true);

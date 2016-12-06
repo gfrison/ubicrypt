@@ -132,7 +132,7 @@ public class RemoteRepositoryIT {
         final RemoteRepository repo = new RemoteRepository(acquirer, provider, new ObjectIO<>(ser, provider.getConfFile(), RemoteConfig.class)) {{
             setProgressEvents(progress);
             setFileEvents(file2Events);
-            setQueueLiner(new QueueLiner<>(1000));
+            setQueueLiner(new QueueLiner(1000));
         }};
         repo.setActions(Arrays.asList(new OnUpdateRemote(provider, repo) {{
             setProgressEvents(progress);

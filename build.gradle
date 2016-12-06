@@ -13,7 +13,7 @@ apply plugin: 'application'
 apply plugin: 'idea'
 apply plugin: 'jacoco'
 
-version = '0.16'
+version = '0.17'
 sourceCompatibility = 1.8
 
 project.group = 'ubicrypt'

@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,6 +47,8 @@ public class MainController implements Initializable {
     private Observable<Object> appEvents;
     @Inject
     Stage stage;
+    @Inject
+    Path basePath;
     @FXML
     StatusBar footer;
     @FXML
@@ -86,8 +89,13 @@ public class MainController implements Initializable {
             footer.setVisible(true);
             filesInProgress.stream().findFirst()
                     .ifPresent(pr -> {
-                        footer.setText(abbreviate(pr.getProvenience().getFile().getPath().getFileName().toString(), 30)
-                                + " → " + abbreviate(pr.getTarget().toString(), 30));
+                        String file = abbreviate(pr.getProvenience().getFile().getPath().getFileName().toString(), 30);
+                        String target = abbreviate(pr.getDirection() == ProgressFile.Direction.inbound ? pr.getProvenience().getOrigin().toString() : pr.getTarget().toString(), 30);
+                        String text = file + " → " + target;
+                        if (pr.getDirection() == ProgressFile.Direction.inbound) {
+                            text = target + " → " + file;
+                        }
+                        footer.setText(text);
                         footer.setProgress((double) progress.getChunk() / pr.getProvenience().getFile().getSize());
                     });
         }));
@@ -98,7 +106,7 @@ public class MainController implements Initializable {
         Alert about = new Alert(Alert.AlertType.INFORMATION);
         about.setTitle("UbiCrypt");
         about.setHeaderText("Version: " + UbiCrypt.getVersion());
-        about.setContentText("Author: Giancarlo Frison<giancarlo@gfrison.com>");
+        about.setContentText("Author: Giancarlo Frison <giancarlo@gfrison.com>");
         about.initOwner(stage);
         about.showAndWait();
     }

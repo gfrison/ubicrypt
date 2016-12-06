@@ -80,10 +80,8 @@ public class UtilsTest {
         final AtomicLong length = new AtomicLong(0);
         final CountDownLatch cd = new CountDownLatch(1);
         Utils.write(target, new ByteArrayInputStream(bytes)).subscribe(sizef -> {
-            System.out.println(sizef);
             length.set(sizef);
         }, Throwable::printStackTrace, () -> {
-            System.out.println("onComplete");
             cd.countDown();
         });
         if (!cd.await(2, TimeUnit.SECONDS)) {

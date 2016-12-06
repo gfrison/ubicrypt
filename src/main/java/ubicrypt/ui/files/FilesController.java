@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import javax.inject.Inject;
 
-import javafx.application.HostServices;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -48,6 +47,7 @@ import ubicrypt.core.exp.AlreadyManagedException;
 import ubicrypt.core.provider.FileEvent;
 import ubicrypt.core.util.ClassMatcher;
 import ubicrypt.core.util.FileInSync;
+import ubicrypt.ui.OSUtil;
 
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
@@ -85,7 +85,7 @@ public class FilesController implements Initializable, ApplicationContextAware {
     @Qualifier("appEvents")
     private Observable<Object> appEvents;
     @Inject
-    HostServices hostServices;
+    OSUtil osUtil;
 
     private final Consumer<List<File>> filesAdder = files -> Observable.merge(files.stream().map(file -> {
         log.debug("adding file:{}", file);
@@ -141,7 +141,7 @@ public class FilesController implements Initializable, ApplicationContextAware {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         fxml = substringBefore(substringAfterLast(url.getFile(), "/"), ".fxml");
-        treeView.setCellFactory(treeView1 -> new TreeCellFactory(treeView1, fileUntracker, null, hostServices,basePath));
+        treeView.setCellFactory(treeView1 -> new TreeCellFactory(treeView1, fileUntracker, null, osUtil, basePath));
         localConfig.getLocalFiles().stream()
                 .filter(Utils.trackedFile)
                 .forEach(localFile -> addFiles(localFile.getPath().iterator(), basePath, root, localFile));
@@ -167,10 +167,18 @@ public class FilesController implements Initializable, ApplicationContextAware {
         fileEvents.filter(fileEvent -> fileEvent.getLocation() == FileEvent.Location.local)
                 .subscribe(fileEvent -> {
                     log.debug("file local event:{}", fileEvent);
-                    TreeItem<ITreeItem> vfile = searchFile(root, fileEvent.getFile()).orElseGet(() -> localConfig.getLocalFiles().stream()
-                            .filter(fileEvent.getFile()::equals)
-                            .findFirst()
-                            .map(fe -> addFiles(fileEvent.getFile().getPath().iterator(), basePath, root, fe)).get());
+                    Optional<TreeItem<ITreeItem>> optfile = searchFile(root, fileEvent.getFile());
+                    if (!optfile.isPresent()) {
+                        optfile = localConfig.getLocalFiles().stream()
+                                .filter(fileEvent.getFile()::equals)
+                                .findFirst()
+                                .map(fe -> addFiles(fileEvent.getFile().getPath().iterator(), basePath, root, fe));
+                    }
+                    if (!optfile.isPresent()) {
+                        log.debug("file not present:{}", fileEvent.getFile().getPath());
+                        return;
+                    }
+                    TreeItem<ITreeItem> vfile = optfile.get();
                     final Node graphics = vfile.getValue().getGraphics();
                     graphics.getStyleClass().clear();
                     switch (fileEvent.getType()) {

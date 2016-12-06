@@ -9,7 +9,6 @@ import java.util.ResourceBundle;
 
 import javax.inject.Inject;
 
-import javafx.application.HostServices;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
@@ -20,6 +19,7 @@ import ubicrypt.core.provider.ProviderCommander;
 import ubicrypt.core.provider.gdrive.GDriveAuthorizer;
 import ubicrypt.core.provider.gdrive.GDriveConf;
 import ubicrypt.core.provider.gdrive.GDriveProvider;
+import ubicrypt.ui.OSUtil;
 import ubicrypt.ui.StackNavigator;
 
 import static org.slf4j.LoggerFactory.getLogger;
@@ -27,7 +27,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class GDriveController implements Initializable {
     private static final Logger log = getLogger(GDriveController.class);
     @Inject
-    HostServices hostServices;
+    OSUtil osUtil;
     @Inject
     ProviderCommander providerCommander;
     @FXML
@@ -44,7 +44,7 @@ public class GDriveController implements Initializable {
     protected StackNavigator navigator;
 
     public void authorize(MouseEvent mouseEvent) {
-        hostServices.showDocument(url);
+        osUtil.openUrl(url);
         gdrive.setDisable(true);
         back.setDisable(true);
         try {

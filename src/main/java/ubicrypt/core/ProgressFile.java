@@ -19,6 +19,8 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class ProgressFile {
+    public enum Direction {inbound, outbound,}
+
     private final FileProvenience provenience;
     private final IRepository target;
     private final long chunk;
@@ -33,12 +35,20 @@ public class ProgressFile {
         error = false;
     }
 
+    public ProgressFile(final FileProvenience provenience, final long chunk) {
+        this(provenience, null, chunk);
+    }
+
     public ProgressFile(final FileProvenience provenience, final IRepository target, final boolean completed, final boolean error) {
         this.provenience = provenience;
         this.target = target;
         this.chunk = 0;
         this.completed = completed;
         this.error = error;
+    }
+
+    public ProgressFile(final FileProvenience provenience, final boolean completed, final boolean error) {
+        this(provenience, null, completed, error);
     }
 
     public FileProvenience getProvenience() {
@@ -59,6 +69,10 @@ public class ProgressFile {
 
     public long getChunk() {
         return chunk;
+    }
+
+    public Direction getDirection() {
+        return target == null ? Direction.inbound : Direction.outbound;
     }
 
     @Override

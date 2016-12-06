@@ -20,7 +20,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import javafx.application.HostServices;
 import javafx.collections.ListChangeListener;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
@@ -31,6 +30,7 @@ import javafx.scene.control.TreeView;
 import rx.Observable;
 import rx.functions.Actions;
 import ubicrypt.core.dto.UbiFile;
+import ubicrypt.ui.OSUtil;
 
 import static javafx.application.Platform.runLater;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -41,12 +41,12 @@ public class TreeCellFactory extends TreeCell<ITreeItem> implements ListChangeLi
     private final CopyOnWriteArrayList<TreeItem<ITreeItem>> selected = new CopyOnWriteArrayList<>();
     private final ContextMenu menu;
     private final MenuItem remove;
-    private final HostServices hostServices;
+    private final OSUtil osUtil;
     private final Path basePath;
 
-    public TreeCellFactory(TreeView<ITreeItem> treeView1, Function<UbiFile, Observable<Boolean>> fileUntracker, Observable<Object> appEvents, HostServices hostServices, Path basePath) {
+    public TreeCellFactory(TreeView<ITreeItem> treeView1, Function<UbiFile, Observable<Boolean>> fileUntracker, Observable<Object> appEvents, OSUtil osUtil, Path basePath) {
         this.basePath = basePath;
-        this.hostServices = hostServices;
+        this.osUtil = osUtil;
         treeView = treeView1;
         treeView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         //multi selection listener for tree view
@@ -90,7 +90,7 @@ public class TreeCellFactory extends TreeCell<ITreeItem> implements ListChangeLi
                     if (event.getClickCount() == 2) {
                         log.debug("click event file:{}", ((FileItem) item).getFile());
                         try {
-                            hostServices.showDocument("file://" + basePath.resolve(((FileItem) item).getFile().getPath()).toString());
+                            osUtil.openUrl("file://" + basePath.resolve(((FileItem) item).getFile().getPath()).toString());
                         } catch (Exception e) {
                             e.printStackTrace();
                         }

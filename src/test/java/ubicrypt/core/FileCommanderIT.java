@@ -16,7 +16,6 @@ package ubicrypt.core;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
@@ -127,7 +126,7 @@ public class FileCommanderIT implements ApplicationContextAware {
         assertThat(fileCommander.addFile(localRepository.getBasePath().resolve(name)).toBlocking().last().getT2().toBlocking().single()).isTrue();
         final LocalFile file = localConfig.getLocalFiles().stream().filter(ffile -> ffile.getPath().equals(Paths.get(name))).findFirst().get();
         assertThat(file.getPath()).isEqualTo(Paths.get(name));
-        assertThat(IOUtils.readLines(providerLifeCycle.enabledProviders().get(0).getRepository().get(file).toBlocking().last())).contains("ciao");
+        assertThat(providerLifeCycle.enabledProviders().get(0).getRepository().get(file).map(Utils.is2string).toBlocking().single()).contains("ciao");
     }
 
     @Test
@@ -184,7 +183,7 @@ public class FileCommanderIT implements ApplicationContextAware {
         assertThat(progresses).hasSize(2);
         assertThat(progresses.get(0).getChunk()).isEqualTo(5L);
         assertThat(progresses.get(1).isCompleted()).isTrue();
-        assertThat(IOUtils.readLines(providerLifeCycle.enabledProviders().get(0).getRepository().get(localConfig.getLocalFiles().iterator().next()).toBlocking().last())).contains("ciao2");
+        assertThat(providerLifeCycle.enabledProviders().get(0).getRepository().get(localConfig.getLocalFiles().iterator().next()).map(Utils.is2string).toBlocking().last()).contains("ciao2");
         sub.unsubscribe();
 
     }
@@ -291,8 +290,8 @@ public class FileCommanderIT implements ApplicationContextAware {
         }
 
         @Bean
-        public QueueLiner<Boolean> queueLiner(@Value("${saveConfIntervalMs:10000}") final Long saveConfIntervalMs) {
-            return new QueueLiner<>(saveConfIntervalMs);
+        public QueueLiner queueLiner(@Value("${saveConfIntervalMs:10000}") final Long saveConfIntervalMs) {
+            return new QueueLiner(saveConfIntervalMs);
         }
     }
 

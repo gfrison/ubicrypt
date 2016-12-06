@@ -79,6 +79,7 @@ public class OnNewLocal implements Func1<FileProvenience, Observable<Boolean>> {
         }
         AtomicReference<Path> tempFile = new AtomicReference<>();
         return fp.getOrigin().get(rfile)
+//                .doOnNext(isa::set)
                 .flatMap(new StoreTempFile())
                 .doOnNext(tempFile::set)
                 .map(new CopyFile(rfile.getSize(), path, true, fp.getFile().getLastModified()))

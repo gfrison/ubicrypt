@@ -25,6 +25,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 
+import org.apache.commons.io.IOUtils;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.slf4j.Logger;
@@ -70,6 +71,7 @@ import java.util.stream.StreamSupport;
 import rx.Observable;
 import rx.Subscriber;
 import rx.functions.Action1;
+import rx.functions.Func1;
 import ubicrypt.UbiCrypt;
 import ubicrypt.core.crypto.PGPEC;
 import ubicrypt.core.dto.UbiFile;
@@ -88,6 +90,14 @@ public class Utils {
     public static final Action1<Throwable> logError = err -> log.error(err.getMessage(), err);
     private final static SmileFactory smile = new SmileFactory();
     private final static ObjectMapper mapper = new ObjectMapper(smile);
+    public static Func1<InputStream, String> is2string = is -> {
+        try {
+            return IOUtils.toString(is, "UTF-8");
+        } catch (IOException e) {
+            Throwables.propagate(e);
+            return null;
+        }
+    };
 
     static {
         configureMapper(mapper);

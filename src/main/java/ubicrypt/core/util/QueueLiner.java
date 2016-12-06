@@ -42,7 +42,7 @@ import static ubicrypt.core.util.QueueLiner.Status.stopping;
 /**
  * Runs sequentially any Observable and terminate any job with the given conclusive epiloguer.
  */
-public class QueueLiner<T> implements IStoppable {
+public class QueueLiner implements IStoppable {
     enum Status {running, stopping, stopped}
 
     private final Logger log = getLogger(QueueLiner.class);
@@ -64,8 +64,17 @@ public class QueueLiner<T> implements IStoppable {
     /**
      * Creates an Enqueuer for a specific epilogue.
      */
-    public QueueEpilogued createEpiloguer(final Supplier<Observable<T>> epilogue) {
+    public <R> QueueEpilogued createEpiloguer(final Supplier<Observable<R>> epilogue) {
         final QueueEpilogued qe = new QueueEpilogued(epilogue);
+        enqueuers.add(qe);
+        return qe;
+    }
+
+    /**
+     * Creates an Enqueuer for a specific epilogue.
+     */
+    public <R> QueueEpilogued createEpiloguer() {
+        final QueueEpilogued qe = new QueueEpilogued();
         enqueuers.add(qe);
         return qe;
     }
@@ -108,7 +117,7 @@ public class QueueLiner<T> implements IStoppable {
     /**
      * Spools the pending queue for a specific QueueEpilogued.
      */
-    private void spool(final QueueEpilogued instance, final Subscriber<? super T> lastSubscriber) {
+    private <T> void spool(final QueueEpilogued<T> instance, final Subscriber<? super T> lastSubscriber) {
         if (status.get() != running) {
             log.info("closing all pending tasks:{}", instance.queue.size());
             instance.queue.stream().map(Tuple2::getT2).forEach(subject -> subject.onCompleted());
@@ -122,7 +131,11 @@ public class QueueLiner<T> implements IStoppable {
         if (enqued == null) {
             if (instance.skippedEpilogue.get()) {
                 log.trace("run final epiloguer:{}", instance.epilogue);
-                instance.epilogue.get().doOnCompleted(this::fetch).subscribe(empty(), lastSubscriber::onError, lastSubscriber::onCompleted);
+                instance.epilogue.ifPresent(opt -> opt.get().doOnCompleted(this::fetch).subscribe(empty(), lastSubscriber::onError, lastSubscriber::onCompleted));
+                if (!instance.epilogue.isPresent()) {
+                    lastSubscriber.onCompleted();
+                    fetch();
+                }
             } else {
                 lastSubscriber.onCompleted();
                 fetch();
@@ -131,32 +144,48 @@ public class QueueLiner<T> implements IStoppable {
         } else if (lastSubscriber != null) {
             lastSubscriber.onCompleted();
         }
-        enqued.getT1().doOnCompleted(() -> {
-            if ((instance.lastEpilogue.get() + delayMs < System.currentTimeMillis()) || status.get() != running) {
-                instance.lastEpilogue.set(System.currentTimeMillis());
-                log.trace("run epiloguer:{}", instance.epilogue);
-                instance.epilogue.get().subscribe(empty(), enqued.getT2()::onError, () -> {
-                    instance.skippedEpilogue.set(false);
+        enqued.getT1()
+                .doOnCompleted(() -> {
+                    if ((instance.lastEpilogue.get() + delayMs < System.currentTimeMillis()) || status.get() != running) {
+                        instance.lastEpilogue.set(System.currentTimeMillis());
+                        log.trace("run epiloguer:{}", instance.epilogue);
+                        instance.epilogue.ifPresent(opt -> opt.get().subscribe(empty(), enqued.getT2()::onError, () -> {
+                            instance.skippedEpilogue.set(false);
+                            spool(instance, enqued.getT2());
+                        }));
+                        if (!instance.epilogue.isPresent()) {
+                            instance.skippedEpilogue.set(false);
+                            spool(instance, enqued.getT2());
+                        }
+                        return;
+                    }
+                    log.trace("skip epiloguer");
+                    instance.skippedEpilogue.set(true);
+                    spool(instance, enqued.getT2());
+                })
+                .subscribeOn(Schedulers.io())
+                .subscribe(enqued.getT2()::onNext, err -> {
+                    try {
+                        enqued.getT2().onError(err);
+                    } catch (Exception e) {
+                        log.warn(e.getMessage(), e);
+                    }
                     spool(instance, enqued.getT2());
                 });
-                return;
-            }
-            log.trace("skip epiloguer");
-            instance.skippedEpilogue.set(true);
-            spool(instance, enqued.getT2());
-        })
-                .subscribeOn(Schedulers.io())
-                .subscribe(enqued.getT2()::onNext, enqued.getT2()::onError);
     }
 
-    public class QueueEpilogued implements Func1<Observable<T>, Observable<T>> {
-        private final Supplier<Observable<T>> epilogue;
+    public class QueueEpilogued<T> implements Func1<Observable<T>, Observable<T>> {
+        private final Optional<Supplier<Observable<T>>> epilogue;
         private final AtomicBoolean skippedEpilogue = new AtomicBoolean(false);
         private final AtomicLong lastEpilogue = new AtomicLong(System.currentTimeMillis());
         private final ConcurrentLinkedQueue<Tuple2<Observable<T>, Subscriber<? super T>>> queue = new ConcurrentLinkedQueue<>();
 
         private QueueEpilogued(final Supplier<Observable<T>> epilogue) {
-            this.epilogue = epilogue;
+            this.epilogue = Optional.of(epilogue);
+        }
+
+        public QueueEpilogued() {
+            this.epilogue = Optional.empty();
         }
 
         /**

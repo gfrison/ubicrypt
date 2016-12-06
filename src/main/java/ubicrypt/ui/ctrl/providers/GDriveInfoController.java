@@ -24,6 +24,7 @@ import ubicrypt.core.provider.UbiProvider;
 import ubicrypt.core.provider.gdrive.GDriveAuthorizer;
 import ubicrypt.core.provider.gdrive.GDriveConf;
 import ubicrypt.core.provider.gdrive.GDriveProvider;
+import ubicrypt.ui.OSUtil;
 import ubicrypt.ui.StackNavigator;
 
 import static javafx.application.Platform.runLater;
@@ -55,7 +56,7 @@ public class GDriveInfoController implements Initializable, Consumer<Tuple3<GDri
     @Inject
     protected GDriveAuthorizer authorizer;
     @Inject
-    HostServices hostServices;
+    OSUtil osUtil;
     private String url;
     protected StackNavigator navigator;
 
@@ -96,7 +97,7 @@ public class GDriveInfoController implements Initializable, Consumer<Tuple3<GDri
     }
 
     public void authorize(MouseEvent mouseEvent) {
-        hostServices.showDocument(url);
+        osUtil.openUrl(url);
         gdrive.setDisable(true);
         back.setDisable(true);
         try {

@@ -44,9 +44,10 @@ import ubicrypt.core.Utils;
 import ubicrypt.core.events.ShutdownOK;
 import ubicrypt.core.events.ShutdownRequest;
 import ubicrypt.ui.ControllerFactory;
+import ubicrypt.ui.OSUtil;
 import ubicrypt.ui.StackNavigator;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static ubicrypt.core.Utils.securityFile;
 import static ubicrypt.core.Utils.ubiqFolder;
 import static ubicrypt.core.crypto.PGPEC.encrypt;
@@ -71,7 +72,7 @@ public class UbiCrypt extends Application {
                         .subscribe(next -> cd.countDown());
                 appEvents.onNext(new ShutdownRequest());
                 try {
-                    if (cd.await(1, MINUTES)) {
+                    if (cd.await(10, SECONDS)) {
                         log.info("shutting gracefully down");
                     } else {
                         log.info("shutting process timed out");
@@ -147,6 +148,7 @@ public class UbiCrypt extends Application {
             ctx.getBeanFactory().registerSingleton("stage", stage);
             ctx.getBeanFactory().registerSingleton("ctx", anchor());
             ctx.getBeanFactory().registerSingleton("hostService", getHostServices());
+            ctx.getBeanFactory().registerSingleton("osUtil", new OSUtil(getHostServices()));
             ControllerFactory cfactory = new ControllerFactory(ctx);
             StackNavigator navigator = new StackNavigator(null, "main", cfactory);
             stage.setScene(new Scene(navigator.open()));

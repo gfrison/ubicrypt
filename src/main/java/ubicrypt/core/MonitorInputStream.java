@@ -15,16 +15,20 @@ package ubicrypt.core;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import rx.Observable;
 import rx.internal.operators.BufferUntilSubscriber;
+import rx.schedulers.Schedulers;
+import rx.subjects.Subject;
 
 public class MonitorInputStream extends InputStream {
     private final InputStream inputStream;
     private final AtomicLong counter = new AtomicLong(0);
-    private final BufferUntilSubscriber<Long> subscriber = BufferUntilSubscriber.create();
+    private final Subject<Long, Long> subscriber = BufferUntilSubscriber.create();
     private int chunkLength = 1 << 16;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     public MonitorInputStream(final InputStream inputStream) {
         this.inputStream = inputStream;
@@ -40,8 +44,10 @@ public class MonitorInputStream extends InputStream {
         try {
             final int ret = inputStream.read();
             if (ret == -1) {
-                subscriber.onNext(counter.get());
-                subscriber.onCompleted();
+                if (closed.compareAndSet(false, true)) {
+                    subscriber.onNext(counter.get());
+                    subscriber.onCompleted();
+                }
             } else {
                 if ((counter.incrementAndGet() % chunkLength) == 0) {
                     subscriber.onNext(counter.get());
