@@ -151,6 +151,8 @@ public class ProviderLifeCycle implements ApplicationContextAware {
             ProviderHook hook = statusProvider.keySet().stream().filter(hk -> hk.getProvider().equals(provider)).findFirst().orElseThrow(() -> new NotFoundException(provider));
             providerListeners.remove(hook).unsubscribe();
             statusProvider.remove(hook);
+            currentlyActiveProviders.remove(hook);
+            providerEvents.onNext(new ProviderEvent(ProviderStatus.removed, hook));
             return just(true);
         } catch (Exception e) {
             return error(e);

@@ -35,7 +35,8 @@ public class StoreTempFile implements Func1<InputStream, Observable<Path>> {
             final Path tempFile = Files.createTempFile(null, null);
             log.debug("stored on temp file:{}", tempFile);
             return Utils.write(tempFile, inputStream).lastOrDefault(0L).map((n -> tempFile));
-        } catch (final IOException e) {
+        } catch (final Exception e) {
+            Utils.close(inputStream);
             return Observable.error(e);
         }
     }

@@ -118,9 +118,11 @@ public class RemoteRepository implements IRepository {
                                 Utils.logError.call(err);
                                 progressEvents.onNext(new ProgressFile(fp, false, true));
                                 subscriber.onError(err);
+                                Utils.close(is);
                             }, () -> {
                                 progressEvents.onNext(new ProgressFile(fp, true, false));
                                 subscriber.onCompleted();
+                                Utils.close(is);
                             });
                     subscriber.onNext(is);
                 })));

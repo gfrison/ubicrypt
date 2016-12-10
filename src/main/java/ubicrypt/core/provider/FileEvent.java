@@ -46,7 +46,7 @@ public class FileEvent {
         return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
                 .append("type", type)
                 .append("location", location)
-                .append("localFile", localFile)
+                .append("localFile", localFile.getPath())
                 .toString();
     }
 

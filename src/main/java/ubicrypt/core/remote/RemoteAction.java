@@ -60,7 +60,7 @@ public abstract class RemoteAction implements IRemoteAction {
                     progressEvents.onNext(new ProgressFile(fp, repository, false, true));
                 },
                 () -> {
-                    log.debug("send complete progress file:{}", fp.getFile());
+                    log.debug("send complete progress file:{}", fp.getFile().getPath());
                     progressEvents.onNext(new ProgressFile(fp, repository, true, false));
                 });
         return mis;

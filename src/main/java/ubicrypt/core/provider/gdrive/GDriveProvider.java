@@ -26,6 +26,7 @@ import java.io.InputStreamReader;
 import java.io.Serializable;
 
 import rx.Observable;
+import ubicrypt.core.Utils;
 import ubicrypt.core.exp.NotFoundException;
 import ubicrypt.core.provider.ProviderStatus;
 import ubicrypt.core.provider.UbiProvider;
@@ -136,10 +137,11 @@ public class GDriveProvider extends UbiProvider implements DataStoreFactory {
                         .getId();
                 subscriber.onNext(id);
                 subscriber.onCompleted();
+                Utils.close(is);
             } catch (IOException e) {
                 subscriber.onError(e);
+                Utils.close(is);
             }
-
         });
     }
 
@@ -173,10 +175,11 @@ public class GDriveProvider extends UbiProvider implements DataStoreFactory {
                         .execute();
                 subscriber.onNext(true);
                 subscriber.onCompleted();
+                Utils.close(is);
             } catch (IOException e) {
                 subscriber.onError(e);
+                Utils.close(is);
             }
-
         });
 
     }
@@ -188,15 +191,21 @@ public class GDriveProvider extends UbiProvider implements DataStoreFactory {
                 subscriber.onError(new RuntimeException("gdrive not initialized"));
                 return;
             }
+            InputStream stream = null;
             try {
-                subscriber.onNext(drive.files().get(pid).executeMediaAsInputStream());
+                stream = drive.files().get(pid).executeMediaAsInputStream();
+                subscriber.onNext(stream);
                 subscriber.onCompleted();
             } catch (GoogleJsonResponseException e) {
                 if (e.getDetails().getCode() == 404) {
                     subscriber.onError(new NotFoundException(pid));
+                } else {
+                    subscriber.onError(e);
                 }
+                Utils.close(stream);
             } catch (IOException e) {
                 subscriber.onError(e);
+                Utils.close(stream);
             }
 
         });

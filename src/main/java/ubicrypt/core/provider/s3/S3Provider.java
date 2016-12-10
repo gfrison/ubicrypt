@@ -32,6 +32,7 @@ import reactor.fn.tuple.Tuple2;
 import rx.Observable;
 import rx.Subscriber;
 import rx.schedulers.Schedulers;
+import ubicrypt.core.Utils;
 import ubicrypt.core.exp.NotFoundException;
 import ubicrypt.core.provider.ProviderStatus;
 import ubicrypt.core.provider.UbiProvider;
@@ -172,6 +173,7 @@ public class S3Provider extends UbiProvider {
 
             } catch (Exception e) {
                 subscriber.onError(e);
+                Utils.close(is);
             }
         })).subscribeOn(Schedulers.io());
     }
@@ -183,14 +185,18 @@ public class S3Provider extends UbiProvider {
                 subscriber.onError(new RuntimeException("s3 not initialized"));
                 return;
             }
+            InputStream is = null;
             try {
                 S3Object obj = client.getObject(pids.getT1(), pids.getT2());
-                subscriber.onNext(obj.getObjectContent());
+                is = obj.getObjectContent();
+                subscriber.onNext(is);
                 subscriber.onCompleted();
             } catch (AmazonS3Exception e) {
+                Utils.close(is);
                 error(pid, subscriber, e);
             } catch (Exception e) {
                 subscriber.onError(e);
+                Utils.close(is);
             }
         })).subscribeOn(Schedulers.io());
     }

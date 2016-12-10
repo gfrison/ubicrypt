@@ -50,6 +50,7 @@ public class OnUpdateRemote extends RemoteAction {
         if (!rfile.isPresent()) {
             return false;
         }
+        log.trace("path:{}, local v:{}, remote v:{}, comparison:{}, test:{}", file.getPath(), file.getVclock(), rfile.get().getVclock(), file.compare(rfile.get()), file.compare(rfile.get()) == VClock.Comparison.newer);
         return file.compare(rfile.get()) == VClock.Comparison.newer;
     }
 
@@ -58,7 +59,7 @@ public class OnUpdateRemote extends RemoteAction {
         UbiFile file = fp.getFile();
         RemoteFile rfile = rconfig.getRemoteFiles().stream().filter(file1 -> file1.equals(file)).findFirst().get();
 
-        log.debug("file:{} newer than:{} on provider:{}", file.getPath(), rfile, provider);
+        log.debug("override file:{} on provider:{}", file.getPath(), provider);
         final AtomicReference<FileEvent.Type> fileEventType = new AtomicReference<>();
         if (!Utils.trackedFile.test(file)) {
             //delete remotely
@@ -90,6 +91,7 @@ public class OnUpdateRemote extends RemoteAction {
                             .doOnNext(saved -> {
                                 rfile.copyFrom(file);
                                 rfile.setKey(key);
+                                rfile.setError(false);
                             })
                             .doOnError(err -> rfile.setError(true))
                             .doOnCompleted(fileEvents(fp, fileEventType.get()));

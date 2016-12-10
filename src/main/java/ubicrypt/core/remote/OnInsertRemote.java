@@ -45,6 +45,7 @@ public class OnInsertRemote extends RemoteAction {
     @Override
     public boolean test(FileProvenience fileProvenience, RemoteConfig remoteConfig) {
         UbiFile file = fileProvenience.getFile();
+        log.trace("path:{}, test:{}", file.getPath(), !remoteConfig.getRemoteFiles().stream().filter(file1 -> file1.equals(file)).findFirst().isPresent());
         return !remoteConfig.getRemoteFiles().stream().filter(file1 -> file1.equals(file)).findFirst().isPresent();
     }
 

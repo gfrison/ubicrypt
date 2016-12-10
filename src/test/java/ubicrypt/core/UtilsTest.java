@@ -115,4 +115,15 @@ public class UtilsTest {
         final String now = IOUtils.toString(Utils.marshall(Instant.now()));
         assertThat(now).contains("T", "Z");
     }
+
+    @Test
+    public void systemProperties() throws Exception {
+        Utils.setProperties(new String[]{"--conf", "ciao", "-a", "=", "b", "--vero"});
+        Utils.setProperties(new String[]{"--conf", "ciao", "-a", "=", "b", "--vero", "--conf2=1", "-c", "8"});
+        assertThat(System.getProperty("conf")).isEqualTo("ciao");
+        assertThat(System.getProperty("a")).isEqualTo("b");
+        assertThat(System.getProperty("vero")).isEqualTo("true");
+        assertThat(System.getProperty("conf2")).isEqualTo("1");
+        assertThat(System.getProperty("c")).isEqualTo("8");
+    }
 }

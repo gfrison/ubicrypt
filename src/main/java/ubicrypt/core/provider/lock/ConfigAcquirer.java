@@ -62,7 +62,7 @@ public class ConfigAcquirer implements Observable.OnSubscribe<AcquirerReleaser> 
 
     @Override
     public void call(Subscriber<? super AcquirerReleaser> subscriber) {
-        if (status == uninitialized || status == unauthorized) {
+        if (status == uninitialized || status == unauthorized || status == expired) {
             create(initializer)
                     .doOnNext(st -> {
                         setStatus(st);

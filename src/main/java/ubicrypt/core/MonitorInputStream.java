@@ -20,7 +20,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import rx.Observable;
 import rx.internal.operators.BufferUntilSubscriber;
-import rx.schedulers.Schedulers;
 import rx.subjects.Subject;
 
 public class MonitorInputStream extends InputStream {
@@ -47,6 +46,7 @@ public class MonitorInputStream extends InputStream {
                 if (closed.compareAndSet(false, true)) {
                     subscriber.onNext(counter.get());
                     subscriber.onCompleted();
+                    inputStream.close();
                 }
             } else {
                 if ((counter.incrementAndGet() % chunkLength) == 0) {
@@ -54,9 +54,26 @@ public class MonitorInputStream extends InputStream {
                 }
             }
             return ret;
-        } catch (final IOException e) {
-            subscriber.onError(e);
-            throw e;
+        } catch (final Exception e) {
+            if (closed.compareAndSet(false, true)) {
+                subscriber.onError(e);
+                inputStream.close();
+            }
+//            throw e;
+            return -1;
+        }
+    }
+
+    @Override
+    public int available() throws IOException {
+        return inputStream.available();
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (closed.compareAndSet(false, true)) {
+            subscriber.onCompleted();
+            inputStream.close();
         }
     }
 

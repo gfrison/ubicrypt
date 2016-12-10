@@ -37,8 +37,10 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.stage.Stage;
+import rx.schedulers.Schedulers;
 import rx.subjects.Subject;
 import ubicrypt.core.FixPassPhraseInitializer;
+import ubicrypt.core.PathConf;
 import ubicrypt.core.UbiConf;
 import ubicrypt.core.Utils;
 import ubicrypt.core.events.ShutdownOK;
@@ -46,6 +48,7 @@ import ubicrypt.core.events.ShutdownRequest;
 import ubicrypt.ui.ControllerFactory;
 import ubicrypt.ui.OSUtil;
 import ubicrypt.ui.StackNavigator;
+import ubicrypt.ui.UIConf;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static ubicrypt.core.Utils.securityFile;
@@ -57,7 +60,6 @@ import static ubicrypt.ui.Anchor.anchor;
 @Lazy
 public class UbiCrypt extends Application {
     private static final Logger log = LoggerFactory.getLogger(UbiCrypt.class);
-    public static String[] arguments = {};
     private ConfigurableApplicationContext ctx;
     private final static AtomicBoolean stopped = new AtomicBoolean(false);
     private Runnable shutdown = () -> {
@@ -88,7 +90,7 @@ public class UbiCrypt extends Application {
 
 
     public static void main(final String[] args) throws IOException, InterruptedException {
-        arguments = args;
+        Utils.setProperties(args);
         ubiqFolder().toFile().mkdirs();
         if (Utils.isAppInUse(ubiqFolder())) {
             log.error("UbiCrypt already running. Quit");
@@ -134,19 +136,18 @@ public class UbiCrypt extends Application {
             }
             Platform.exit();
         }
-        final File file = securityFile().toFile();
-        stage.setScene(anchor().show(file.exists() ? "login" : "createKey", getHostServices()));
+        final File secFile = securityFile().toFile();
+        stage.setScene(anchor().show(secFile.exists() ? "login" : "createKey", getHostServices()));
         stage.show();
         final UbiCrypt ubiCrypt = this;
-        anchor().getPasswordStream().subscribe(pwd -> {
-            final SpringApplication app = new SpringApplication(UbiConf.class);
+        anchor().getPasswordStream().subscribeOn(Schedulers.io()).subscribe(pwd -> {
+            final SpringApplication app = new SpringApplication(UbiConf.class, PathConf.class, UIConf.class);
             app.setRegisterShutdownHook(false);
             app.addInitializers(new FixPassPhraseInitializer(pwd));
             app.setLogStartupInfo(true);
-            ctx = app.run(arguments);
+            ctx = app.run();
             ctx.getAutowireCapableBeanFactory().autowireBean(ubiCrypt);
             ctx.getBeanFactory().registerSingleton("stage", stage);
-            ctx.getBeanFactory().registerSingleton("ctx", anchor());
             ctx.getBeanFactory().registerSingleton("hostService", getHostServices());
             ctx.getBeanFactory().registerSingleton("osUtil", new OSUtil(getHostServices()));
             ControllerFactory cfactory = new ControllerFactory(ctx);

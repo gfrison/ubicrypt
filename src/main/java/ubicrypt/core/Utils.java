@@ -26,6 +26,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.slf4j.Logger;
@@ -72,7 +73,6 @@ import rx.Observable;
 import rx.Subscriber;
 import rx.functions.Action1;
 import rx.functions.Func1;
-import ubicrypt.UbiCrypt;
 import ubicrypt.core.crypto.PGPEC;
 import ubicrypt.core.dto.UbiFile;
 import ubicrypt.core.exp.NotFoundException;
@@ -82,7 +82,8 @@ import ubicrypt.core.util.PGPKValueSerializer;
 import ubicrypt.core.util.PathDeserializer;
 import ubicrypt.core.util.PathSerializer;
 
-import static org.apache.commons.lang3.StringUtils.substringAfter;
+import static org.apache.commons.lang3.StringUtils.startsWith;
+import static org.apache.commons.lang3.StringUtils.trim;
 
 public class Utils {
     public static final Predicate<? super UbiFile> trackedFile = file -> !(file.isDeleted() || file.isRemoved());
@@ -337,18 +338,13 @@ public class Utils {
     }
 
     public static Path ubiqFolder() {
-        return Arrays.stream(UbiCrypt.arguments)
-                .filter(arg -> arg.startsWith("--conf"))
-                .map(conf -> substringAfter(conf, "="))
-                .map(Paths::get)
-                .findFirst()
-                .orElseGet(() -> {
-                    if ((System.getProperty("os.name")).toUpperCase().contains("WIN")) {
-                        return Paths.get(System.getenv("AppData"), "ubicrypt");
-                    } else {
-                        return Paths.get(System.getProperty("user.home"), ".ubicrypt");
-                    }
-                });
+        Path def = null;
+        if ((System.getProperty("os.name")).toUpperCase().contains("WIN")) {
+            def = Paths.get(System.getenv("AppData"), "ubicrypt");
+        } else {
+            def = Paths.get(System.getProperty("user.home"), ".ubicrypt");
+        }
+        return Paths.get(System.getProperty("conf", def.toString()));
     }
 
     public static boolean isAppInUse(final Path ubiqFolder) throws IOException {
@@ -486,6 +482,48 @@ public class Utils {
 
     public static Observable.OnSubscribe<Boolean> emptySubject() {
         return subscriber -> subscriber.onCompleted();
+    }
+
+    public static void setProperties(String[] args) {
+        if (args == null || args.length == 0) {
+            return;
+        }
+        int i = 0;
+        do {
+            String arg = trim(args[i]);
+            String pured = arg;
+            if (startsWith(arg, "-") || startsWith(arg, "--")) {
+                pured = StringUtils.substringAfterLast(arg, "-");
+            }
+            if (StringUtils.contains(pured, "=")) {
+                String[] split = StringUtils.split(pured, '=');
+                System.setProperty(split[0], split[1]);
+                i++;
+                continue;
+            }
+            i++;
+            if (i >= args.length) {
+                System.setProperty(pured, "true");
+                return;
+            }
+            String val = trim(args[i]);
+            if (StringUtils.equals(val, "=")) {
+                i++;
+                if (i >= args.length) {
+                    return;
+                }
+                val = trim(args[i]);
+            }
+
+            if (startsWith(val, "-")) {
+                System.setProperty(pured, "true");
+            } else {
+                System.setProperty(pured, val);
+                i++;
+            }
+
+
+        } while (i < args.length);
     }
 
 }

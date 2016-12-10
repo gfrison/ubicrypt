@@ -70,13 +70,6 @@ public class UbiConf {
     }
 
     @Bean
-    public Path basePath(@Value("${home:@null}") final String home) {
-        final Path ret = StringUtils.isEmpty(home) ? Paths.get(System.getProperty("user.home")) : Paths.get(home);
-        log.info("home folder:{}", ret);
-        return ret;
-    }
-
-    @Bean
     public int deviceId(Path basePath) {
         return Utils.deviceId() + basePath.hashCode() % 99;
     }
@@ -112,17 +105,6 @@ public class UbiConf {
     @Bean
     public LocalRepository localRepository(final Path basePath) {
         return new LocalRepository(basePath);
-    }
-
-    /**
-     * providers
-     */
-    @Bean
-    public List<ProviderDescriptor> providerDescriptors() {
-        return ImmutableList.of(new ProviderDescriptor(FileProvider.class, "file", "local folder", new ImageView("images/folder-48.png")),
-                new ProviderDescriptor(S3Provider.class, "s3", "Amazon S3", new ImageView("images/Amazon-48.png")),
-                new ProviderDescriptor(GDriveProvider.class, "gdrive", "Google Drive", new ImageView("images/gdrive.png"))
-        );
     }
 
     @Bean

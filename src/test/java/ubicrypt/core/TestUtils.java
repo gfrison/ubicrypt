@@ -17,11 +17,13 @@ import com.google.common.base.Throwables;
 
 import org.apache.commons.lang3.RandomStringUtils;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import ubicrypt.core.crypto.AESGCM;
@@ -36,6 +38,21 @@ public class TestUtils {
 
     static {
         createDirs();
+    }
+
+    public static void createRandomFile(Path path, int size) {
+        final byte[] bytes = new byte[size];
+        new Random().nextBytes(bytes);
+        try {
+            Files.createFile(path);
+        } catch (IOException e) {
+            Throwables.propagate(e);
+        }
+        try (FileOutputStream os = new FileOutputStream(path.toFile())) {
+            os.write(bytes);
+        } catch (IOException e) {
+            Throwables.propagate(e);
+        }
     }
 
     public static void createDirs() {

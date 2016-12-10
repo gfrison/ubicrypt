@@ -66,7 +66,7 @@ public class FileProvenience {
     @Override
     public String toString() {
         return new ToStringBuilder(this, NO_CLASS_NAME_STYLE)
-                .append("file", file)
+                .append("file", file.getPath())
                 .append("origin", origin)
                 .toString();
     }

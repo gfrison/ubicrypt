@@ -92,8 +92,16 @@ public class OnNewLocal implements Func1<FileProvenience, Observable<Boolean>> {
                     }
                 })
                 .onErrorReturn(err -> {
+                    if (tempFile.get() != null) {
+                        try {
+                            Files.delete(tempFile.get());
+                        } catch (IOException e) {
+                        }
+                    }
                     if (err instanceof NotFoundException) {
                         log.warn("remote file:{} not found in:{}", fp.getFile().getPath(), fp.getOrigin());
+                    } else {
+                        Utils.logError.call(err);
                     }
                     fp.getOrigin().error(fp.getFile());
                     return false;
