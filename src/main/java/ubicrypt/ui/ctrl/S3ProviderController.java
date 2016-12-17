@@ -47,38 +47,29 @@ import static ubicrypt.ui.Anchor.anchor;
 public class S3ProviderController implements Initializable {
   private static final Logger log = getLogger(S3ProviderController.class);
   private final EventHandler<? super KeyEvent> onKeyPressed;
-  @FXML
-  TextField accessKey;
-  @FXML
-  TextField secret;
-  @FXML
-  Label error;
-  @FXML
-  Button finish;
-  @FXML
-  Button back;
-  @FXML
-  Button listBuckets;
-  @FXML
-  ChoiceBox buckets;
-  @FXML
-  ChoiceBox regions;
-  @Inject
-  ProviderCommander providerCommander;
+  @FXML TextField accessKey;
+  @FXML TextField secret;
+  @FXML Label error;
+  @FXML Button finish;
+  @FXML Button back;
+  @FXML Button listBuckets;
+  @FXML ChoiceBox buckets;
+  @FXML ChoiceBox regions;
+  @Inject ProviderCommander providerCommander;
   StackNavigator navigator;
 
   {
     onKeyPressed =
-      event -> {
-        if (!checkInputs()) {
-          return;
-        }
-        if (event instanceof KeyEvent
-          && event.getCode() == KeyCode.ENTER
-          && !listBuckets.isDisabled()) {
-          listBuckets();
-        }
-      };
+        event -> {
+          if (!checkInputs()) {
+            return;
+          }
+          if (event instanceof KeyEvent
+              && event.getCode() == KeyCode.ENTER
+              && !listBuckets.isDisabled()) {
+            listBuckets();
+          }
+        };
   }
 
   private boolean checkInputs() {
@@ -124,18 +115,18 @@ public class S3ProviderController implements Initializable {
 
   public void listBuckets() {
     AmazonS3Client client =
-      new AmazonS3Client(
-        new AWSCredentials() {
-          @Override
-          public String getAWSAccessKeyId() {
-            return accessKey.getText();
-          }
+        new AmazonS3Client(
+            new AWSCredentials() {
+              @Override
+              public String getAWSAccessKeyId() {
+                return accessKey.getText();
+              }
 
-          @Override
-          public String getAWSSecretKey() {
-            return secret.getText();
-          }
-        });
+              @Override
+              public String getAWSSecretKey() {
+                return secret.getText();
+              }
+            });
     try {
       client.listBuckets().forEach(bucket -> buckets.getItems().add(bucket.getName()));
       error.setVisible(false);
@@ -149,30 +140,30 @@ public class S3ProviderController implements Initializable {
     buckets.setDisable(false);
     finish.setDisable(false);
     finish.setOnMouseClicked(
-      addEvent -> {
-        S3Provider provider = new S3Provider();
-        S3Conf conf = new S3Conf();
-        conf.setAccessKeyId(accessKey.getText());
-        conf.setSecrectKey(secret.getText());
-        conf.setRegion(Regions.fromName((String) regions.getSelectionModel().getSelectedItem()));
-        conf.setBucket((String) buckets.getSelectionModel().getSelectedItem());
-        provider.setConf(conf);
-        providerCommander
-          .register(provider)
-          .subscribe(
-            result -> {
-              log.info("provider s3:{} registered:{}", conf.getBucket(), result);
-              clearInputs();
-              navigator.popHome();
-            },
-            err -> {
-              log.error("error on adding s3 provider", err);
-              Platform.runLater(
-                () -> {
-                  error.setVisible(true);
-                  error.setText("Error: " + err.getMessage());
-                });
-            });
-      });
+        addEvent -> {
+          S3Provider provider = new S3Provider();
+          S3Conf conf = new S3Conf();
+          conf.setAccessKeyId(accessKey.getText());
+          conf.setSecrectKey(secret.getText());
+          conf.setRegion(Regions.fromName((String) regions.getSelectionModel().getSelectedItem()));
+          conf.setBucket((String) buckets.getSelectionModel().getSelectedItem());
+          provider.setConf(conf);
+          providerCommander
+              .register(provider)
+              .subscribe(
+                  result -> {
+                    log.info("provider s3:{} registered:{}", conf.getBucket(), result);
+                    clearInputs();
+                    navigator.popHome();
+                  },
+                  err -> {
+                    log.error("error on adding s3 provider", err);
+                    Platform.runLater(
+                        () -> {
+                          error.setVisible(true);
+                          error.setText("Error: " + err.getMessage());
+                        });
+                  });
+        });
   }
 }

@@ -13,5 +13,4 @@
  */
 package ubicrypt.core.events;
 
-public class SynchDoneEvent {
-}
+public class SynchDoneEvent {}

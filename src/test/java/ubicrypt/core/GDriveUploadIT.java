@@ -62,26 +62,21 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class GDriveUploadIT {
   private static final Logger log = getLogger(GDriveUploadIT.class);
   private static GDriveConf conf;
-  @Inject
-  ProviderCommander providerCommander;
-  @Inject
-  FileFacade fileFacade;
+  @Inject ProviderCommander providerCommander;
+  @Inject FileFacade fileFacade;
 
   @Resource
   @Qualifier("providerEvent")
   Observable<ProviderEvent> providerEvent;
 
-  @Inject
-  ProviderLifeCycle providerLifeCycle;
-  @Inject
-  Path basePath;
+  @Inject ProviderLifeCycle providerLifeCycle;
+  @Inject Path basePath;
 
   @Resource
   @Qualifier("fileEvents")
   Observable<FileEvent> fileEvents;
 
-  @Inject
-  LocalConfig localConfig;
+  @Inject LocalConfig localConfig;
 
   @Resource
   @Qualifier("appEvents")
@@ -108,22 +103,22 @@ public class GDriveUploadIT {
 
     //create 20 files
     List<Observable<Boolean>> ls =
-      IntStream.range(0, numFiles)
-        .mapToObj(
-          i -> TestUtils.createRandomFile(TestUtils.tmp.resolve(String.valueOf(i)), size))
-        .map(fileFacade::addFile)
-        .map(ob -> ob.toBlocking().first())
-        .map(Tuple2::getT2)
-        .collect(Collectors.toList());
+        IntStream.range(0, numFiles)
+            .mapToObj(
+                i -> TestUtils.createRandomFile(TestUtils.tmp.resolve(String.valueOf(i)), size))
+            .map(fileFacade::addFile)
+            .map(ob -> ob.toBlocking().first())
+            .map(Tuple2::getT2)
+            .collect(Collectors.toList());
     //track files
     assertThat(Observable.merge(ls).toBlocking().last()).isTrue();
 
     Optional<ProviderHook> opt =
-      providerLifeCycle
-        .currentlyActiveProviders()
-        .stream()
-        .filter(providerHook -> providerHook.getProvider().equals(provider))
-        .findFirst();
+        providerLifeCycle
+            .currentlyActiveProviders()
+            .stream()
+            .filter(providerHook -> providerHook.getProvider().equals(provider))
+            .findFirst();
     assertThat(opt.isPresent()).isTrue();
     AcquirerReleaser acquirer = Observable.create(opt.get().getAcquirer()).toBlocking().first();
     assertThat(acquirer).isNotNull();
@@ -132,28 +127,28 @@ public class GDriveUploadIT {
 
     Thread.sleep(2000);
     assertThat(
-      provider
-        .getDrive()
-        .files()
-        .list()
-        .setQ(String.format("'%s' in parents", conf.getFolderId()))
-        .execute()
-        .getFiles()
-        .size())
-      .isEqualTo(numFiles + 2);
+            provider
+                .getDrive()
+                .files()
+                .list()
+                .setQ(String.format("'%s' in parents", conf.getFolderId()))
+                .execute()
+                .getFiles()
+                .size())
+        .isEqualTo(numFiles + 2);
 
     //untrack
     List<Observable<Boolean>> untracked =
-      IntStream.range(0, numFiles)
-        .mapToObj(i -> fileFacade.removeFile(TestUtils.tmp.resolve(String.valueOf(i))))
-        .collect(Collectors.toList());
+        IntStream.range(0, numFiles)
+            .mapToObj(i -> fileFacade.removeFile(TestUtils.tmp.resolve(String.valueOf(i))))
+            .collect(Collectors.toList());
     assertThat(Observable.merge(untracked).toBlocking().last()).isTrue();
     opt =
-      providerLifeCycle
-        .currentlyActiveProviders()
-        .stream()
-        .filter(providerHook -> providerHook.getProvider().equals(provider))
-        .findFirst();
+        providerLifeCycle
+            .currentlyActiveProviders()
+            .stream()
+            .filter(providerHook -> providerHook.getProvider().equals(provider))
+            .findFirst();
     assertThat(opt.isPresent()).isTrue();
     acquirer = Observable.create(opt.get().getAcquirer()).toBlocking().first();
     assertThat(acquirer).isNotNull();
@@ -161,15 +156,15 @@ public class GDriveUploadIT {
     //check remote files are deleted
     assertThat(remoteFiles.stream().filter(remoteFile -> !remoteFile.isRemoved())).hasSize(0);
     assertThat(
-      provider
-        .getDrive()
-        .files()
-        .list()
-        .setQ(String.format("'%s' in parents", conf.getFolderId()))
-        .execute()
-        .getFiles()
-        .size())
-      .isEqualTo(2);
+            provider
+                .getDrive()
+                .files()
+                .list()
+                .setQ(String.format("'%s' in parents", conf.getFolderId()))
+                .execute()
+                .getFiles()
+                .size())
+        .isEqualTo(2);
     provider.getDrive().files().delete(conf.getFolderId()).execute();
   }
 }

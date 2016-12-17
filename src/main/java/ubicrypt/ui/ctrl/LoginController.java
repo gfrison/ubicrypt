@@ -38,34 +38,31 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 public class LoginController implements Initializable, Consumer<HostServices> {
   private static final Logger log = getLogger(LoginController.class);
-  @FXML
-  Button submit;
-  @FXML
-  Label errorLabel;
-  @FXML
-  private PasswordField pwd;
+  @FXML Button submit;
+  @FXML Label errorLabel;
+  @FXML private PasswordField pwd;
   private final EventHandler handler =
-    event -> {
-      if (event instanceof KeyEvent && ((KeyEvent) event).getCode() != KeyCode.ENTER) {
-        return;
-      }
-      try {
-        if (StringUtils.isNotEmpty(pwd.getText())
-          && Utils.readPrivateKey(pwd.getText().toCharArray()) != null) {
-          log.debug("password match");
-          submit.setDisable(true);
-          errorLabel.setVisible(false);
-          final PublishSubject<char[]> passwordStream = Anchor.anchor().getPasswordStream();
-          passwordStream.onNext(pwd.getText().toCharArray());
-          passwordStream.onCompleted();
-          errorLabel.setVisible(false);
+      event -> {
+        if (event instanceof KeyEvent && ((KeyEvent) event).getCode() != KeyCode.ENTER) {
           return;
         }
-      } catch (PGPException e) {
-        log.info("password mismatch");
-      }
-      errorLabel.setVisible(true);
-    };
+        try {
+          if (StringUtils.isNotEmpty(pwd.getText())
+              && Utils.readPrivateKey(pwd.getText().toCharArray()) != null) {
+            log.debug("password match");
+            submit.setDisable(true);
+            errorLabel.setVisible(false);
+            final PublishSubject<char[]> passwordStream = Anchor.anchor().getPasswordStream();
+            passwordStream.onNext(pwd.getText().toCharArray());
+            passwordStream.onCompleted();
+            errorLabel.setVisible(false);
+            return;
+          }
+        } catch (PGPException e) {
+          log.info("password mismatch");
+        }
+        errorLabel.setVisible(true);
+      };
 
   @Override
   public void initialize(final URL location, final ResourceBundle resources) {
@@ -75,6 +72,5 @@ public class LoginController implements Initializable, Consumer<HostServices> {
   }
 
   @Override
-  public void accept(HostServices hostServices) {
-  }
+  public void accept(HostServices hostServices) {}
 }

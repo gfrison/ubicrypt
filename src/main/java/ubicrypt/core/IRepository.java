@@ -33,6 +33,5 @@ public interface IRepository {
     return Observable.just(false);
   }
 
-  default void error(UbiFile file) {
-  }
+  default void error(UbiFile file) {}
 }

@@ -52,22 +52,14 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class MainController implements Initializable {
   private static final Logger log = getLogger(MainController.class);
   private final Set<ProgressFile> filesInProgress = ConcurrentHashMap.newKeySet();
-  @Inject
-  PGPService pgpService;
-  @Resource
-  PublishSubject<ProgressFile> progressEvents;
-  @Inject
-  Stage stage;
-  @Inject
-  Path basePath;
-  @FXML
-  StatusBar footer;
-  @FXML
-  FilesController filesController;
-  @FXML
-  ProvidersController providersController;
-  @FXML
-  TabPane tabs;
+  @Inject PGPService pgpService;
+  @Resource PublishSubject<ProgressFile> progressEvents;
+  @Inject Stage stage;
+  @Inject Path basePath;
+  @FXML StatusBar footer;
+  @FXML FilesController filesController;
+  @FXML ProvidersController providersController;
+  @FXML TabPane tabs;
 
   @Inject
   @Qualifier("appEvents")
@@ -81,61 +73,61 @@ public class MainController implements Initializable {
     log.debug("initialize fxml:{}, pgpservice:{}", fxml, pgpService);
     //file progress monitor
     progressEvents.subscribe(
-      progress ->
-        Platform.runLater(
-          () -> {
-            if (progress.isCompleted() || progress.isError()) {
-              log.debug("progress completed");
-              if (!filesInProgress.remove(progress)) {
-                log.warn(
-                  "progress not tracked. progress file:{}, element:{}",
-                  progress.getProvenience().getFile());
-              }
-              Timeline timeline =
-                new Timeline(
-                  new KeyFrame(
-                    Duration.seconds(2),
-                    ae -> {
-                      footer.setText("");
-                      footer.setProgress(0D);
-                    }));
-              timeline.play();
-            } else {
-              filesInProgress.add(progress);
-            }
-            if (filesInProgress.isEmpty()) {
-              return;
-            }
-            footer.setVisible(true);
-            filesInProgress
-              .stream()
-              .findFirst()
-              .ifPresent(
-                pr -> {
-                  String file =
-                    abbreviate(
-                      pr.getProvenience()
-                        .getFile()
-                        .getPath()
-                        .getFileName()
-                        .toString(),
-                      30);
-                  String target =
-                    abbreviate(
-                      pr.getDirection() == ProgressFile.Direction.inbound
-                        ? pr.getProvenience().getOrigin().toString()
-                        : pr.getTarget().toString(),
-                      30);
-                  String text = file + " → " + target;
-                  if (pr.getDirection() == ProgressFile.Direction.inbound) {
-                    text = target + " → " + file;
+        progress ->
+            Platform.runLater(
+                () -> {
+                  if (progress.isCompleted() || progress.isError()) {
+                    log.debug("progress completed");
+                    if (!filesInProgress.remove(progress)) {
+                      log.warn(
+                          "progress not tracked. progress file:{}, element:{}",
+                          progress.getProvenience().getFile());
+                    }
+                    Timeline timeline =
+                        new Timeline(
+                            new KeyFrame(
+                                Duration.seconds(2),
+                                ae -> {
+                                  footer.setText("");
+                                  footer.setProgress(0D);
+                                }));
+                    timeline.play();
+                  } else {
+                    filesInProgress.add(progress);
                   }
-                  footer.setText(text);
-                  footer.setProgress(
-                    (double) progress.getChunk()
-                      / pr.getProvenience().getFile().getSize());
-                });
-          }));
+                  if (filesInProgress.isEmpty()) {
+                    return;
+                  }
+                  footer.setVisible(true);
+                  filesInProgress
+                      .stream()
+                      .findFirst()
+                      .ifPresent(
+                          pr -> {
+                            String file =
+                                abbreviate(
+                                    pr.getProvenience()
+                                        .getFile()
+                                        .getPath()
+                                        .getFileName()
+                                        .toString(),
+                                    30);
+                            String target =
+                                abbreviate(
+                                    pr.getDirection() == ProgressFile.Direction.inbound
+                                        ? pr.getProvenience().getOrigin().toString()
+                                        : pr.getTarget().toString(),
+                                    30);
+                            String text = file + " → " + target;
+                            if (pr.getDirection() == ProgressFile.Direction.inbound) {
+                              text = target + " → " + file;
+                            }
+                            footer.setText(text);
+                            footer.setProgress(
+                                (double) progress.getChunk()
+                                    / pr.getProvenience().getFile().getSize());
+                          });
+                }));
   }
 
   public void about(ActionEvent actionEvent) {

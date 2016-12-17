@@ -33,15 +33,15 @@ public class UItils {
   private static final Logger log = getLogger(UItils.class);
 
   public static Optional<TreeItem<ITreeItem>> searchFile(
-    final TreeItem<ITreeItem> filesRoot, final UbiFile file) {
+      final TreeItem<ITreeItem> filesRoot, final UbiFile file) {
     return searchFile(filesRoot, file, file.getPath().iterator(), emptyPath);
   }
 
   private static Optional<TreeItem<ITreeItem>> searchFile(
-    final TreeItem<ITreeItem> filesRoot,
-    final UbiFile file,
-    final Iterator<Path> it,
-    final Path basePath) {
+      final TreeItem<ITreeItem> filesRoot,
+      final UbiFile file,
+      final Iterator<Path> it,
+      final Path basePath) {
     if (!it.hasNext()) {
       if (filesRoot.getValue() instanceof FileItem) {
         if (((FileItem) filesRoot.getValue()).getFile().equals(file)) {
@@ -53,19 +53,19 @@ public class UItils {
     final Path path = it.next();
     final Path resolvedPath = basePath.resolve(path);
     return filesRoot
-      .getChildren()
-      .stream()
-      .filter(
-        item -> {
-          if (item.getValue() instanceof FileItem) {
-            return ((FolderItem) item.getValue())
-              .getPath()
-              .toString()
-              .equals(resolvedPath.toString());
-          }
-          return ((FolderItem) item.getValue()).getPath().toString().equals(path.toString());
-        })
-      .findFirst()
-      .flatMap(item -> searchFile(item, file, it, resolvedPath));
+        .getChildren()
+        .stream()
+        .filter(
+            item -> {
+              if (item.getValue() instanceof FileItem) {
+                return ((FolderItem) item.getValue())
+                    .getPath()
+                    .toString()
+                    .equals(resolvedPath.toString());
+              }
+              return ((FolderItem) item.getValue()).getPath().toString().equals(path.toString());
+            })
+        .findFirst()
+        .flatMap(item -> searchFile(item, file, it, resolvedPath));
   }
 }

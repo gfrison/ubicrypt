@@ -56,7 +56,7 @@ class PGPKeyRingImpl {
   private void readPublicKeyRing() throws Exception {
     final InputStream in = new FileInputStream(getPublicKeyRingFileName());
     final PGPPublicKeyRingCollection collection =
-      new PGPPublicKeyRingCollection(in, new BcKeyFingerprintCalculator());
+        new PGPPublicKeyRingCollection(in, new BcKeyFingerprintCalculator());
     in.close();
 
     for (final Iterator iterator = collection.getKeyRings(); iterator.hasNext(); ) {
@@ -77,7 +77,7 @@ class PGPKeyRingImpl {
   private void readPrivateKeyBundle() throws Exception {
     final InputStream in = new FileInputStream(getSecretKeyRingFileName());
     final PGPSecretKeyRingCollection collection =
-      new PGPSecretKeyRingCollection(in, new BcKeyFingerprintCalculator());
+        new PGPSecretKeyRingCollection(in, new BcKeyFingerprintCalculator());
     in.close();
     final Iterator iter = collection.getKeyRings();
     while (iter.hasNext()) {

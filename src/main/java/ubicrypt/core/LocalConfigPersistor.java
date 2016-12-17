@@ -41,13 +41,11 @@ import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.events.ShutdownRegistration;
 
 public class LocalConfigPersistor
-  implements Observable.OnSubscribe<Void>, EnvironmentAware, IStoppable {
+    implements Observable.OnSubscribe<Void>, EnvironmentAware, IStoppable {
   private final Logger log = LoggerFactory.getLogger(LocalConfigPersistor.class);
   private final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1);
-  @Inject
-  LocalConfig localConfig;
-  @Inject
-  IPGPService ipgpService;
+  @Inject LocalConfig localConfig;
+  @Inject IPGPService ipgpService;
 
   @Autowired
   @Value("${localConf.interval.persistSec:1}")
@@ -71,18 +69,18 @@ public class LocalConfigPersistor
     }
     log.info("local conf persistor started, pgp enable:{}", encrypt);
     runnable =
-      () -> {
-        try {
-          final byte[] clearBytes = Utils.marshall(localConfig);
-          Files.write(
-            Utils.configFile(),
-            encrypt
-              ? IOUtils.toByteArray(ipgpService.encrypt(new ByteArrayInputStream(clearBytes)))
-              : clearBytes);
-        } catch (final Exception e) {
-          log.error(e.getMessage(), e);
-        }
-      };
+        () -> {
+          try {
+            final byte[] clearBytes = Utils.marshall(localConfig);
+            Files.write(
+                Utils.configFile(),
+                encrypt
+                    ? IOUtils.toByteArray(ipgpService.encrypt(new ByteArrayInputStream(clearBytes)))
+                    : clearBytes);
+          } catch (final Exception e) {
+            log.error(e.getMessage(), e);
+          }
+        };
     executorService.scheduleWithFixedDelay(runnable, interval, 1, TimeUnit.SECONDS);
     appEvents.onNext(new ShutdownRegistration(this));
   }
@@ -90,23 +88,22 @@ public class LocalConfigPersistor
   @Override
   public Observable<Void> stop() {
     return Observable.<Void>create(
-      subscriber -> {
-        log.debug("shutdown local config persistor");
-        executorService.shutdown();
-        try {
-          executorService.awaitTermination(5, TimeUnit.SECONDS);
-          runnable.run();
-          subscriber.onCompleted();
-        } catch (InterruptedException e) {
-          subscriber.onError(e);
-        }
-      })
-      .subscribeOn(Schedulers.io());
+            subscriber -> {
+              log.debug("shutdown local config persistor");
+              executorService.shutdown();
+              try {
+                executorService.awaitTermination(5, TimeUnit.SECONDS);
+                runnable.run();
+                subscriber.onCompleted();
+              } catch (InterruptedException e) {
+                subscriber.onError(e);
+              }
+            })
+        .subscribeOn(Schedulers.io());
   }
 
   @Override
-  public void call(final Subscriber<? super Void> subscriber) {
-  }
+  public void call(final Subscriber<? super Void> subscriber) {}
 
   @Override
   public void setEnvironment(final Environment environment) {

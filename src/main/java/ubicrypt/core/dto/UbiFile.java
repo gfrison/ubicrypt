@@ -179,16 +179,16 @@ public abstract class UbiFile<T extends UbiFile> implements Comparable<UbiFile> 
   @Override
   public String toString() {
     return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
-      .append("id", id)
-      .append("vclock", vclock)
-      .append("lastModified", lastModified)
-      .append("deleted", deleted)
-      .append("removed", removed)
-      .append("path", path)
-      .append("size", size)
-      .append("sha1", sha1)
-      .append("active", active)
-      .toString();
+        .append("id", id)
+        .append("vclock", vclock)
+        .append("lastModified", lastModified)
+        .append("deleted", deleted)
+        .append("removed", removed)
+        .append("path", path)
+        .append("size", size)
+        .append("sha1", sha1)
+        .append("active", active)
+        .toString();
   }
 
   public enum KeyType {

@@ -21,9 +21,7 @@ import ubicrypt.core.dto.UbiFile;
 
 import static org.apache.commons.lang3.builder.ToStringStyle.NO_CLASS_NAME_STYLE;
 
-/**
- * associate the file with its own origin provider
- */
+/** associate the file with its own origin provider */
 public class FileProvenience {
   private final UbiFile file;
   private final IRepository origin;
@@ -60,8 +58,8 @@ public class FileProvenience {
   @Override
   public String toString() {
     return new ToStringBuilder(this, NO_CLASS_NAME_STYLE)
-      .append("file", file.getPath())
-      .append("origin", origin)
-      .toString();
+        .append("file", file.getPath())
+        .append("origin", origin)
+        .toString();
   }
 }

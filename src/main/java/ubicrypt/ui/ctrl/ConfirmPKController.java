@@ -40,41 +40,33 @@ import static ubicrypt.ui.Anchor.anchor;
 
 public class ConfirmPKController implements Initializable, Consumer<PGPPublicKey> {
   private static final Logger log = getLogger(ConfirmPKController.class);
-  @FXML
-  Label creationDate;
-  @FXML
-  Label algorithm;
-  @FXML
-  ListView<String> userIds;
-  @Inject
-  PGPService pgpService;
-  @Inject
-  ProviderCommander providerCommander;
-  @FXML
-  Button cancel;
-  @FXML
-  Button add;
+  @FXML Label creationDate;
+  @FXML Label algorithm;
+  @FXML ListView<String> userIds;
+  @Inject PGPService pgpService;
+  @Inject ProviderCommander providerCommander;
+  @FXML Button cancel;
+  @FXML Button add;
   StackNavigator navigator;
 
   @Override
   public void accept(final PGPPublicKey pgpPublicKey) {
     log.debug("received pk:{}", pgpPublicKey);
     creationDate.setText(
-      DateFormatUtils.format(pgpPublicKey.getCreationTime(), "yyyy-MM-dd HH:mm"));
+        DateFormatUtils.format(pgpPublicKey.getCreationTime(), "yyyy-MM-dd HH:mm"));
     algorithm.setText(PGPEC.algorithm(pgpPublicKey.getAlgorithm()));
     Utils.toStream(pgpPublicKey.getRawUserIDs())
-      .forEach(userId -> userIds.getItems().add((String) userId));
+        .forEach(userId -> userIds.getItems().add((String) userId));
     cancel.setOnMouseClicked(event -> anchor().popScene());
     add.setOnMouseClicked(
-      event ->
-        providerCommander
-          .addOwnedPK(pgpPublicKey)
-          .doOnError(err -> log.error(err.getMessage(), err))
-          .doOnCompleted(() -> Platform.runLater(() -> navigator.browse("exportConfig")))
-          .subscribe());
+        event ->
+            providerCommander
+                .addOwnedPK(pgpPublicKey)
+                .doOnError(err -> log.error(err.getMessage(), err))
+                .doOnCompleted(() -> Platform.runLater(() -> navigator.browse("exportConfig")))
+                .subscribe());
   }
 
   @Override
-  public void initialize(final URL location, final ResourceBundle resources) {
-  }
+  public void initialize(final URL location, final ResourceBundle resources) {}
 }

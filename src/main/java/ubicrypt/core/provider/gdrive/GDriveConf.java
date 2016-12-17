@@ -34,13 +34,11 @@ public class GDriveConf implements DataStore {
   private String folderName = "ubicrypt";
 
   private Map<String, byte[]> map = new ConcurrentHashMap<>();
-  @JsonIgnore
-  private DataStoreFactory dataStoreFactory;
+  @JsonIgnore private DataStoreFactory dataStoreFactory;
   private String folderId;
   private String email;
 
-  public GDriveConf() {
-  }
+  public GDriveConf() {}
 
   public GDriveConf(String id, DataStoreFactory dataStoreFactory) {
     this.id = id;
@@ -87,11 +85,11 @@ public class GDriveConf implements DataStore {
     }
     byte[] serialized = IOUtils.serialize(value);
     return map.values()
-      .stream()
-      .map(bs -> Arrays.equals(serialized, bs))
-      .filter(test -> test)
-      .findFirst()
-      .orElse(false);
+        .stream()
+        .map(bs -> Arrays.equals(serialized, bs))
+        .filter(test -> test)
+        .findFirst()
+        .orElse(false);
   }
 
   @Override
@@ -102,17 +100,17 @@ public class GDriveConf implements DataStore {
   @Override
   public Collection values() throws IOException {
     return map.values()
-      .stream()
-      .map(
-        bs -> {
-          try {
-            return IOUtils.deserialize(bs);
-          } catch (IOException e) {
-            Throwables.propagate(e);
-          }
-          return null;
-        })
-      .collect(Collectors.toList());
+        .stream()
+        .map(
+            bs -> {
+              try {
+                return IOUtils.deserialize(bs);
+              } catch (IOException e) {
+                Throwables.propagate(e);
+              }
+              return null;
+            })
+        .collect(Collectors.toList());
   }
 
   @Override

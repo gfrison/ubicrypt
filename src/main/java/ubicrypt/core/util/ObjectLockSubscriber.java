@@ -28,7 +28,7 @@ import rx.functions.Action0;
 
 public class ObjectLockSubscriber<T> implements Observable.OnSubscribe<T> {
   private static final ConcurrentHashMap<Object, Tuple2<AtomicBoolean, Queue<Action0>>> locks =
-    new ConcurrentHashMap<>();
+      new ConcurrentHashMap<>();
   private final T obj;
   private final Consumer<T> onCommit;
 
@@ -45,37 +45,37 @@ public class ObjectLockSubscriber<T> implements Observable.OnSubscribe<T> {
   @Override
   public void call(final Subscriber<? super T> subscriber) {
     final Tuple2<AtomicBoolean, Queue<Action0>> tuple =
-      locks.computeIfAbsent(
-        obj, (object) -> Tuple.of(new AtomicBoolean(false), new ConcurrentLinkedQueue()));
+        locks.computeIfAbsent(
+            obj, (object) -> Tuple.of(new AtomicBoolean(false), new ConcurrentLinkedQueue()));
     final Queue queue = tuple.getT2();
     subscriber.add(
-      new Subscription() {
-        private final AtomicBoolean unsub = new AtomicBoolean(false);
+        new Subscription() {
+          private final AtomicBoolean unsub = new AtomicBoolean(false);
 
-        @Override
-        public void unsubscribe() {
-          final Tuple2<AtomicBoolean, Queue<Action0>> tuple = locks.get(obj);
-          if (onCommit != null) {
-            onCommit.accept(obj);
+          @Override
+          public void unsubscribe() {
+            final Tuple2<AtomicBoolean, Queue<Action0>> tuple = locks.get(obj);
+            if (onCommit != null) {
+              onCommit.accept(obj);
+            }
+            tuple.getT1().compareAndSet(true, false);
+            final Action0 func = tuple.getT2().poll();
+            if (func != null) {
+              func.call();
+            }
+            unsub.set(true);
           }
-          tuple.getT1().compareAndSet(true, false);
-          final Action0 func = tuple.getT2().poll();
-          if (func != null) {
-            func.call();
-          }
-          unsub.set(true);
-        }
 
-        @Override
-        public boolean isUnsubscribed() {
-          return unsub.get();
-        }
-      });
+          @Override
+          public boolean isUnsubscribed() {
+            return unsub.get();
+          }
+        });
     final Action0 func =
-      () -> {
-        subscriber.onNext(obj);
-        subscriber.onCompleted();
-      };
+        () -> {
+          subscriber.onNext(obj);
+          subscriber.onCompleted();
+        };
     if (tuple.getT1().compareAndSet(false, true)) {
       func.call();
     } else {

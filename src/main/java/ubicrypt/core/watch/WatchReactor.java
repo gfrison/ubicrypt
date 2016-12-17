@@ -33,74 +33,69 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 public class WatchReactor {
   private static final Logger log = getLogger(WatchReactor.class);
-  @Inject
-  PublishSubject<PathEvent> pathStream;
-  @Inject
-  IFileCommander fileCommander;
-  @Inject
-  Path basePath;
-  @Resource
-  private Subject<FileEvent, FileEvent> fileEvents;
-  @Inject
-  private WatcherBroadcaster watcherBroadcaster;
+  @Inject PublishSubject<PathEvent> pathStream;
+  @Inject IFileCommander fileCommander;
+  @Inject Path basePath;
+  @Resource private Subject<FileEvent, FileEvent> fileEvents;
+  @Inject private WatcherBroadcaster watcherBroadcaster;
 
   @PostConstruct
   public void init() {
     //react to file incoming/removing local files
     fileEvents
-      .filter(fileEvent -> fileEvent.getLocation() == FileEvent.Location.local)
-      .subscribe(
-        fileEvent -> {
-          switch (fileEvent.getType()) {
-            case created:
-              watcherBroadcaster.watchPath(basePath.resolve(fileEvent.getFile().getPath()));
-              break;
-            case deleted:
-            case removed:
-              //TODO
-          }
-        });
+        .filter(fileEvent -> fileEvent.getLocation() == FileEvent.Location.local)
+        .subscribe(
+            fileEvent -> {
+              switch (fileEvent.getType()) {
+                case created:
+                  watcherBroadcaster.watchPath(basePath.resolve(fileEvent.getFile().getPath()));
+                  break;
+                case deleted:
+                case removed:
+                  //TODO
+              }
+            });
     //react to filesystem changes
     pathStream.subscribe(
-      pathEvent -> {
-        log.debug("incoming {}", pathEvent);
-        try {
-          switch (pathEvent.getEvent()) {
-            case create:
-              fileCommander
-                .addFile(pathEvent.getPath())
-                .flatMap(Tuple2::getT2)
-                .onErrorResumeNext(
-                  err -> {
-                    if (err instanceof AlreadyManagedException) {
-                      return fileCommander.updateFile(pathEvent.getPath());
-                    }
-                    return Observable.error(err);
-                  })
-                .subscribe(
-                  res -> log.info("add/update file:{}, result:{}", pathEvent.getPath(), res),
-                  err -> log.error("error event:", pathEvent, err));
-              break;
-            case update:
-              fileCommander
-                .updateFile(pathEvent.getPath())
-                .subscribe(
-                  res -> log.info("update file:{}, result:{}", pathEvent.getPath(), res),
-                  err -> log.error("error event:", pathEvent, err));
-              break;
-            case delete:
-              fileCommander
-                .deleteFile(pathEvent.getPath())
-                .subscribe(
-                  res -> log.info("remove file:{}, result:{}", pathEvent.getPath(), res),
-                  err -> log.error("error event:", pathEvent, err));
-              break;
+        pathEvent -> {
+          log.debug("incoming {}", pathEvent);
+          try {
+            switch (pathEvent.getEvent()) {
+              case create:
+                fileCommander
+                    .addFile(pathEvent.getPath())
+                    .flatMap(Tuple2::getT2)
+                    .onErrorResumeNext(
+                        err -> {
+                          if (err instanceof AlreadyManagedException) {
+                            return fileCommander.updateFile(pathEvent.getPath());
+                          }
+                          return Observable.error(err);
+                        })
+                    .subscribe(
+                        res -> log.info("add/update file:{}, result:{}", pathEvent.getPath(), res),
+                        err -> log.error("error event:", pathEvent, err));
+                break;
+              case update:
+                fileCommander
+                    .updateFile(pathEvent.getPath())
+                    .subscribe(
+                        res -> log.info("update file:{}, result:{}", pathEvent.getPath(), res),
+                        err -> log.error("error event:", pathEvent, err));
+                break;
+              case delete:
+                fileCommander
+                    .deleteFile(pathEvent.getPath())
+                    .subscribe(
+                        res -> log.info("remove file:{}, result:{}", pathEvent.getPath(), res),
+                        err -> log.error("error event:", pathEvent, err));
+                break;
+            }
+          } catch (final Exception e) {
+            log.error("error on path event:{}", pathEvent.getPath(), e);
           }
-        } catch (final Exception e) {
-          log.error("error on path event:{}", pathEvent.getPath(), e);
-        }
-      },
-      err -> log.error(err.getMessage(), err));
+        },
+        err -> log.error(err.getMessage(), err));
     log.info("file change reactor started");
   }
 }

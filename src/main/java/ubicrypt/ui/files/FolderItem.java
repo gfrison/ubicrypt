@@ -31,13 +31,13 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 public class FolderItem implements ITreeItem {
   final ImageView imageView =
-    new ImageView() {
-      {
-        getStyleClass().add("tree-folder");
-        setFitHeight(20);
-        setFitWidth(20);
-      }
-    };
+      new ImageView() {
+        {
+          getStyleClass().add("tree-folder");
+          setFitHeight(20);
+          setFitWidth(20);
+        }
+      };
   private final Path path;
   private final String label;
   private final ContextMenu menu = new ContextMenu();
@@ -49,9 +49,9 @@ public class FolderItem implements ITreeItem {
   }
 
   public FolderItem(
-    final Path path,
-    final EventHandler<ActionEvent> onAddHandler,
-    final EventHandler<ActionEvent> onAddFolder) {
+      final Path path,
+      final EventHandler<ActionEvent> onAddHandler,
+      final EventHandler<ActionEvent> onAddFolder) {
     checkArgument(path != null, "path must not be null");
     this.path = path;
     label = null;

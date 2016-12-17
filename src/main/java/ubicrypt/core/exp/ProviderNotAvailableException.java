@@ -13,5 +13,4 @@
  */
 package ubicrypt.core.exp;
 
-public class ProviderNotAvailableException extends RuntimeException {
-}
+public class ProviderNotAvailableException extends RuntimeException {}

@@ -41,10 +41,8 @@ public class ShowConfigCtrl implements Initializable {
     Utils.configureMapper(mapper);
   }
 
-  @Inject
-  LocalConfig localConfig;
-  @FXML
-  private TextArea text;
+  @Inject LocalConfig localConfig;
+  @FXML private TextArea text;
 
   @Override
   public void initialize(final URL location, final ResourceBundle resources) {

@@ -33,53 +33,49 @@ public class FileFacade implements IFileCommander {
 
   private static final Logger log = getLogger(FileFacade.class);
 
-  @Inject
-  FileCommander fileCommander;
-  @Inject
-  WatcherBroadcaster watcher;
-  @Inject
-  Path basePath;
-  @Inject
-  LocalConfig localConfig;
+  @Inject FileCommander fileCommander;
+  @Inject WatcherBroadcaster watcher;
+  @Inject Path basePath;
+  @Inject LocalConfig localConfig;
 
   @Override
   public Observable<Tuple2<LocalFile, Observable<Boolean>>> addFile(final Path absolutePath) {
     final Path relPath = basePath.relativize(absolutePath);
     final Optional<LocalFile> optFile =
-      localConfig
-        .getLocalFiles()
-        .stream()
-        .filter(lfile -> lfile.getPath().equals(relPath))
-        .findFirst();
+        localConfig
+            .getLocalFiles()
+            .stream()
+            .filter(lfile -> lfile.getPath().equals(relPath))
+            .findFirst();
     if (optFile.isPresent()) {
       log.debug("file already present:{} ", optFile.get());
       final LocalFile localFile = optFile.get();
       if (localFile.isRemoved()) {
         return Observable.just(
-          Tuple.of(
-            optFile.get(),
-            fileCommander.update(absolutePath, (file) -> file.setRemoved(false))));
+            Tuple.of(
+                optFile.get(),
+                fileCommander.update(absolutePath, (file) -> file.setRemoved(false))));
       }
       if (localFile.isDeleted()) {
         return Observable.just(
-          Tuple.of(
-            optFile.get(),
-            fileCommander.update(absolutePath, (file) -> file.setDeleted(false))));
+            Tuple.of(
+                optFile.get(),
+                fileCommander.update(absolutePath, (file) -> file.setDeleted(false))));
       }
     }
     return fileCommander
-      .addFile(absolutePath)
-      .map(
-        ret ->
-          Tuple.of(
-            ret.getT1(),
-            ret.getT2()
-              .doOnNext(
-                res -> {
-                  if (res) {
-                    watcher.watchPath(absolutePath);
-                  }
-                })));
+        .addFile(absolutePath)
+        .map(
+            ret ->
+                Tuple.of(
+                    ret.getT1(),
+                    ret.getT2()
+                        .doOnNext(
+                            res -> {
+                              if (res) {
+                                watcher.watchPath(absolutePath);
+                              }
+                            })));
   }
 
   @Override

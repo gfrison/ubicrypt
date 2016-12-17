@@ -54,10 +54,10 @@ public class ProviderItem implements ITreeItem {
   private ProviderStatus status = ProviderStatus.uninitialized;
 
   public ProviderItem(
-    final UbiProvider provider,
-    final ProviderDescriptor descriptor,
-    final Consumer<UbiProvider> providerRemover,
-    StackNavigator navigator) {
+      final UbiProvider provider,
+      final ProviderDescriptor descriptor,
+      final Consumer<UbiProvider> providerRemover,
+      StackNavigator navigator) {
     this.provider = provider;
     this.descriptor = descriptor;
     hbox = new HBox();
@@ -75,23 +75,23 @@ public class ProviderItem implements ITreeItem {
     Button info = new Button();
     info.setGraphic(infoGraphic);
     info.setOnMouseClicked(
-      event -> {
-        navigator.browse(
-          "provider/" + provider.code() + "-info", Tuple.of(provider, providerRemover, status));
-      });
+        event -> {
+          navigator.browse(
+              "provider/" + provider.code() + "-info", Tuple.of(provider, providerRemover, status));
+        });
     if (ProviderItem.class.getResource("/fxml/provider/" + provider.code() + "-info.fxml")
-      == null) {
+        == null) {
       info.setDisable(true);
     }
 
     providerIcon =
-      new ImageView() {
-        {
-          setImage(descriptor.getLogo().getImage());
-          setFitHeight(40);
-          setFitWidth(40);
-        }
-      };
+        new ImageView() {
+          {
+            setImage(descriptor.getLogo().getImage());
+            setFitHeight(40);
+            setFitWidth(40);
+          }
+        };
     statusIcon = new ImageView(new Image("/images/clock.png"));
     statusIcon.setFitWidth(15);
     statusIcon.setFitHeight(15);
@@ -99,19 +99,19 @@ public class ProviderItem implements ITreeItem {
     menu = new ContextMenu();
     final MenuItem remove = new MenuItem("Remove Provider");
     remove.setOnAction(
-      event -> {
-        final Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Cloud Storage remove");
-        alert.setHeaderText(String.format("Storage %s will be removed", provider.providerId()));
-        alert.setContentText("Are you sure?");
+        event -> {
+          final Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+          alert.setTitle("Cloud Storage remove");
+          alert.setHeaderText(String.format("Storage %s will be removed", provider.providerId()));
+          alert.setContentText("Are you sure?");
 
-        final Optional<ButtonType> result = alert.showAndWait();
-        if (result.get() == ButtonType.OK) {
-          providerRemover.accept(provider);
-        } else {
-          // ... user chose CANCEL or closed the dialog
-        }
-      });
+          final Optional<ButtonType> result = alert.showAndWait();
+          if (result.get() == ButtonType.OK) {
+            providerRemover.accept(provider);
+          } else {
+            // ... user chose CANCEL or closed the dialog
+          }
+        });
     menu.getItems().addAll(remove);
   }
 

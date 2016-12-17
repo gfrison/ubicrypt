@@ -20,8 +20,7 @@ public class ProviderLock {
   private int deviceId;
   private Instant expires;
 
-  public ProviderLock() {
-  }
+  public ProviderLock() {}
 
   public ProviderLock(final int deviceId, final Instant expires) {
     this.deviceId = deviceId;

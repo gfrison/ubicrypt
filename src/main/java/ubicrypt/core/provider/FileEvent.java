@@ -44,10 +44,10 @@ public class FileEvent {
   @Override
   public String toString() {
     return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
-      .append("type", type)
-      .append("location", location)
-      .append("localFile", localFile.getPath())
-      .toString();
+        .append("type", type)
+        .append("location", location)
+        .append("localFile", localFile.getPath())
+        .toString();
   }
 
   public enum Type {

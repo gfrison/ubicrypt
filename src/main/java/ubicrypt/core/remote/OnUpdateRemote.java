@@ -47,17 +47,17 @@ public class OnUpdateRemote extends RemoteAction {
   public boolean test(FileProvenience fileProvenience, RemoteConfig remoteConfig) {
     UbiFile file = fileProvenience.getFile();
     Optional<RemoteFile> rfile =
-      remoteConfig.getRemoteFiles().stream().filter(file1 -> file1.equals(file)).findFirst();
+        remoteConfig.getRemoteFiles().stream().filter(file1 -> file1.equals(file)).findFirst();
     if (!rfile.isPresent()) {
       return false;
     }
     log.trace(
-      "path:{}, local v:{}, remote v:{}, comparison:{}, test:{}",
-      file.getPath(),
-      file.getVclock(),
-      rfile.get().getVclock(),
-      file.compare(rfile.get()),
-      file.compare(rfile.get()) == VClock.Comparison.newer);
+        "path:{}, local v:{}, remote v:{}, comparison:{}, test:{}",
+        file.getPath(),
+        file.getVclock(),
+        rfile.get().getVclock(),
+        file.compare(rfile.get()),
+        file.compare(rfile.get()) == VClock.Comparison.newer);
     return file.compare(rfile.get()) == VClock.Comparison.newer;
   }
 
@@ -65,7 +65,7 @@ public class OnUpdateRemote extends RemoteAction {
   public Observable<Boolean> apply(final FileProvenience fp, final RemoteConfig rconfig) {
     UbiFile file = fp.getFile();
     RemoteFile rfile =
-      rconfig.getRemoteFiles().stream().filter(file1 -> file1.equals(file)).findFirst().get();
+        rconfig.getRemoteFiles().stream().filter(file1 -> file1.equals(file)).findFirst().get();
 
     log.debug("override file:{} on provider:{}", file.getPath(), provider);
     final AtomicReference<FileEvent.Type> fileEventType = new AtomicReference<>();
@@ -78,43 +78,43 @@ public class OnUpdateRemote extends RemoteAction {
         fileEventType.set(FileEvent.Type.deleted);
       }
       return provider
-        .delete(rfile.getName())
-        .doOnNext(
-          saved -> log.info("deleted:{} file:{}, in:{}", saved, rfile.getPath(), provider))
-        .doOnNext(
-          saved -> {
-            if (saved) {
-              rfile.copyFrom(file);
-            }
-          })
-        .doOnError(err -> rfile.setError(true))
-        .doOnCompleted(fileEvents(fp, fileEventType.get()));
+          .delete(rfile.getName())
+          .doOnNext(
+              saved -> log.info("deleted:{} file:{}, in:{}", saved, rfile.getPath(), provider))
+          .doOnNext(
+              saved -> {
+                if (saved) {
+                  rfile.copyFrom(file);
+                }
+              })
+          .doOnError(err -> rfile.setError(true))
+          .doOnCompleted(fileEvents(fp, fileEventType.get()));
     }
     //update remotely
     fileEventType.set(FileEvent.Type.updated);
     return fp.getOrigin()
-      .get(file)
-      .flatMap(
-        is -> {
-          //renew encryption key
-          final Key key = new Key(AESGCM.rndKey(), UbiFile.KeyType.aes);
-          return provider
-            .put(
-              rfile.getName(),
-              AESGCM.encryptIs(
-                key.getBytes(),
-                new DeflaterInputStream(monitor(fp, is), new Deflater(BEST_COMPRESSION))))
-            .doOnNext(
-              saved ->
-                log.info("updated:{} file:{}, in:{}", saved, rfile.getPath(), provider))
-            .doOnNext(
-              saved -> {
-                rfile.copyFrom(file);
-                rfile.setKey(key);
-                rfile.setError(false);
-              })
-            .doOnError(err -> rfile.setError(true))
-            .doOnCompleted(fileEvents(fp, fileEventType.get()));
-        });
+        .get(file)
+        .flatMap(
+            is -> {
+              //renew encryption key
+              final Key key = new Key(AESGCM.rndKey(), UbiFile.KeyType.aes);
+              return provider
+                  .put(
+                      rfile.getName(),
+                      AESGCM.encryptIs(
+                          key.getBytes(),
+                          new DeflaterInputStream(monitor(fp, is), new Deflater(BEST_COMPRESSION))))
+                  .doOnNext(
+                      saved ->
+                          log.info("updated:{} file:{}, in:{}", saved, rfile.getPath(), provider))
+                  .doOnNext(
+                      saved -> {
+                        rfile.copyFrom(file);
+                        rfile.setKey(key);
+                        rfile.setError(false);
+                      })
+                  .doOnError(err -> rfile.setError(true))
+                  .doOnCompleted(fileEvents(fp, fileEventType.get()));
+            });
   }
 }

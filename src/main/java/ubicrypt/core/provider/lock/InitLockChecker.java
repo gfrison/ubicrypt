@@ -35,8 +35,8 @@ public class InitLockChecker implements Observable.OnSubscribe<ProviderStatus> {
   @Override
   public void call(Subscriber<? super ProviderStatus> subscriber) {
     provider
-      .init(deviceId)
-      .doOnNext(status -> log.info("initialize {}, status:{}", provider, status))
-      .subscribe(subscriber);
+        .init(deviceId)
+        .doOnNext(status -> log.info("initialize {}, status:{}", provider, status))
+        .subscribe(subscriber);
   }
 }

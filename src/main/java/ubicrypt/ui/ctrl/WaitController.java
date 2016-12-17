@@ -19,8 +19,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 
 public class WaitController implements Consumer<String> {
-  @FXML
-  Label title;
+  @FXML Label title;
 
   @Override
   public void accept(String s) {

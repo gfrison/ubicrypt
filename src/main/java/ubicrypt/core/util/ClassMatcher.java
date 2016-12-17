@@ -34,7 +34,7 @@ public class ClassMatcher<T> implements Function<Object, T>, Action1<T> {
   @Override
   public T apply(Object obj) {
     return Optional.ofNullable(binder.apply(obj, null)) //
-      .orElse(null);
+        .orElse(null);
   }
 
   @Override
@@ -44,33 +44,33 @@ public class ClassMatcher<T> implements Function<Object, T>, Action1<T> {
 
   public <Y> ClassMatcher<T> on(final Class<Y> targetClass, final Action1<Y> func) {
     return new ClassMatcher<T>(
-      (obj, next) ->
-        Optional.ofNullable(binder.apply(obj, next)) //
-          .orElseGet(
-            () -> {
-              if (targetClass.isAssignableFrom(obj.getClass())) {
-                func.call((Y) obj);
-              }
-              return null;
-            }));
+        (obj, next) ->
+            Optional.ofNullable(binder.apply(obj, next)) //
+                .orElseGet(
+                    () -> {
+                      if (targetClass.isAssignableFrom(obj.getClass())) {
+                        func.call((Y) obj);
+                      }
+                      return null;
+                    }));
   }
 
   public <Y> ClassMatcher<T> on(final Class<Y> targetClass, final Function<Y, T> func) {
     return new ClassMatcher<>(
-      (obj, next) ->
-        Optional.ofNullable(binder.apply(obj, next)) //
-          .orElseGet(
-            () -> {
-              if (targetClass.isAssignableFrom(obj.getClass())) {
-                return func.apply((Y) obj);
-              }
-              return null;
-            }));
+        (obj, next) ->
+            Optional.ofNullable(binder.apply(obj, next)) //
+                .orElseGet(
+                    () -> {
+                      if (targetClass.isAssignableFrom(obj.getClass())) {
+                        return func.apply((Y) obj);
+                      }
+                      return null;
+                    }));
   }
 
   public ClassMatcher<T> onDefault(final Function<Object, T> func) {
     return new ClassMatcher<>(
-      (obj, next) ->
-        Optional.ofNullable(binder.apply(obj, next)).orElseGet(() -> func.apply(obj)));
+        (obj, next) ->
+            Optional.ofNullable(binder.apply(obj, next)).orElseGet(() -> func.apply(obj)));
   }
 }

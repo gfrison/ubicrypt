@@ -41,25 +41,25 @@ public class FileProvider extends UbiProvider {
     checkNotNull(is, "input stream must be not null");
     final String id = UUID.randomUUID().toString();
     return Observable.concat(
-      Utils.write(conf.getPath().resolve(id), is).map(i -> (String) null), just(id))
-      .doOnSubscribe(() -> log.debug("post {}", conf.getPath().resolve(id)))
-      .last();
+            Utils.write(conf.getPath().resolve(id), is).map(i -> (String) null), just(id))
+        .doOnSubscribe(() -> log.debug("post {}", conf.getPath().resolve(id)))
+        .last();
   }
 
   @Override
   public Observable<Boolean> delete(final String pid) {
     checkNotNull(pid, "pid must be not null");
     return Observable.create(
-      subscriber -> {
-        try {
-          log.debug("delete {}", conf.getPath().resolve(pid));
-          Files.delete(conf.getPath().resolve(pid));
-          subscriber.onNext(true);
-          subscriber.onCompleted();
-        } catch (final IOException e) {
-          subscriber.onError(e);
-        }
-      });
+        subscriber -> {
+          try {
+            log.debug("delete {}", conf.getPath().resolve(pid));
+            Files.delete(conf.getPath().resolve(pid));
+            subscriber.onNext(true);
+            subscriber.onCompleted();
+          } catch (final IOException e) {
+            subscriber.onError(e);
+          }
+        });
   }
 
   @Override
@@ -67,25 +67,25 @@ public class FileProvider extends UbiProvider {
     checkNotNull(pid, "pid must be not null");
     checkNotNull(is, "input stream must be not null");
     return Utils.write(conf.getPath().resolve(pid), is)
-      .doOnSubscribe(() -> log.debug("put {}", conf.getPath().resolve(pid)))
-      .last()
-      .map(l -> true)
-      .defaultIfEmpty(false);
+        .doOnSubscribe(() -> log.debug("put {}", conf.getPath().resolve(pid)))
+        .last()
+        .map(l -> true)
+        .defaultIfEmpty(false);
   }
 
   @Override
   public Observable<InputStream> get(final String pid) {
     checkNotNull(pid, "pid must be not null");
     return Observable.create(
-      subscriber -> {
-        try {
-          log.debug("get {}", conf.getPath().resolve(pid));
-          subscriber.onNext(Utils.readIs(conf.getPath().resolve(pid)));
-          subscriber.onCompleted();
-        } catch (final Exception e) {
-          subscriber.onError(e);
-        }
-      });
+        subscriber -> {
+          try {
+            log.debug("get {}", conf.getPath().resolve(pid));
+            subscriber.onNext(Utils.readIs(conf.getPath().resolve(pid)));
+            subscriber.onCompleted();
+          } catch (final Exception e) {
+            subscriber.onError(e);
+          }
+        });
   }
 
   @Override

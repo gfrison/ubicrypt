@@ -44,10 +44,8 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 public class OnNewLocal implements Func1<FileProvenience, Observable<Boolean>> {
   private static final Logger log = getLogger(OnNewLocal.class);
-  @Inject
-  private Path basePath;
-  @Inject
-  private LocalConfig localConfig;
+  @Inject private Path basePath;
+  @Inject private LocalConfig localConfig;
 
   @Resource
   @Qualifier("fileEvents")
@@ -64,7 +62,7 @@ public class OnNewLocal implements Func1<FileProvenience, Observable<Boolean>> {
     lc.copyFrom(rfile);
     if (Files.exists(path)) {
       final BasicFileAttributes attrs =
-        SupplierExp.silent(() -> Files.readAttributes(path, BasicFileAttributes.class));
+          SupplierExp.silent(() -> Files.readAttributes(path, BasicFileAttributes.class));
       if (attrs.isDirectory()) {
         log.info("can't import file, a folder already exists with the same name:{}", path);
         return Observable.just(false);
@@ -73,10 +71,10 @@ public class OnNewLocal implements Func1<FileProvenience, Observable<Boolean>> {
         log.info("identical file already present locally:{}", path);
         localConfig.getLocalFiles().add(LocalFile.copy(rfile));
         return Observable.just(true)
-          .doOnCompleted(
-            () ->
-              fileEvents.onNext(
-                new FileEvent(rfile, FileEvent.Type.created, FileEvent.Location.local)));
+            .doOnCompleted(
+                () ->
+                    fileEvents.onNext(
+                        new FileEvent(rfile, FileEvent.Type.created, FileEvent.Location.local)));
       }
       log.info("conflicting file already present locally:{}", path);
       //            conflictEvents.onNext(rfile);
@@ -84,50 +82,50 @@ public class OnNewLocal implements Func1<FileProvenience, Observable<Boolean>> {
     }
     AtomicReference<Path> tempFile = new AtomicReference<>();
     return fp.getOrigin()
-      .get(rfile)
-      .doOnNext(next -> log.info("copy to:{} from:{}", path, fp.getOrigin()))
-      .flatMap(new StoreTempFile())
-      .doOnNext(tempFile::set)
-      .map(new CopyFile(rfile.getSize(), path, true, fp.getFile().getLastModified()))
-      .doOnCompleted(
-        () -> {
-          if (tempFile.get() != null) {
-            try {
-              Files.delete(tempFile.get());
-            } catch (IOException e) {
-            }
-          }
-        })
-      .onErrorReturn(
-        err -> {
-          if (tempFile.get() != null) {
-            try {
-              Files.delete(tempFile.get());
-            } catch (IOException e) {
-            }
-          }
-          if (err instanceof NotFoundException) {
-            log.warn("remote file:{} not found in:{}", fp.getFile().getPath(), fp.getOrigin());
-          } else {
-            Utils.logError.call(err);
-          }
-          fp.getOrigin().error(fp.getFile());
-          return false;
-        })
-      .subscribeOn(Schedulers.io())
-      .doOnNext(
-        next -> {
-          if (next) {
-            localConfig.getLocalFiles().add(LocalFile.copy(rfile));
-          }
-        })
-      .doOnNext(
-        next ->
-          fileEvents.onNext(
-            new FileEvent(
-              rfile,
-              next ? FileEvent.Type.created : FileEvent.Type.error,
-              FileEvent.Location.local)));
+        .get(rfile)
+        .doOnNext(next -> log.info("copy to:{} from:{}", path, fp.getOrigin()))
+        .flatMap(new StoreTempFile())
+        .doOnNext(tempFile::set)
+        .map(new CopyFile(rfile.getSize(), path, true, fp.getFile().getLastModified()))
+        .doOnCompleted(
+            () -> {
+              if (tempFile.get() != null) {
+                try {
+                  Files.delete(tempFile.get());
+                } catch (IOException e) {
+                }
+              }
+            })
+        .onErrorReturn(
+            err -> {
+              if (tempFile.get() != null) {
+                try {
+                  Files.delete(tempFile.get());
+                } catch (IOException e) {
+                }
+              }
+              if (err instanceof NotFoundException) {
+                log.warn("remote file:{} not found in:{}", fp.getFile().getPath(), fp.getOrigin());
+              } else {
+                Utils.logError.call(err);
+              }
+              fp.getOrigin().error(fp.getFile());
+              return false;
+            })
+        .subscribeOn(Schedulers.io())
+        .doOnNext(
+            next -> {
+              if (next) {
+                localConfig.getLocalFiles().add(LocalFile.copy(rfile));
+              }
+            })
+        .doOnNext(
+            next ->
+                fileEvents.onNext(
+                    new FileEvent(
+                        rfile,
+                        next ? FileEvent.Type.created : FileEvent.Type.error,
+                        FileEvent.Location.local)));
   }
 
   public void setBasePath(Path basePath) {

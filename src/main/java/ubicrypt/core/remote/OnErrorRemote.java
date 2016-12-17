@@ -37,14 +37,14 @@ public class OnErrorRemote extends OnUpdateRemote {
   public boolean test(FileProvenience fileProvenience, RemoteConfig remoteConfig) {
     UbiFile file = fileProvenience.getFile();
     Optional<RemoteFile> rfile =
-      remoteConfig.getRemoteFiles().stream().filter(file1 -> file1.equals(file)).findFirst();
+        remoteConfig.getRemoteFiles().stream().filter(file1 -> file1.equals(file)).findFirst();
     log.trace(
-      "path:{}, local v:{}, remote v:{}, comparison:{}, test:{}",
-      file.getPath(),
-      file.getVclock(),
-      rfile.get().getVclock(),
-      file.compare(rfile.get()),
-      rfile.isPresent() ? rfile.get().isError() : false);
+        "path:{}, local v:{}, remote v:{}, comparison:{}, test:{}",
+        file.getPath(),
+        file.getVclock(),
+        rfile.get().getVclock(),
+        file.compare(rfile.get()),
+        rfile.isPresent() ? rfile.get().isError() : false);
     if (!rfile.isPresent()) {
       return false;
     }

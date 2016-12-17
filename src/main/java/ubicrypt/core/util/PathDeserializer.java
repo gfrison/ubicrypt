@@ -29,7 +29,7 @@ public class PathDeserializer extends StdDeserializer<Path> {
 
   @Override
   public Path deserialize(JsonParser p, DeserializationContext ctxt)
-    throws IOException, JsonProcessingException {
+      throws IOException, JsonProcessingException {
     return Paths.get(p.getText());
   }
 }

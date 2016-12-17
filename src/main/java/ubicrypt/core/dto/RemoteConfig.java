@@ -26,8 +26,7 @@ public class RemoteConfig extends RemoteFiles {
   @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
   private Set<UbiProvider> providers = ConcurrentHashMap.newKeySet();
 
-  public RemoteConfig() {
-  }
+  public RemoteConfig() {}
 
   public Set<UbiProvider> getProviders() {
     return providers;

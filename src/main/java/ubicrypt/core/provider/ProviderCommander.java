@@ -37,8 +37,7 @@ import static rx.Observable.error;
 
 public class ProviderCommander {
   private static final Logger log = LoggerFactory.getLogger(ProviderCommander.class);
-  @Inject
-  LocalConfig localConfig;
+  @Inject LocalConfig localConfig;
 
   @Resource
   @Qualifier("providerLifeCycle")
@@ -50,41 +49,41 @@ public class ProviderCommander {
 
   public Observable<Boolean> register(final UbiProvider provider) {
     return Observable.create(
-      subscriber -> {
-        log.info("registering provider:{}", provider);
-        if (localConfig
-          .getProviders()
-          .stream()
-          .filter(provider::equals)
-          .findFirst()
-          .isPresent()) {
-          log.info("provider:{} already present", provider);
-          subscriber.onError(new AlreadyManagedException(provider));
-          return;
-        }
-        providerLifeCycle
-          .initializeProvider(provider)
-          .doOnCompleted(
-            () -> {
-              localConfig.getProviders().add(provider);
-              subscriber.onNext(true);
-              providerLifeCycle
-                .enabledProviders()
-                .stream()
-                .filter(hook -> !hook.getProvider().equals(provider))
-                .forEach(
-                  hook ->
-                    hook.getConfigSaver()
-                      .apply(
-                        rconf -> {
-                          //add provider
-                          rconf.getProviders().add(provider);
-                          return rconf;
-                        }));
-            })
-          .subscribeOn(Schedulers.io())
-          .subscribe(Actions.empty(), subscriber::onError, subscriber::onCompleted);
-      });
+        subscriber -> {
+          log.info("registering provider:{}", provider);
+          if (localConfig
+              .getProviders()
+              .stream()
+              .filter(provider::equals)
+              .findFirst()
+              .isPresent()) {
+            log.info("provider:{} already present", provider);
+            subscriber.onError(new AlreadyManagedException(provider));
+            return;
+          }
+          providerLifeCycle
+              .initializeProvider(provider)
+              .doOnCompleted(
+                  () -> {
+                    localConfig.getProviders().add(provider);
+                    subscriber.onNext(true);
+                    providerLifeCycle
+                        .enabledProviders()
+                        .stream()
+                        .filter(hook -> !hook.getProvider().equals(provider))
+                        .forEach(
+                            hook ->
+                                hook.getConfigSaver()
+                                    .apply(
+                                        rconf -> {
+                                          //add provider
+                                          rconf.getProviders().add(provider);
+                                          return rconf;
+                                        }));
+                  })
+              .subscribeOn(Schedulers.io())
+              .subscribe(Actions.empty(), subscriber::onError, subscriber::onCompleted);
+        });
   }
 
   public Observable<Boolean> remove(final UbiProvider provider) {
@@ -94,18 +93,18 @@ public class ProviderCommander {
         return error(new NotFoundException(provider));
       }
       providerLifeCycle
-        .enabledProviders()
-        .stream()
-        .filter(hook -> !hook.getProvider().equals(provider))
-        .forEach(
-          hook ->
-            hook.getConfigSaver()
-              .apply(
-                rconf -> {
-                  //remove provider
-                  rconf.getProviders().remove(provider);
-                  return rconf;
-                }));
+          .enabledProviders()
+          .stream()
+          .filter(hook -> !hook.getProvider().equals(provider))
+          .forEach(
+              hook ->
+                  hook.getConfigSaver()
+                      .apply(
+                          rconf -> {
+                            //remove provider
+                            rconf.getProviders().remove(provider);
+                            return rconf;
+                          }));
       return providerLifeCycle.deactivateProvider(provider);
     } catch (Exception e) {
       return error(e);
@@ -115,11 +114,11 @@ public class ProviderCommander {
   public Observable<Boolean> addOwnedPK(final PGPPublicKey pgpPublicKey) {
     localConfig.getOwnedPKs().add(new PGPKValue(pgpPublicKey));
     return Observable.merge(
-      providerLifeCycle
-        .enabledProviders()
-        .stream()
-        .map(ProviderHook::getConfLockRewriter)
-        .map(Observable::create)
-        .collect(Collectors.toList()));
+        providerLifeCycle
+            .enabledProviders()
+            .stream()
+            .map(ProviderHook::getConfLockRewriter)
+            .map(Observable::create)
+            .collect(Collectors.toList()));
   }
 }

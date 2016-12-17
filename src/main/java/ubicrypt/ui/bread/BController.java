@@ -32,28 +32,27 @@ import static ubicrypt.ui.Anchor.anchor;
 
 public class BController implements Initializable, EnvironmentAware {
   private static final Logger log = getLogger(BController.class);
-  @FXML
-  BreadCrumbBar<BCItem> breadcrumb;
+  @FXML BreadCrumbBar<BCItem> breadcrumb;
   private Environment env;
 
   @Override
   public void initialize(final URL location, final ResourceBundle resources) {
     final List<String> stackScene = anchor().getSceneStack();
     final TreeItem<BCItem> treeItem =
-      breadCrumbTree(stackScene.iterator(), null, stackScene.size());
+        breadCrumbTree(stackScene.iterator(), null, stackScene.size());
     breadcrumb.selectedCrumbProperty().set(treeItem);
     breadcrumb.setOnCrumbAction(
-      event -> anchor().popScene(event.getSelectedCrumb().getValue().getLevel()));
+        event -> anchor().popScene(event.getSelectedCrumb().getValue().getLevel()));
   }
 
   private TreeItem<BCItem> breadCrumbTree(
-    final Iterator<String> it, final TreeItem<BCItem> root, int level) {
+      final Iterator<String> it, final TreeItem<BCItem> root, int level) {
     if (!it.hasNext()) {
       return root;
     }
     final String next = it.next();
     final TreeItem<BCItem> item =
-      new TreeItem<>(new BCItem(env.getProperty("bc." + next, next), level));
+        new TreeItem<>(new BCItem(env.getProperty("bc." + next, next), level));
     if (root != null) {
       root.getChildren().add(item);
     }

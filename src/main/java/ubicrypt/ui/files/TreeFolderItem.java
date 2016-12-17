@@ -20,15 +20,15 @@ public class TreeFolderItem extends TreeItem<ITreeItem> {
   public TreeFolderItem(final FolderItem folder) {
     super(folder, folder.getGraphics());
     expandedProperty()
-      .addListener(
-        (observable, oldValue, newValue) -> {
-          if (newValue) {
-            getGraphic().getStyleClass().remove("tree-folder");
-            getGraphic().getStyleClass().add("tree-open-folder");
-          } else {
-            getGraphic().getStyleClass().add("tree-folder");
-            getGraphic().getStyleClass().remove("tree-open-folder");
-          }
-        });
+        .addListener(
+            (observable, oldValue, newValue) -> {
+              if (newValue) {
+                getGraphic().getStyleClass().remove("tree-folder");
+                getGraphic().getStyleClass().add("tree-open-folder");
+              } else {
+                getGraphic().getStyleClass().add("tree-folder");
+                getGraphic().getStyleClass().remove("tree-open-folder");
+              }
+            });
   }
 }

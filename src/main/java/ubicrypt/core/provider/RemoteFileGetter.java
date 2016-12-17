@@ -32,8 +32,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static rx.Observable.create;
 
 public class RemoteFileGetter
-  implements Func1<UbiFile, Observable<InputStream>>,
-  Func2<UbiFile, BiFunction<RemoteFile, InputStream, InputStream>, Observable<InputStream>> {
+    implements Func1<UbiFile, Observable<InputStream>>,
+        Func2<UbiFile, BiFunction<RemoteFile, InputStream, InputStream>, Observable<InputStream>> {
   private final Observable.OnSubscribe<AcquirerReleaser> acquirer;
   private final UbiProvider provider;
 
@@ -50,12 +50,12 @@ public class RemoteFileGetter
 
   private static Func1<? super RemoteConfig, RemoteFile> remoteFile(final UbiFile file) {
     return remoteConfig ->
-      remoteConfig
-        .getRemoteFiles()
-        .stream()
-        .filter(filterRemote(file))
-        .findFirst()
-        .orElseThrow(() -> new IllegalArgumentException("not present in remote file list"));
+        remoteConfig
+            .getRemoteFiles()
+            .stream()
+            .filter(filterRemote(file))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("not present in remote file list"));
   }
 
   @Override
@@ -65,15 +65,14 @@ public class RemoteFileGetter
 
   @Override
   public Observable<InputStream> call(
-    UbiFile file, BiFunction<RemoteFile, InputStream, InputStream> streamTransformer) {
+      UbiFile file, BiFunction<RemoteFile, InputStream, InputStream> streamTransformer) {
     AtomicReference<Action0> releaser = new AtomicReference<>();
     return create(acquirer)
-      .doOnNext(acquirerReleaser -> releaser.set(acquirerReleaser.getReleaser()))
-      .map(AcquirerReleaser::getRemoteConfig)
-      .map(remoteFile(file))
-      .flatMap(rf -> provider.get(rf.getName()).map(is -> streamTransformer.apply(rf, is)))
-      .doOnCompleted(releaser.get() != null ? releaser.get()::call : Actions.empty())
-      .doOnError(releaser.get() != null ? err -> releaser.get().call() : err -> {
-      });
+        .doOnNext(acquirerReleaser -> releaser.set(acquirerReleaser.getReleaser()))
+        .map(AcquirerReleaser::getRemoteConfig)
+        .map(remoteFile(file))
+        .flatMap(rf -> provider.get(rf.getName()).map(is -> streamTransformer.apply(rf, is)))
+        .doOnCompleted(releaser.get() != null ? releaser.get()::call : Actions.empty())
+        .doOnError(releaser.get() != null ? err -> releaser.get().call() : err -> {});
   }
 }

@@ -49,7 +49,7 @@ public class Anchor {
   private static final Anchor ctx = new Anchor();
   //FXLoader bug: https://community.oracle.com/message/11240449
   private static final ResourceBundleWrapper bundle =
-    new ResourceBundleWrapper(ResourceBundle.getBundle("fx"));
+      new ResourceBundleWrapper(ResourceBundle.getBundle("fx"));
   private static final ConcurrentHashMap<String, Visual> scenes = new ConcurrentHashMap<>();
   private final PublishSubject<char[]> passwordStream = PublishSubject.create();
   private final BufferUntilSubscriber<Object> controllerPublisher = BufferUntilSubscriber.create();
@@ -60,8 +60,7 @@ public class Anchor {
   private Stage stage;
   private AtomicReference<Visual> currentVisual = new AtomicReference<>();
 
-  private Anchor() {
-  }
+  private Anchor() {}
 
   public static Anchor anchor() {
     return ctx;
@@ -101,14 +100,14 @@ public class Anchor {
 
   private Visual loadFrom(final String fxml) {
     final FXMLLoader loader =
-      new FXMLLoader(Anchor.class.getResource(String.format("/fxml/%s.fxml", fxml)), bundle);
+        new FXMLLoader(Anchor.class.getResource(String.format("/fxml/%s.fxml", fxml)), bundle);
     try {
       final Scene scene =
-        new Scene(loader.load()) {
-          {
-            getStylesheets().add("/main.css");
-          }
-        };
+          new Scene(loader.load()) {
+            {
+              getStylesheets().add("/main.css");
+            }
+          };
 
       return new Visual(fxml, scene, loader.getController());
     } catch (final IOException e) {
@@ -124,10 +123,10 @@ public class Anchor {
   public void popScene(final int skip) {
     try {
       IntStream.range(0, skip - 1)
-        .forEach(
-          i -> {
-            levels.pop();
-          });
+          .forEach(
+              i -> {
+                levels.pop();
+              });
       Platform.runLater(() -> show(levels.pop()));
     } catch (final Exception e) {
       log.warn("error on popScene", e);
@@ -137,22 +136,22 @@ public class Anchor {
   private void show(Visual visual) {
     showPublisher.onNext(visual.getController());
     visual
-      .getScene()
-      .setOnKeyPressed(
-        event -> {
-          if (event.getCode() == KeyCode.DIGIT7 && event.isControlDown()) {
-            anchor().browse("showConfig");
-            return;
-          }
-          if (event.getCode() == KeyCode.L && event.isControlDown()) {
-            anchor().browse("log");
-            return;
-          }
-          if (event.getCode() == KeyCode.H && event.isControlDown()) {
-            anchor().popHome();
-            return;
-          }
-        });
+        .getScene()
+        .setOnKeyPressed(
+            event -> {
+              if (event.getCode() == KeyCode.DIGIT7 && event.isControlDown()) {
+                anchor().browse("showConfig");
+                return;
+              }
+              if (event.getCode() == KeyCode.L && event.isControlDown()) {
+                anchor().browse("log");
+                return;
+              }
+              if (event.getCode() == KeyCode.H && event.isControlDown()) {
+                anchor().popHome();
+                return;
+              }
+            });
 
     stage.setScene(visual.getScene());
     stage.show();

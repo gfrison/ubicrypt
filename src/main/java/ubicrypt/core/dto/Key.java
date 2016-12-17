@@ -22,8 +22,7 @@ public class Key {
   private UbiFile.KeyType type = UbiFile.KeyType.aes;
   private byte[] bytes;
 
-  public Key() {
-  }
+  public Key() {}
 
   public Key(byte[] bytes) {
     this.bytes = bytes;
@@ -69,7 +68,7 @@ public class Key {
   @Override
   public String toString() {
     return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
-      .append("type", type)
-      .toString();
+        .append("type", type)
+        .toString();
   }
 }

@@ -87,23 +87,23 @@ public class VClock implements Cloneable {
   @Override
   public String toString() {
     return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
-      .append("map", map)
-      .toString();
+        .append("map", map)
+        .toString();
   }
 
   @Override
   public Object clone() throws CloneNotSupportedException {
     return new VClock(
-      map.entrySet()
-        .stream()
-        .collect(
-          ConcurrentHashMap<Integer, AtomicLong>::new,
-          (ConcurrentHashMap<Integer, AtomicLong> map,
-           Map.Entry<Integer, AtomicLong> entry) ->
-            map.put(entry.getKey(), new AtomicLong(entry.getValue().longValue())),
-          (ConcurrentHashMap<Integer, AtomicLong> map1,
-           ConcurrentHashMap<Integer, AtomicLong> map2) ->
-            map1.putAll(map2)));
+        map.entrySet()
+            .stream()
+            .collect(
+                ConcurrentHashMap<Integer, AtomicLong>::new,
+                (ConcurrentHashMap<Integer, AtomicLong> map,
+                        Map.Entry<Integer, AtomicLong> entry) ->
+                    map.put(entry.getKey(), new AtomicLong(entry.getValue().longValue())),
+                (ConcurrentHashMap<Integer, AtomicLong> map1,
+                        ConcurrentHashMap<Integer, AtomicLong> map2) ->
+                    map1.putAll(map2)));
   }
 
   public enum Comparison {

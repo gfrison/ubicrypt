@@ -39,9 +39,7 @@ import static ubicrypt.core.util.QueueLiner.Status.running;
 import static ubicrypt.core.util.QueueLiner.Status.stopped;
 import static ubicrypt.core.util.QueueLiner.Status.stopping;
 
-/**
- * Runs sequentially any Observable and terminate any job with the given conclusive epiloguer.
- */
+/** Runs sequentially any Observable and terminate any job with the given conclusive epiloguer. */
 public class QueueLiner implements IStoppable {
   private final Logger log = getLogger(QueueLiner.class);
   private final AtomicBoolean inProcess = new AtomicBoolean(false);
@@ -51,26 +49,20 @@ public class QueueLiner implements IStoppable {
   private Subject<Void, Void> shutdownProducer = BufferUntilSubscriber.create();
   private Observable<Void> sharedShutdownEvents = shutdownProducer.share();
 
-  /**
-   * @param delayMs specify the minimun delays between epiloguers execution.
-   */
+  /** @param delayMs specify the minimun delays between epiloguers execution. */
   public QueueLiner(final long delayMs) {
     log.info("epilogue delay:{} ms", delayMs);
     this.delayMs = delayMs;
   }
 
-  /**
-   * Creates an Enqueuer for a specific epilogue.
-   */
+  /** Creates an Enqueuer for a specific epilogue. */
   public <R> QueueEpilogued createEpiloguer(final Supplier<Observable<R>> epilogue) {
     final QueueEpilogued qe = new QueueEpilogued(epilogue);
     enqueuers.add(qe);
     return qe;
   }
 
-  /**
-   * Creates an Enqueuer for a specific epilogue.
-   */
+  /** Creates an Enqueuer for a specific epilogue. */
   public <R> QueueEpilogued createEpiloguer() {
     final QueueEpilogued qe = new QueueEpilogued();
     enqueuers.add(qe);
@@ -97,12 +89,10 @@ public class QueueLiner implements IStoppable {
     return sharedShutdownEvents;
   }
 
-  /**
-   * Fetch all queues and executes them one after another.
-   */
+  /** Fetch all queues and executes them one after another. */
   private void fetch() {
     final Optional<QueueEpilogued> opt =
-      enqueuers.stream().filter(enqueuer -> !enqueuer.queue.isEmpty()).findFirst();
+        enqueuers.stream().filter(enqueuer -> !enqueuer.queue.isEmpty()).findFirst();
     if (opt.isPresent()) {
       log.trace("epiloged in queue:{}", opt.get());
       spool(opt.get(), null);
@@ -112,11 +102,9 @@ public class QueueLiner implements IStoppable {
     }
   }
 
-  /**
-   * Spools the pending queue for a specific QueueEpilogued.
-   */
+  /** Spools the pending queue for a specific QueueEpilogued. */
   private <T> void spool(
-    final QueueEpilogued<T> instance, final Subscriber<? super T> lastSubscriber) {
+      final QueueEpilogued<T> instance, final Subscriber<? super T> lastSubscriber) {
     if (status.get() != running) {
       log.info("closing all pending tasks:{}", instance.queue.size());
       instance.queue.stream().map(Tuple2::getT2).forEach(subject -> subject.onCompleted());
@@ -131,10 +119,10 @@ public class QueueLiner implements IStoppable {
       if (instance.skippedEpilogue.get()) {
         log.trace("run final epiloguer:{}", instance.epilogue);
         instance.epilogue.ifPresent(
-          opt ->
-            opt.get()
-              .doOnCompleted(this::fetch)
-              .subscribe(empty(), lastSubscriber::onError, lastSubscriber::onCompleted));
+            opt ->
+                opt.get()
+                    .doOnCompleted(this::fetch)
+                    .subscribe(empty(), lastSubscriber::onError, lastSubscriber::onCompleted));
         if (!instance.epilogue.isPresent()) {
           lastSubscriber.onCompleted();
           fetch();
@@ -148,44 +136,44 @@ public class QueueLiner implements IStoppable {
       lastSubscriber.onCompleted();
     }
     enqued
-      .getT1()
-      .doOnCompleted(
-        () -> {
-          if ((instance.lastEpilogue.get() + delayMs < System.currentTimeMillis())
-            || status.get() != running) {
-            instance.lastEpilogue.set(System.currentTimeMillis());
-            log.trace("run epiloguer:{}", instance.epilogue);
-            instance.epilogue.ifPresent(
-              opt ->
-                opt.get()
-                  .subscribe(
-                    empty(),
-                    enqued.getT2()::onError,
-                    () -> {
-                      instance.skippedEpilogue.set(false);
-                      spool(instance, enqued.getT2());
-                    }));
-            if (!instance.epilogue.isPresent()) {
-              instance.skippedEpilogue.set(false);
+        .getT1()
+        .doOnCompleted(
+            () -> {
+              if ((instance.lastEpilogue.get() + delayMs < System.currentTimeMillis())
+                  || status.get() != running) {
+                instance.lastEpilogue.set(System.currentTimeMillis());
+                log.trace("run epiloguer:{}", instance.epilogue);
+                instance.epilogue.ifPresent(
+                    opt ->
+                        opt.get()
+                            .subscribe(
+                                empty(),
+                                enqued.getT2()::onError,
+                                () -> {
+                                  instance.skippedEpilogue.set(false);
+                                  spool(instance, enqued.getT2());
+                                }));
+                if (!instance.epilogue.isPresent()) {
+                  instance.skippedEpilogue.set(false);
+                  spool(instance, enqued.getT2());
+                }
+                return;
+              }
+              log.trace("skip epiloguer");
+              instance.skippedEpilogue.set(true);
               spool(instance, enqued.getT2());
-            }
-            return;
-          }
-          log.trace("skip epiloguer");
-          instance.skippedEpilogue.set(true);
-          spool(instance, enqued.getT2());
-        })
-      .subscribeOn(Schedulers.io())
-      .subscribe(
-        enqued.getT2()::onNext,
-        err -> {
-          try {
-            enqued.getT2().onError(err);
-          } catch (Exception e) {
-            log.warn(e.getMessage(), e);
-          }
-          spool(instance, enqued.getT2());
-        });
+            })
+        .subscribeOn(Schedulers.io())
+        .subscribe(
+            enqued.getT2()::onNext,
+            err -> {
+              try {
+                enqued.getT2().onError(err);
+              } catch (Exception e) {
+                log.warn(e.getMessage(), e);
+              }
+              spool(instance, enqued.getT2());
+            });
   }
 
   enum Status {
@@ -199,7 +187,7 @@ public class QueueLiner implements IStoppable {
     private final AtomicBoolean skippedEpilogue = new AtomicBoolean(false);
     private final AtomicLong lastEpilogue = new AtomicLong(System.currentTimeMillis());
     private final ConcurrentLinkedQueue<Tuple2<Observable<T>, Subscriber<? super T>>> queue =
-      new ConcurrentLinkedQueue<>();
+        new ConcurrentLinkedQueue<>();
 
     private QueueEpilogued(final Supplier<Observable<T>> epilogue) {
       this.epilogue = Optional.of(epilogue);
@@ -209,9 +197,7 @@ public class QueueLiner implements IStoppable {
       this.epilogue = Optional.empty();
     }
 
-    /**
-     * Enqueue the Observable and runs it sequentially (not in parallel)
-     */
+    /** Enqueue the Observable and runs it sequentially (not in parallel) */
     @Override
     public Observable<T> call(final Observable<T> enqueable) {
       if (status.get() != running) {
@@ -219,14 +205,14 @@ public class QueueLiner implements IStoppable {
         return Observable.empty();
       }
       return Observable.create(
-        subscriber -> {
-          log.trace("enqueued epilogue:{}", epilogue.hashCode());
-          queue.offer(Tuple.of(enqueable, subscriber));
-          if (inProcess.compareAndSet(false, true)) {
-            log.trace("fetch queue");
-            fetch();
-          }
-        });
+          subscriber -> {
+            log.trace("enqueued epilogue:{}", epilogue.hashCode());
+            queue.offer(Tuple.of(enqueable, subscriber));
+            if (inProcess.compareAndSet(false, true)) {
+              log.trace("fetch queue");
+              fetch();
+            }
+          });
     }
   }
 }

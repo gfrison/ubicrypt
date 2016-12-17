@@ -56,21 +56,18 @@ public class RemoteRepository implements IRepository {
   private final Observable.OnSubscribe<AcquirerReleaser> acquirer;
   private final RemoteIO<RemoteConfig> configIO;
   private final UbiProvider provider;
-  @Resource
-  private PublishSubject<ProgressFile> progressEvents = PublishSubject.create();
-  @Resource
-  private Subject<FileEvent, FileEvent> fileEvents = PublishSubject.create();
-  @Resource
-  private QueueLiner queueLiner;
+  @Resource private PublishSubject<ProgressFile> progressEvents = PublishSubject.create();
+  @Resource private Subject<FileEvent, FileEvent> fileEvents = PublishSubject.create();
+  @Resource private QueueLiner queueLiner;
   private Func1<Observable<Boolean>, Observable<Boolean>> outboundQueue;
   private Func1<Observable<InputStream>, Observable<InputStream>> inboundQueue;
   private RemoteFileGetter fileGetter;
   private List<IRemoteAction> actions;
 
   public RemoteRepository(
-    final Observable.OnSubscribe<AcquirerReleaser> acquirer,
-    final UbiProvider provider,
-    final RemoteIO<RemoteConfig> configIO) {
+      final Observable.OnSubscribe<AcquirerReleaser> acquirer,
+      final UbiProvider provider,
+      final RemoteIO<RemoteConfig> configIO) {
     this.acquirer = acquirer;
     this.provider = provider;
     this.configIO = configIO;
@@ -81,7 +78,7 @@ public class RemoteRepository implements IRepository {
   @PostConstruct
   public void init() {
     this.outboundQueue =
-      queueLiner.createEpiloguer(() -> saveConf(releaserRef.get().getRemoteConfig()));
+        queueLiner.createEpiloguer(() -> saveConf(releaserRef.get().getRemoteConfig()));
     this.inboundQueue = queueLiner.createEpiloguer();
   }
 
@@ -89,75 +86,75 @@ public class RemoteRepository implements IRepository {
   public void error(UbiFile file) {
     AtomicReference<Action0> releaser = new AtomicReference<>();
     create(acquirer)
-      .doOnNext(acquirerReleaser -> releaser.set(acquirerReleaser.getReleaser()))
-      .map(AcquirerReleaser::getRemoteConfig)
-      .flatMap(
-        rc -> {
-          rc.getRemoteFiles()
-            .stream()
-            .filter(f -> f.equals(file))
-            .findFirst()
-            .ifPresent(rcf -> rcf.setError(true));
-          return saveConf(rc);
-        })
-      .doOnError(
-        err -> {
-          if (releaser.get() != null) {
-            releaser.get().call();
-          }
-        })
-      .doOnCompleted(() -> releaser.get().call())
-      .subscribe(
-        Actions.empty(),
-        err -> {
-          log.error(err.getMessage());
-          Utils.logError.call(err);
-        });
+        .doOnNext(acquirerReleaser -> releaser.set(acquirerReleaser.getReleaser()))
+        .map(AcquirerReleaser::getRemoteConfig)
+        .flatMap(
+            rc -> {
+              rc.getRemoteFiles()
+                  .stream()
+                  .filter(f -> f.equals(file))
+                  .findFirst()
+                  .ifPresent(rcf -> rcf.setError(true));
+              return saveConf(rc);
+            })
+        .doOnError(
+            err -> {
+              if (releaser.get() != null) {
+                releaser.get().call();
+              }
+            })
+        .doOnCompleted(() -> releaser.get().call())
+        .subscribe(
+            Actions.empty(),
+            err -> {
+              log.error(err.getMessage());
+              Utils.logError.call(err);
+            });
   }
 
   @Override
   public Observable<InputStream> get(final UbiFile file) {
     return inboundQueue.call(
-      fileGetter
-        .call(
-          file,
-          (rfile, is) ->
-            new MonitorInputStream(
-              new InflaterInputStream(AESGCM.decryptIs(rfile.getKey().getBytes(), is))))
-        .cast(MonitorInputStream.class)
-        .flatMap(
-          is ->
-            create(
-              subscriber -> {
-                final FileProvenience fp = new FileProvenience(file, this);
-                is.monitor()
-                  .subscribe(
-                    chunk -> progressEvents.onNext(new ProgressFile(fp, chunk)),
-                    err -> {
-                      Utils.logError.call(err);
-                      progressEvents.onNext(new ProgressFile(fp, false, true));
-                      subscriber.onError(err);
-                      Utils.close(is);
-                    },
-                    () -> {
-                      progressEvents.onNext(new ProgressFile(fp, true, false));
-                      subscriber.onCompleted();
-                      Utils.close(is);
-                    });
-                subscriber.onNext(is);
-              })));
+        fileGetter
+            .call(
+                file,
+                (rfile, is) ->
+                    new MonitorInputStream(
+                        new InflaterInputStream(AESGCM.decryptIs(rfile.getKey().getBytes(), is))))
+            .cast(MonitorInputStream.class)
+            .flatMap(
+                is ->
+                    create(
+                        subscriber -> {
+                          final FileProvenience fp = new FileProvenience(file, this);
+                          is.monitor()
+                              .subscribe(
+                                  chunk -> progressEvents.onNext(new ProgressFile(fp, chunk)),
+                                  err -> {
+                                    Utils.logError.call(err);
+                                    progressEvents.onNext(new ProgressFile(fp, false, true));
+                                    subscriber.onError(err);
+                                    Utils.close(is);
+                                  },
+                                  () -> {
+                                    progressEvents.onNext(new ProgressFile(fp, true, false));
+                                    subscriber.onCompleted();
+                                    Utils.close(is);
+                                  });
+                          subscriber.onNext(is);
+                        })));
   }
 
   private Observable<Boolean> saveConf(final RemoteConfig remoteConfig) {
     AtomicReference<Action0> releaser = new AtomicReference<>();
     return create(acquirer)
-      .doOnNext(acquirerReleaser -> releaser.set(acquirerReleaser.getReleaser()))
-      .flatMap(
-        rel ->
-          configIO
-            .apply(remoteConfig)
-            .doOnError(err -> releaser.get().call())
-            .doOnCompleted(() -> releaser.get().call()));
+        .doOnNext(acquirerReleaser -> releaser.set(acquirerReleaser.getReleaser()))
+        .flatMap(
+            rel ->
+                configIO
+                    .apply(remoteConfig)
+                    .doOnError(err -> releaser.get().call())
+                    .doOnCompleted(() -> releaser.get().call()));
   }
 
   @Override
@@ -174,55 +171,55 @@ public class RemoteRepository implements IRepository {
   private Observable<Boolean> saveSerial(final FileProvenience fp) {
     //acquire permission
     return create(acquirer)
-      .flatMap(
-        releaser -> {
-          releaserRef.set(releaser);
-          final RemoteConfig remoteConfig = releaser.getRemoteConfig();
-          UbiFile<UbiFile> file = fp.getFile();
-          return actions
-            .stream()
-            .filter(test -> test.test(fp, remoteConfig))
-            .map(action -> action.apply(fp, remoteConfig))
-            .findFirst()
-            .orElseGet(
-              () -> {
-                log.trace("no action for file:{} provider:{}", file.getPath(), provider);
-                return just(false);
-              });
-        })
-      .doOnError(
-        releaserRef.get() != null
-          ? err -> releaserRef.get().getReleaser().call()
-          : Actions.empty())
-      .doOnError(err -> progressEvents.onNext(new ProgressFile(fp, this, false, true)))
-      .doOnError(err -> fileEvents(fp, FileEvent.Type.error))
-      .onErrorReturn(
-        err -> {
-          log.error(err.getMessage(), err);
-          return false;
-        })
-      .doOnCompleted(
-        releaserRef.get() != null ? releaserRef.get().getReleaser()::call : Actions.empty());
+        .flatMap(
+            releaser -> {
+              releaserRef.set(releaser);
+              final RemoteConfig remoteConfig = releaser.getRemoteConfig();
+              UbiFile<UbiFile> file = fp.getFile();
+              return actions
+                  .stream()
+                  .filter(test -> test.test(fp, remoteConfig))
+                  .map(action -> action.apply(fp, remoteConfig))
+                  .findFirst()
+                  .orElseGet(
+                      () -> {
+                        log.trace("no action for file:{} provider:{}", file.getPath(), provider);
+                        return just(false);
+                      });
+            })
+        .doOnError(
+            releaserRef.get() != null
+                ? err -> releaserRef.get().getReleaser().call()
+                : Actions.empty())
+        .doOnError(err -> progressEvents.onNext(new ProgressFile(fp, this, false, true)))
+        .doOnError(err -> fileEvents(fp, FileEvent.Type.error))
+        .onErrorReturn(
+            err -> {
+              log.error(err.getMessage(), err);
+              return false;
+            })
+        .doOnCompleted(
+            releaserRef.get() != null ? releaserRef.get().getReleaser()::call : Actions.empty());
   }
 
   private Action0 fileEvents(final FileProvenience fp, final FileEvent.Type fileEventType) {
     return () ->
-      fileEvents.onNext(new FileEvent(fp.getFile(), fileEventType, FileEvent.Location.remote));
+        fileEvents.onNext(new FileEvent(fp.getFile(), fileEventType, FileEvent.Location.remote));
   }
 
   private InputStream monitor(final FileProvenience fp, final InputStream inputStream) {
     final MonitorInputStream mis = new MonitorInputStream(inputStream);
     mis.monitor()
-      .subscribe(
-        chunk -> progressEvents.onNext(new ProgressFile(fp, this, chunk)),
-        err -> {
-          log.error(err.getMessage(), err);
-          progressEvents.onNext(new ProgressFile(fp, this, false, true));
-        },
-        () -> {
-          log.debug("send complete progress file:{}", fp.getFile());
-          progressEvents.onNext(new ProgressFile(fp, this, true, false));
-        });
+        .subscribe(
+            chunk -> progressEvents.onNext(new ProgressFile(fp, this, chunk)),
+            err -> {
+              log.error(err.getMessage(), err);
+              progressEvents.onNext(new ProgressFile(fp, this, false, true));
+            },
+            () -> {
+              log.debug("send complete progress file:{}", fp.getFile());
+              progressEvents.onNext(new ProgressFile(fp, this, true, false));
+            });
     return mis;
   }
 

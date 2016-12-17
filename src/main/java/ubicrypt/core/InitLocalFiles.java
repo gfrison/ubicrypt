@@ -30,17 +30,12 @@ import javax.inject.Inject;
 import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.dto.LocalFile;
 
-/**
- * increment vclock for each local file has been modified before startup.
- */
+/** increment vclock for each local file has been modified before startup. */
 public class InitLocalFiles implements Consumer<LocalFile> {
   private final Logger log = LoggerFactory.getLogger(InitLocalFiles.class);
-  @Inject
-  LocalConfig localConfig;
-  @Inject
-  Path basePath;
-  @Inject
-  int deviceId;
+  @Inject LocalConfig localConfig;
+  @Inject Path basePath;
+  @Inject int deviceId;
 
   @PostConstruct
   @Async
@@ -53,20 +48,20 @@ public class InitLocalFiles implements Consumer<LocalFile> {
     boolean modified = false;
     try {
       final BasicFileAttributes attr =
-        Files.readAttributes(basePath.resolve(localFile.getPath()), BasicFileAttributes.class);
+          Files.readAttributes(basePath.resolve(localFile.getPath()), BasicFileAttributes.class);
       if (attr.lastModifiedTime().toInstant().isAfter(localFile.getLastModified())) {
         log.debug(
-          "file:{}, different modified time. Config:{}, actual:{}",
-          localFile.getPath(),
-          localFile.getLastModified(),
-          attr.lastModifiedTime());
+            "file:{}, different modified time. Config:{}, actual:{}",
+            localFile.getPath(),
+            localFile.getLastModified(),
+            attr.lastModifiedTime());
         localFile.setLastModified(attr.lastModifiedTime().toInstant());
         if (attr.size() != localFile.getSize()) {
           log.debug(
-            "file:{}, different size. Config:{}, actual:{}",
-            localFile.getPath(),
-            localFile.getSize(),
-            attr.size());
+              "file:{}, different size. Config:{}, actual:{}",
+              localFile.getPath(),
+              localFile.getSize(),
+              attr.size());
           localFile.setSize(attr.size());
           modified = true;
         }

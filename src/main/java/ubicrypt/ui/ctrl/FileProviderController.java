@@ -38,18 +38,12 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class FileProviderController implements Initializable {
   private static final Logger log = getLogger(FileProviderController.class);
 
-  @Inject
-  ProviderCommander providerCommander;
-  @Inject
-  Stage stage;
-  @FXML
-  Button selectFolder;
-  @FXML
-  Button finish;
-  @FXML
-  TextField textFolder;
-  @FXML
-  Button back;
+  @Inject ProviderCommander providerCommander;
+  @Inject Stage stage;
+  @FXML Button selectFolder;
+  @FXML Button finish;
+  @FXML TextField textFolder;
+  @FXML Button back;
   StackNavigator navigator;
 
   @Override
@@ -57,26 +51,26 @@ public class FileProviderController implements Initializable {
     textFolder.setText(null);
     finish.setDisable(true);
     selectFolder.setOnMouseClicked(
-      event -> {
-        final DirectoryChooser fc = new DirectoryChooser();
-        final File dir = fc.showDialog(stage);
-        if (dir != null) {
-          textFolder.setText(dir.toString());
-          finish.setDisable(false);
-        }
-      });
+        event -> {
+          final DirectoryChooser fc = new DirectoryChooser();
+          final File dir = fc.showDialog(stage);
+          if (dir != null) {
+            textFolder.setText(dir.toString());
+            finish.setDisable(false);
+          }
+        });
     back.setOnMouseClicked(mouseEvent -> navigator.popLayer());
     finish.setOnMouseClicked(
-      mouseEvent -> {
-        final FileProvider provider = new FileProvider();
-        provider.setConf(new FileConf(Paths.get(textFolder.getText())));
-        providerCommander
-          .register(provider)
-          .filter(Boolean::booleanValue)
-          .subscribe(
-            res -> log.info("new provider:{}, add result:{}", provider, res),
-            err -> log.error(err.getMessage(), err));
-        navigator.popHome();
-      });
+        mouseEvent -> {
+          final FileProvider provider = new FileProvider();
+          provider.setConf(new FileConf(Paths.get(textFolder.getText())));
+          providerCommander
+              .register(provider)
+              .filter(Boolean::booleanValue)
+              .subscribe(
+                  res -> log.info("new provider:{}, add result:{}", provider, res),
+                  err -> log.error(err.getMessage(), err));
+          navigator.popHome();
+        });
   }
 }

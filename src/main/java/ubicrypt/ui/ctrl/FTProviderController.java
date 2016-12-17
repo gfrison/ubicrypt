@@ -44,56 +44,47 @@ import static ubicrypt.ui.Anchor.anchor;
 
 public class FTProviderController implements Initializable {
   private static final Logger log = getLogger(FTProviderController.class);
-  @FXML
-  TextField host;
-  @FXML
-  TextField port;
-  @FXML
-  CheckBox anonymous;
-  @FXML
-  TextField username;
-  @FXML
-  TextField password;
-  @FXML
-  Button add;
-  @FXML
-  Label error;
-  @FXML
-  TextField folder;
-  @Inject
-  ProviderCommander providerCommander;
+  @FXML TextField host;
+  @FXML TextField port;
+  @FXML CheckBox anonymous;
+  @FXML TextField username;
+  @FXML TextField password;
+  @FXML Button add;
+  @FXML Label error;
+  @FXML TextField folder;
+  @Inject ProviderCommander providerCommander;
   private final EventHandler<? super KeyEvent> onKeyPressed =
-    event -> {
-      if (isEmpty(host.getText())) {
-        add.setDisable(true);
-        return;
-      }
-      if (!NumberUtils.isNumber(port.getText())) {
-        add.setDisable(true);
-        return;
-      }
-      if (anonymous.isSelected()) {
-        username.setDisable(true);
-        password.setDisable(true);
-      } else {
-        if (isEmpty(username.getText())) {
+      event -> {
+        if (isEmpty(host.getText())) {
           add.setDisable(true);
           return;
         }
-        if (isEmpty(password.getText())) {
+        if (!NumberUtils.isNumber(port.getText())) {
           add.setDisable(true);
           return;
         }
-      }
-      if (isEmpty(host.getText())) {
-        add.setDisable(true);
-        return;
-      }
-      add.setDisable(false);
-      if (event instanceof KeyEvent && event.getCode() == KeyCode.ENTER && !add.isDisabled()) {
-        register();
-      }
-    };
+        if (anonymous.isSelected()) {
+          username.setDisable(true);
+          password.setDisable(true);
+        } else {
+          if (isEmpty(username.getText())) {
+            add.setDisable(true);
+            return;
+          }
+          if (isEmpty(password.getText())) {
+            add.setDisable(true);
+            return;
+          }
+        }
+        if (isEmpty(host.getText())) {
+          add.setDisable(true);
+          return;
+        }
+        add.setDisable(false);
+        if (event instanceof KeyEvent && event.getCode() == KeyCode.ENTER && !add.isDisabled()) {
+          register();
+        }
+      };
 
   @PostConstruct
   public void init() {
@@ -103,19 +94,19 @@ public class FTProviderController implements Initializable {
     username.setOnKeyPressed(onKeyPressed);
     password.setOnKeyPressed(onKeyPressed);
     anonymous.setOnMouseClicked(
-      event -> {
-        if (anonymous.isSelected()) {
+        event -> {
+          if (anonymous.isSelected()) {
+            username.setDisable(false);
+            password.setDisable(false);
+            return;
+          }
           username.setDisable(false);
           password.setDisable(false);
-          return;
-        }
-        username.setDisable(false);
-        password.setDisable(false);
-      });
+        });
     add.setOnMouseClicked(
-      event -> {
-        register();
-      });
+        event -> {
+          register();
+        });
   }
 
   public void register() {
@@ -143,20 +134,20 @@ public class FTProviderController implements Initializable {
     anchor().browse("wait", "Registering FTP provider");
     try {
       providerCommander
-        .register(ftp)
-        .subscribeOn(Schedulers.io())
-        .subscribe(
-          result -> {
-            log.info("provider ftp:{} registered:{}", conf.getHost(), result);
-            clearInputs();
-            anchor().popHome();
-          },
-          err -> {
-            log.error("error on adding ftp provider", err);
-            anchor().popScene();
-            error.setVisible(true);
-            error.setText("Error: " + err.getMessage());
-          });
+          .register(ftp)
+          .subscribeOn(Schedulers.io())
+          .subscribe(
+              result -> {
+                log.info("provider ftp:{} registered:{}", conf.getHost(), result);
+                clearInputs();
+                anchor().popHome();
+              },
+              err -> {
+                log.error("error on adding ftp provider", err);
+                anchor().popScene();
+                error.setVisible(true);
+                error.setText("Error: " + err.getMessage());
+              });
     } catch (Exception e) {
       log.error("exp", e);
     }

@@ -43,8 +43,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 @Configuration
 public class RemoteCtxConf {
   private static final Logger log = getLogger(RemoteCtxConf.class);
-  @Resource
-  private QueueLiner queueLiner;
+  @Resource private QueueLiner queueLiner;
 
   @Resource
   @Qualifier("appEvents")
@@ -114,7 +113,7 @@ public class RemoteCtxConf {
 
   @Bean
   public QueueLiner queueLiner(
-    @Value("${saveConfIntervalMs:30000}") final Long saveConfIntervalMs) {
+      @Value("${saveConfIntervalMs:30000}") final Long saveConfIntervalMs) {
     return new QueueLiner(saveConfIntervalMs);
   }
 

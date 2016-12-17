@@ -17,5 +17,4 @@ import java.util.function.Function;
 
 import rx.Observable;
 
-public interface RemoteIO<T> extends Observable.OnSubscribe<T>, Function<T, Observable<Boolean>> {
-}
+public interface RemoteIO<T> extends Observable.OnSubscribe<T>, Function<T, Observable<Boolean>> {}

@@ -13,5 +13,4 @@
  */
 package ubicrypt.core.events;
 
-public class ShutdownRequest {
-}
+public class ShutdownRequest {}

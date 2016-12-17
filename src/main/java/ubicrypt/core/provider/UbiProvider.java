@@ -28,27 +28,27 @@ import ubicrypt.core.dto.UbiFile;
 public abstract class UbiProvider {
   private transient long userId = -1;
   private RemoteFile confFile =
-    new RemoteFile() {
-      {
-        setKey(
-          new Key() {
-            {
-              setType(UbiFile.KeyType.pgp);
-            }
-          });
-      }
-    };
+      new RemoteFile() {
+        {
+          setKey(
+              new Key() {
+                {
+                  setType(UbiFile.KeyType.pgp);
+                }
+              });
+        }
+      };
   private RemoteFile lockFile =
-    new RemoteFile() {
-      {
-        setKey(
-          new Key() {
-            {
-              setType(UbiFile.KeyType.pgp);
-            }
-          });
-      }
-    };
+      new RemoteFile() {
+        {
+          setKey(
+              new Key() {
+                {
+                  setType(UbiFile.KeyType.pgp);
+                }
+              });
+        }
+      };
 
   public abstract Observable<String> post(InputStream is);
 
@@ -108,8 +108,7 @@ public abstract class UbiProvider {
     return 5 * 60 * 1000;
   }
 
-  public void close() {
-  }
+  public void close() {}
 
   public abstract String code();
 

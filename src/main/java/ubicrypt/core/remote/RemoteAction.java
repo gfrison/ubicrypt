@@ -52,22 +52,22 @@ public abstract class RemoteAction implements IRemoteAction {
 
   Action0 fileEvents(final FileProvenience fp, final FileEvent.Type fileEventType) {
     return () ->
-      fileEvents.onNext(new FileEvent(fp.getFile(), fileEventType, FileEvent.Location.remote));
+        fileEvents.onNext(new FileEvent(fp.getFile(), fileEventType, FileEvent.Location.remote));
   }
 
   InputStream monitor(final FileProvenience fp, final InputStream inputStream) {
     final MonitorInputStream mis = new MonitorInputStream(inputStream);
     mis.monitor()
-      .subscribe(
-        chunk -> progressEvents.onNext(new ProgressFile(fp, repository, chunk)),
-        err -> {
-          log.error(err.getMessage(), err);
-          progressEvents.onNext(new ProgressFile(fp, repository, false, true));
-        },
-        () -> {
-          log.debug("send complete progress file:{}", fp.getFile().getPath());
-          progressEvents.onNext(new ProgressFile(fp, repository, true, false));
-        });
+        .subscribe(
+            chunk -> progressEvents.onNext(new ProgressFile(fp, repository, chunk)),
+            err -> {
+              log.error(err.getMessage(), err);
+              progressEvents.onNext(new ProgressFile(fp, repository, false, true));
+            },
+            () -> {
+              log.debug("send complete progress file:{}", fp.getFile().getPath());
+              progressEvents.onNext(new ProgressFile(fp, repository, true, false));
+            });
     return mis;
   }
 

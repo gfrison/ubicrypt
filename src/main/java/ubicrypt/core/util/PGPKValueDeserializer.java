@@ -28,7 +28,7 @@ public class PGPKValueDeserializer extends StdDeserializer<PGPKValue> {
 
   @Override
   public PGPKValue deserialize(final JsonParser p, final DeserializationContext ctxt)
-    throws IOException {
+      throws IOException {
     return new PGPKValue(new BcPGPPublicKeyRing(p.getBinaryValue()).getPublicKey());
   }
 }

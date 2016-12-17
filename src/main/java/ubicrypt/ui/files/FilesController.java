@@ -74,105 +74,96 @@ import static ubicrypt.ui.UItils.searchFile;
 
 public class FilesController implements Initializable, ApplicationContextAware {
   private static final Logger log = getLogger(FilesController.class);
-  @Inject
-  Stage stage;
-  @Inject
-  LocalConfig localConfig;
-  @FXML
-  TreeView<ITreeItem> treeView;
-  @FXML
-  TreeItem<ITreeItem> root;
-  @FXML
-  Button addFile;
-  @Inject
-  FileFacade fileCommander;
-  @Resource
-  Path basePath;
-  private final Consumer<Path> folderAdder =
-    fromFolder -> {
-      DirectoryChooser dc = new DirectoryChooser();
-      dc.setInitialDirectory(basePath.resolve(fromFolder).toFile());
-      dc.setTitle("Select Folder to Save");
-      ofNullable(dc.showDialog(stage))
-        .ifPresent(
-          folder -> {
-            try {
-              List<File> files =
-                Files.walk(folder.toPath())
-                  .filter(Files::isRegularFile)
-                  .filter(f -> !Files.isSymbolicLink(f))
-                  .filter(f -> silent(() -> !Files.isHidden(f)))
-                  .map(Path::toFile)
-                  .collect(Collectors.toList());
-              filesAdder.accept(files);
-
-            } catch (IOException e) {
-              log.error(e.getMessage(), e);
-            }
-          });
-    };
-  private final Consumer<Path> fileAdder =
-    fromFolder -> {
-      FileChooser fc = new FileChooser();
-      log.debug("add files from:{}", basePath.resolve(fromFolder));
-      fc.setInitialDirectory(basePath.resolve(fromFolder).toFile());
-      fc.setTitle("Select Files to Save");
-      ofNullable(fc.showOpenMultipleDialog(stage)).ifPresent(filesAdder);
-    };
+  @Inject Stage stage;
+  @Inject LocalConfig localConfig;
+  @FXML TreeView<ITreeItem> treeView;
+  @FXML TreeItem<ITreeItem> root;
+  @FXML Button addFile;
+  @Inject FileFacade fileCommander;
+  @Resource Path basePath;
   private final Consumer<List<File>> filesAdder =
-    files ->
-      Observable.merge(
-        files
-          .stream()
-          .map(
-            file -> {
-              log.debug("adding file:{}", file);
-              final Path relPath = basePath.relativize(file.toPath());
-              return fileCommander
-                .addFile(file.toPath())
-                .flatMap(
-                  tupla -> {
-                    addFiles(relPath.iterator(), basePath, root, tupla.getT1());
-                    return tupla.getT2();
-                  })
-                .onErrorReturn(
+      files ->
+          Observable.merge(
+                  files
+                      .stream()
+                      .map(
+                          file -> {
+                            log.debug("adding file:{}", file);
+                            final Path relPath = basePath.relativize(file.toPath());
+                            return fileCommander
+                                .addFile(file.toPath())
+                                .flatMap(
+                                    tupla -> {
+                                      addFiles(relPath.iterator(), basePath, root, tupla.getT1());
+                                      return tupla.getT2();
+                                    })
+                                .onErrorReturn(
+                                    err -> {
+                                      if (err instanceof AlreadyManagedException) {
+                                        return true;
+                                      }
+                                      throw Throwables.propagate(err);
+                                    })
+                                .doOnNext(
+                                    result -> log.info("file:{} add result:{}", file, result));
+                          })
+                      .collect(toList()))
+              .subscribe(
+                  empty(),
                   err -> {
-                    if (err instanceof AlreadyManagedException) {
-                      return true;
-                    }
-                    throw Throwables.propagate(err);
-                  })
-                .doOnNext(
-                  result -> log.info("file:{} add result:{}", file, result));
-            })
-          .collect(toList()))
-        .subscribe(
-          empty(),
-          err -> {
-            log.error(err.getMessage(), err);
-          },
-          () -> {
-          });
+                    log.error(err.getMessage(), err);
+                  },
+                  () -> {});
+  private final Consumer<Path> folderAdder =
+      fromFolder -> {
+        DirectoryChooser dc = new DirectoryChooser();
+        dc.setInitialDirectory(basePath.resolve(fromFolder).toFile());
+        dc.setTitle("Select Folder to Save");
+        ofNullable(dc.showDialog(stage))
+            .ifPresent(
+                folder -> {
+                  try {
+                    List<File> files =
+                        Files.walk(folder.toPath())
+                            .filter(Files::isRegularFile)
+                            .filter(f -> !Files.isSymbolicLink(f))
+                            .filter(f -> silent(() -> !Files.isHidden(f)))
+                            .map(Path::toFile)
+                            .collect(Collectors.toList());
+                    filesAdder.accept(files);
+
+                  } catch (IOException e) {
+                    log.error(e.getMessage(), e);
+                  }
+                });
+      };
+  private final Consumer<Path> fileAdder =
+      fromFolder -> {
+        FileChooser fc = new FileChooser();
+        log.debug("add files from:{}", basePath.resolve(fromFolder));
+        fc.setInitialDirectory(basePath.resolve(fromFolder).toFile());
+        fc.setTitle("Select Files to Save");
+        ofNullable(fc.showOpenMultipleDialog(stage)).ifPresent(filesAdder);
+      };
   private final Function<UbiFile, Observable<Boolean>> fileUntracker =
-    file ->
-      fileCommander
-        .removeFile(basePath.resolve(file.getPath()))
-        .doOnNext(
-          res -> {
-            log.info("untrack file:{}  result:{}", file, res);
-            searchFile(root, file).ifPresent(FilesController::removeItem);
-          })
-        .doOnError(err -> log.error("error untracking file", err));
-  @Resource
-  Observable<FileEvent> fileEvents;
-  @Inject
-  FileInSync fileInSync;
-  @Inject
-  OSUtil osUtil;
+      file ->
+          fileCommander
+              .removeFile(basePath.resolve(file.getPath()))
+              .doOnNext(
+                  res -> {
+                    log.info("untrack file:{}  result:{}", file, res);
+                    searchFile(root, file).ifPresent(FilesController::removeItem);
+                  })
+              .doOnError(err -> log.error("error untracking file", err));
+  @Resource Observable<FileEvent> fileEvents;
+  @Inject FileInSync fileInSync;
+  @Inject OSUtil osUtil;
   private String fxml;
+
   @Inject
   @Qualifier("appEvents")
   private Observable<Object> appEvents;
+
   private ApplicationContext ctx;
 
   private static void removeItem(final TreeItem<ITreeItem> item) {
@@ -184,100 +175,100 @@ public class FilesController implements Initializable, ApplicationContextAware {
   public void initialize(URL url, ResourceBundle resourceBundle) {
     fxml = substringBefore(substringAfterLast(url.getFile(), "/"), ".fxml");
     treeView.setCellFactory(
-      treeView1 -> new TreeCellFactory(treeView1, fileUntracker, null, osUtil, basePath));
+        treeView1 -> new TreeCellFactory(treeView1, fileUntracker, null, osUtil, basePath));
     localConfig
-      .getLocalFiles()
-      .stream()
-      .filter(Utils.trackedFile)
-      .forEach(localFile -> addFiles(localFile.getPath().iterator(), basePath, root, localFile));
+        .getLocalFiles()
+        .stream()
+        .filter(Utils.trackedFile)
+        .forEach(localFile -> addFiles(localFile.getPath().iterator(), basePath, root, localFile));
 
     //remote file events
     fileEvents
-      .filter(fileEvent -> fileEvent.getLocation() == FileEvent.Location.remote)
-      .subscribe(
-        fileEvent -> {
-          log.debug("file remote event:{}", fileEvent);
-          //update file icon
-          final UbiFile<UbiFile> file = fileEvent.getFile();
-          Observable.create(fileInSync.call(file))
-            .subscribe(
-              res -> {
-                searchFile(root, file)
-                  .ifPresent(
-                    treeView -> {
-                      log.debug("found file item:{}", treeView);
-                      final Node graphics = treeView.getValue().getGraphics();
-                      graphics.getStyleClass().clear();
-                      graphics.getStyleClass().add(format("tree-file-saved-%s", res));
-                    });
-              });
-        });
+        .filter(fileEvent -> fileEvent.getLocation() == FileEvent.Location.remote)
+        .subscribe(
+            fileEvent -> {
+              log.debug("file remote event:{}", fileEvent);
+              //update file icon
+              final UbiFile<UbiFile> file = fileEvent.getFile();
+              Observable.create(fileInSync.call(file))
+                  .subscribe(
+                      res -> {
+                        searchFile(root, file)
+                            .ifPresent(
+                                treeView -> {
+                                  log.debug("found file item:{}", treeView);
+                                  final Node graphics = treeView.getValue().getGraphics();
+                                  graphics.getStyleClass().clear();
+                                  graphics.getStyleClass().add(format("tree-file-saved-%s", res));
+                                });
+                      });
+            });
     //local file events
     fileEvents
-      .filter(fileEvent -> fileEvent.getLocation() == FileEvent.Location.local)
-      .subscribe(
-        fileEvent -> {
-          log.debug("file local event:{}", fileEvent);
-          Optional<TreeItem<ITreeItem>> optfile = searchFile(root, fileEvent.getFile());
-          if (!optfile.isPresent()) {
-            optfile =
-              localConfig
-                .getLocalFiles()
-                .stream()
-                .filter(fileEvent.getFile()::equals)
-                .findFirst()
-                .map(
-                  fe ->
-                    addFiles(
-                      fileEvent.getFile().getPath().iterator(), basePath, root, fe));
-          }
-          if (!optfile.isPresent()) {
-            log.debug("file not present:{}", fileEvent.getFile().getPath());
-            return;
-          }
-          TreeItem<ITreeItem> vfile = optfile.get();
-          final Node graphics = vfile.getValue().getGraphics();
-          graphics.getStyleClass().clear();
-          switch (fileEvent.getType()) {
-            case created:
-            case synched:
-              graphics.getStyleClass().add("tree-file-saved-true");
-              break;
-            case unsynched:
-              graphics.getStyleClass().add("tree-file-saving");
-              break;
-            case error:
-              graphics.getStyleClass().add("tree-file-saved-true");
-              break;
-            case removed:
-            case deleted:
-              removeItem(vfile);
-              break;
-            default:
-              graphics.getStyleClass().add(format("tree-file-saved-%s", true));
-          }
-        });
+        .filter(fileEvent -> fileEvent.getLocation() == FileEvent.Location.local)
+        .subscribe(
+            fileEvent -> {
+              log.debug("file local event:{}", fileEvent);
+              Optional<TreeItem<ITreeItem>> optfile = searchFile(root, fileEvent.getFile());
+              if (!optfile.isPresent()) {
+                optfile =
+                    localConfig
+                        .getLocalFiles()
+                        .stream()
+                        .filter(fileEvent.getFile()::equals)
+                        .findFirst()
+                        .map(
+                            fe ->
+                                addFiles(
+                                    fileEvent.getFile().getPath().iterator(), basePath, root, fe));
+              }
+              if (!optfile.isPresent()) {
+                log.debug("file not present:{}", fileEvent.getFile().getPath());
+                return;
+              }
+              TreeItem<ITreeItem> vfile = optfile.get();
+              final Node graphics = vfile.getValue().getGraphics();
+              graphics.getStyleClass().clear();
+              switch (fileEvent.getType()) {
+                case created:
+                case synched:
+                  graphics.getStyleClass().add("tree-file-saved-true");
+                  break;
+                case unsynched:
+                  graphics.getStyleClass().add("tree-file-saving");
+                  break;
+                case error:
+                  graphics.getStyleClass().add("tree-file-saved-true");
+                  break;
+                case removed:
+                case deleted:
+                  removeItem(vfile);
+                  break;
+                default:
+                  graphics.getStyleClass().add(format("tree-file-saved-%s", true));
+              }
+            });
 
     //sync-done events
     appEvents.subscribe(
-      ClassMatcher.newMatcher()
-        .on(
-          SyncBeginEvent.class,
-          event -> {
-            log.info("sync begin received");
-          })
-        .on(
-          SynchDoneEvent.class,
-          event -> {
-            log.debug("synchronization done");
-          }));
+        ClassMatcher.newMatcher()
+            .on(
+                SyncBeginEvent.class,
+                event -> {
+                  log.info("sync begin received");
+                })
+            .on(
+                SynchDoneEvent.class,
+                event -> {
+                  log.debug("synchronization done");
+                }));
   }
 
   private synchronized TreeItem<ITreeItem> addFiles(
-    final Iterator<Path> it,
-    final Path rootPath,
-    final TreeItem<ITreeItem> root,
-    final LocalFile file) {
+      final Iterator<Path> it,
+      final Path rootPath,
+      final TreeItem<ITreeItem> root,
+      final LocalFile file) {
     if (!it.hasNext()) {
       return root;
     }
@@ -288,30 +279,30 @@ public class FilesController implements Initializable, ApplicationContextAware {
       final TreeItem<ITreeItem> fileItem = new TreeItem<>(item);
       root.getChildren().add(fileItem);
       root.getChildren()
-        .sort(
-          (iTreeItemTreeItem, t1) ->
-            iTreeItemTreeItem.getValue().getLabel().compareTo(t1.getValue().getLabel()));
+          .sort(
+              (iTreeItemTreeItem, t1) ->
+                  iTreeItemTreeItem.getValue().getLabel().compareTo(t1.getValue().getLabel()));
       return fileItem;
     }
     final Optional<TreeItem<ITreeItem>> optTreeItem =
-      root.getChildren()
-        .stream()
-        .filter(ti -> ((FolderItem) ti.getValue()).getPath().equals(path))
-        .findFirst();
+        root.getChildren()
+            .stream()
+            .filter(ti -> ((FolderItem) ti.getValue()).getPath().equals(path))
+            .findFirst();
     if (optTreeItem.isPresent()) {
       return addFiles(it, resolvedPath, optTreeItem.get(), file);
     }
     final TreeItem<ITreeItem> fileItem =
-      new TreeFolderItem(
-        new FolderItem(
-          path,
-          event -> fileAdder.accept(resolvedPath),
-          event -> folderAdder.accept(resolvedPath)));
+        new TreeFolderItem(
+            new FolderItem(
+                path,
+                event -> fileAdder.accept(resolvedPath),
+                event -> folderAdder.accept(resolvedPath)));
     root.getChildren().add(fileItem);
     root.getChildren()
-      .sort(
-        (iTreeItemTreeItem, t1) ->
-          iTreeItemTreeItem.getValue().getLabel().compareTo(t1.getValue().getLabel()));
+        .sort(
+            (iTreeItemTreeItem, t1) ->
+                iTreeItemTreeItem.getValue().getLabel().compareTo(t1.getValue().getLabel()));
     return addFiles(it, resolvedPath, fileItem, file);
   }
 

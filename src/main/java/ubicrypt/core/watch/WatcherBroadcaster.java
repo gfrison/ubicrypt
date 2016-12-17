@@ -64,10 +64,8 @@ public class WatcherBroadcaster {
   private final Map<WatchKey, Path> watchers = new ConcurrentHashMap<>();
   private final HashMap<Path, Long> fileLastmodified = new HashMap<>();
   private final List<Path> deletes = new CopyOnWriteArrayList();
-  @Inject
-  LocalConfig localConfig;
-  @Inject
-  PublishSubject<PathEvent> pathStream;
+  @Inject LocalConfig localConfig;
+  @Inject PublishSubject<PathEvent> pathStream;
 
   @Resource
   @Qualifier("synchProcessing")
@@ -75,52 +73,48 @@ public class WatcherBroadcaster {
 
   private boolean active = true;
   private final Consumer<Path> register =
-    (dir) -> {
-      if (!active) {
-        log.warn("watcher service not active");
-        return;
-      }
-      try {
-        if (!watchers.containsKey(dir)) {
-          log.debug("watching folder:{}", dir);
-          watchers.put(dir.register(watchService, ENTRY_DELETE, ENTRY_MODIFY, ENTRY_CREATE), dir);
+      (dir) -> {
+        if (!active) {
+          log.warn("watcher service not active");
+          return;
         }
-      } catch (IOException e) {
-        Throwables.propagate(e);
-      }
-    };
+        try {
+          if (!watchers.containsKey(dir)) {
+            log.debug("watching folder:{}", dir);
+            watchers.put(dir.register(watchService, ENTRY_DELETE, ENTRY_MODIFY, ENTRY_CREATE), dir);
+          }
+        } catch (IOException e) {
+          Throwables.propagate(e);
+        }
+      };
 
   public WatcherBroadcaster(final Path basePath) throws IOException {
     this.basePath = basePath;
   }
 
-  /**
-   * register parent folder's file
-   */
+  /** register parent folder's file */
   private void registerFileFolders() {
     localConfig
-      .getLocalFiles()
-      .stream()
-      .filter(Utils.trackedFile)
-      .map(LocalFile::getPath)
-      .map(basePath::resolve)
-      .filter(Files::isRegularFile)
-      .map(path -> path.toFile().getParentFile().toPath())
-      .distinct()
-      .forEach(register);
+        .getLocalFiles()
+        .stream()
+        .filter(Utils.trackedFile)
+        .map(LocalFile::getPath)
+        .map(basePath::resolve)
+        .filter(Files::isRegularFile)
+        .map(path -> path.toFile().getParentFile().toPath())
+        .distinct()
+        .forEach(register);
   }
 
-  /**
-   * register entire folder
-   */
+  /** register entire folder */
   private void registerTrackedFolders() {
     localConfig
-      .getTrackedFolders()
-      .stream()
-      .map(basePath::resolve)
-      .filter(Files::isDirectory)
-      .distinct()
-      .forEach(register);
+        .getTrackedFolders()
+        .stream()
+        .map(basePath::resolve)
+        .filter(Files::isDirectory)
+        .distinct()
+        .forEach(register);
   }
 
   @PostConstruct
@@ -175,16 +169,16 @@ public class WatcherBroadcaster {
     if (event == PathEvent.Event.delete) {
       deletes.add(path);
       executorService.schedule(
-        () -> {
-          if (!deletes.contains(path)) {
-            dispatch(PathEvent.Event.update, path);
-            return;
-          }
-          deletes.remove(path);
-          dispatch(PathEvent.Event.delete, path);
-        },
-        10,
-        TimeUnit.MILLISECONDS);
+          () -> {
+            if (!deletes.contains(path)) {
+              dispatch(PathEvent.Event.update, path);
+              return;
+            }
+            deletes.remove(path);
+            dispatch(PathEvent.Event.delete, path);
+          },
+          10,
+          TimeUnit.MILLISECONDS);
     } else {
       if (!deletes.contains(path)) {
         dispatch(event, path);
@@ -205,11 +199,11 @@ public class WatcherBroadcaster {
       return;
     }
     if (localConfig
-      .getLocalFiles()
-      .stream()
-      .filter(file -> file.getPath().equals(path))
-      .findFirst()
-      .isPresent()) {
+        .getLocalFiles()
+        .stream()
+        .filter(file -> file.getPath().equals(path))
+        .findFirst()
+        .isPresent()) {
       pathStream.onNext(new PathEvent(event, basePath.resolve(path)));
     }
   }

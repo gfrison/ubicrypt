@@ -36,13 +36,11 @@ import static ubicrypt.core.provider.ProviderStatus.initialized;
 import static ubicrypt.core.provider.ProviderStatus.removed;
 import static ubicrypt.core.provider.ProviderStatus.uninitialized;
 
-/**
- * take all local and remote files and synchronized them all at startup.
- */
+/** take all local and remote files and synchronized them all at startup. */
 public class InitFileSyncronizer {
   private static final Logger log = LoggerFactory.getLogger(InitFileSyncronizer.class);
   private static List<ProviderStatus> ignoreStatuses =
-    Arrays.asList(uninitialized, initialized, error, removed);
+      Arrays.asList(uninitialized, initialized, error, removed);
   private final AtomicBoolean enqueued = new AtomicBoolean(false);
   private final AtomicBoolean processing = new AtomicBoolean(false);
 
@@ -56,20 +54,18 @@ public class InitFileSyncronizer {
 
   private Action0 onComplete = Actions.empty();
 
-  /**
-   * when all provider are not uninitialized, begin the sync for all files
-   */
+  /** when all provider are not uninitialized, begin the sync for all files */
   @PostConstruct
   public void init() {
     log.info("file synchronizer started");
     providerEvent
-      .filter(event -> !ignoreStatuses.contains(event.getEvent()))
-      .subscribe(
-        event -> {
-          if (event.getEvent() == active) {
-            process(event);
-          }
-        });
+        .filter(event -> !ignoreStatuses.contains(event.getEvent()))
+        .subscribe(
+            event -> {
+              if (event.getEvent() == active) {
+                process(event);
+              }
+            });
   }
 
   private void process(ProviderEvent event) {
@@ -83,17 +79,17 @@ public class InitFileSyncronizer {
 
   private void doSync() {
     Observable.create(fileSynchronizer)
-      .doOnCompleted(onComplete)
-      .doOnCompleted(
-        () -> {
-          if (enqueued.compareAndSet(true, false)) {
-            doSync();
-          } else {
-            processing.set(false);
-          }
-        })
-      .doOnError(err -> processing.set(false))
-      .subscribe(Actions.empty(), err -> log.error(err.getMessage(), err));
+        .doOnCompleted(onComplete)
+        .doOnCompleted(
+            () -> {
+              if (enqueued.compareAndSet(true, false)) {
+                doSync();
+              } else {
+                processing.set(false);
+              }
+            })
+        .doOnError(err -> processing.set(false))
+        .subscribe(Actions.empty(), err -> log.error(err.getMessage(), err));
   }
 
   public void setOnComplete(final Action0 onComplete) {

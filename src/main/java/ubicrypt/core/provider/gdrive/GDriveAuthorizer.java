@@ -64,8 +64,8 @@ public class GDriveAuthorizer implements DataStoreFactory, IStoppable {
 
   private static GoogleClientSecrets appCredentials() throws IOException {
     return GoogleClientSecrets.load(
-      getDefaultInstance(),
-      new InputStreamReader(GDriveAuthorizer.class.getResourceAsStream("/google.json")));
+        getDefaultInstance(),
+        new InputStreamReader(GDriveAuthorizer.class.getResourceAsStream("/google.json")));
   }
 
   @PostConstruct
@@ -81,14 +81,14 @@ public class GDriveAuthorizer implements DataStoreFactory, IStoppable {
       conf = new GDriveConf(credentialId, this);
       http = GoogleNetHttpTransport.newTrustedTransport();
       flow =
-        new GoogleAuthorizationCodeFlow.Builder(
-          http,
-          getDefaultInstance(),
-          appCredentials(),
-          Arrays.asList(DriveScopes.DRIVE_FILE))
-          .setDataStoreFactory(this)
-          .setAccessType("offline")
-          .build();
+          new GoogleAuthorizationCodeFlow.Builder(
+                  http,
+                  getDefaultInstance(),
+                  appCredentials(),
+                  Arrays.asList(DriveScopes.DRIVE_FILE))
+              .setDataStoreFactory(this)
+              .setAccessType("offline")
+              .build();
       receiver = new LocalServerReceiver();
       redirectUri = receiver.getRedirectUri();
       return flow.newAuthorizationUrl().setRedirectUri(redirectUri).build();
@@ -110,12 +110,12 @@ public class GDriveAuthorizer implements DataStoreFactory, IStoppable {
       TokenResponse response = flow.newTokenRequest(code).setRedirectUri(redirectUri).execute();
       Credential credential = flow.createAndStoreCredential(response, credentialId);
       Drive drive =
-        new Drive.Builder(http, getDefaultInstance(), credential)
-          .setDriveRequestInitializer(new DriveRequestInitializer())
-          .setApplicationName("UbiCrypt")
-          .build();
+          new Drive.Builder(http, getDefaultInstance(), credential)
+              .setDriveRequestInitializer(new DriveRequestInitializer())
+              .setApplicationName("UbiCrypt")
+              .build();
       String email =
-        drive.about().get().setFields("user, storageQuota").execute().getUser().getEmailAddress();
+          drive.about().get().setFields("user, storageQuota").execute().getUser().getEmailAddress();
       conf.setEmail(email);
       return conf;
     } catch (Exception e) {
@@ -146,12 +146,12 @@ public class GDriveAuthorizer implements DataStoreFactory, IStoppable {
   @Override
   public Observable<Void> stop() {
     return create(
-      subscriber -> {
-        if (receiver != null) {
-          close();
-        }
-        subscriber.onCompleted();
-      });
+        subscriber -> {
+          if (receiver != null) {
+            close();
+          }
+          subscriber.onCompleted();
+        });
   }
 
   public boolean isListening() {

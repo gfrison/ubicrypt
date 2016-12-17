@@ -41,11 +41,9 @@ public class PGPService implements IPGPService {
   @Qualifier("keyPair")
   PGPKeyPair keyPair;
 
-  @Inject
-  LocalConfig localConfig;
+  @Inject LocalConfig localConfig;
 
-  public PGPService() {
-  }
+  public PGPService() {}
 
   public PGPService(final PGPKeyPair keyPair, final LocalConfig localConfig) {
     this.keyPair = keyPair;
@@ -57,11 +55,11 @@ public class PGPService implements IPGPService {
     checkNotNull(keyPair, "keyPair must not be null");
     checkNotNull(localConfig, "localConfig must not be null");
     return PGPEC.encrypt(
-      concat(
-        of(keyPair.getPublicKey()),
-        localConfig.getOwnedPKs().stream().map(EqualsValue::getValue))
-        .collect(Collectors.toList()),
-      clearBytes);
+        concat(
+                of(keyPair.getPublicKey()),
+                localConfig.getOwnedPKs().stream().map(EqualsValue::getValue))
+            .collect(Collectors.toList()),
+        clearBytes);
   }
 
   @Override

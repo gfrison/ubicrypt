@@ -33,10 +33,10 @@ public class RewriteConfLock implements Observable.OnSubscribe<Boolean> {
   @Override
   public void call(Subscriber<? super Boolean> subscriber) {
     create(confIO)
-      .flatMap(confIO::apply)
-      .filter(a -> a)
-      .flatMap(a -> create(lockIO).flatMap(lockIO::apply))
-      .defaultIfEmpty(false)
-      .subscribe(subscriber);
+        .flatMap(confIO::apply)
+        .filter(a -> a)
+        .flatMap(a -> create(lockIO).flatMap(lockIO::apply))
+        .defaultIfEmpty(false)
+        .subscribe(subscriber);
   }
 }

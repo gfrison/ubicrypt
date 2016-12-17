@@ -39,9 +39,9 @@ public class PathEvent {
   @Override
   public String toString() {
     return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
-      .append("event", event)
-      .append("path", path)
-      .toString();
+        .append("event", event)
+        .append("path", path)
+        .toString();
   }
 
   enum Event {

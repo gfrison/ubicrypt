@@ -52,9 +52,9 @@ public class ConfigAcquirer implements Observable.OnSubscribe<AcquirerReleaser> 
   private Observable.OnSubscribe<AcquirerReleaser> acquirer = new ActualAcquirer();
 
   public ConfigAcquirer(
-    Observable.OnSubscribe<ProviderStatus> initializer,
-    Observable.OnSubscribe<LockStatus> lockChecker,
-    RemoteIO<RemoteConfig> remoteIO) {
+      Observable.OnSubscribe<ProviderStatus> initializer,
+      Observable.OnSubscribe<LockStatus> lockChecker,
+      RemoteIO<RemoteConfig> remoteIO) {
     this.lockChecker = lockChecker;
     this.remoteIO = remoteIO;
     statuses.subscribe(st -> log.debug("incoming status:{}", st));
@@ -65,14 +65,14 @@ public class ConfigAcquirer implements Observable.OnSubscribe<AcquirerReleaser> 
   public void call(Subscriber<? super AcquirerReleaser> subscriber) {
     if (status == uninitialized || status == unauthorized || status == expired) {
       create(initializer)
-        .doOnNext(
-          st -> {
-            setStatus(st);
-            statusStream.onNext(st);
-          })
-        .filter(st -> st == initialized)
-        .flatMap(st -> create(acquirer))
-        .subscribe(subscriber);
+          .doOnNext(
+              st -> {
+                setStatus(st);
+                statusStream.onNext(st);
+              })
+          .filter(st -> st == initialized)
+          .flatMap(st -> create(acquirer))
+          .subscribe(subscriber);
     } else {
       create(acquirer).subscribe(subscriber);
     }
@@ -103,20 +103,20 @@ public class ConfigAcquirer implements Observable.OnSubscribe<AcquirerReleaser> 
         case initialized:
           Observable.create(lockChecker).subscribe(new LockSubscriber(subscriber));
           statuses
-            .filter(event -> event == error || event == unavailable || event == active)
-            .flatMap(
-              event -> {
-                if (event == error || event == unavailable) {
-                  log.debug("return no configuration");
-                  return just(null);
-                }
-                //active
-                inprogress.incrementAndGet();
-                return just(new AcquirerReleaser(config, () -> inprogress.decrementAndGet()));
-              })
-            .firstOrDefault(null)
-            .filter(Objects::nonNull)
-            .subscribe(subscriber);
+              .filter(event -> event == error || event == unavailable || event == active)
+              .flatMap(
+                  event -> {
+                    if (event == error || event == unavailable) {
+                      log.debug("return no configuration");
+                      return just(null);
+                    }
+                    //active
+                    inprogress.incrementAndGet();
+                    return just(new AcquirerReleaser(config, () -> inprogress.decrementAndGet()));
+                  })
+              .firstOrDefault(null)
+              .filter(Objects::nonNull)
+              .subscribe(subscriber);
           break;
         case active:
           inprogress.incrementAndGet();
@@ -141,8 +141,7 @@ public class ConfigAcquirer implements Observable.OnSubscribe<AcquirerReleaser> 
     }
 
     @Override
-    public void onCompleted() {
-    }
+    public void onCompleted() {}
 
     @Override
     public void onError(Throwable e) {
@@ -158,28 +157,28 @@ public class ConfigAcquirer implements Observable.OnSubscribe<AcquirerReleaser> 
       switch (lockStatus) {
         case available:
           Observable.create(remoteIO)
-            .onErrorResumeNext(
-              err -> {
-                if (err instanceof NotFoundException) {
-                  return remoteIO.apply(new RemoteConfig()).map(res -> new RemoteConfig());
-                }
-                return Observable.error(err);
-              })
-            .subscribe(
-              config -> {
-                log.debug("config arrived:{}", config);
-                setConfig(config);
-                setStatus(active);
-              },
-              err -> {
-                log.error("provider:{} failed to get config file", provider, err);
-                setStatus(error);
-                statusStream.onNext(error);
-              },
-              () -> {
-                log.debug("remoteIO get completed");
-                statusStream.onNext(active);
-              });
+              .onErrorResumeNext(
+                  err -> {
+                    if (err instanceof NotFoundException) {
+                      return remoteIO.apply(new RemoteConfig()).map(res -> new RemoteConfig());
+                    }
+                    return Observable.error(err);
+                  })
+              .subscribe(
+                  config -> {
+                    log.debug("config arrived:{}", config);
+                    setConfig(config);
+                    setStatus(active);
+                  },
+                  err -> {
+                    log.error("provider:{} failed to get config file", provider, err);
+                    setStatus(error);
+                    statusStream.onNext(error);
+                  },
+                  () -> {
+                    log.debug("remoteIO get completed");
+                    statusStream.onNext(active);
+                  });
 
           break;
         case unavailable:

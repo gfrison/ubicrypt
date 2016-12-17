@@ -48,10 +48,8 @@ public class RemoveLockOnShutdown implements IStoppable, ApplicationContextAware
   @Qualifier("appEvents")
   private Subject appEvents;
 
-  @Inject
-  private ProviderLifeCycle providerLifeCycle;
-  @Inject
-  private int deviceId;
+  @Inject private ProviderLifeCycle providerLifeCycle;
+  @Inject private int deviceId;
   private BeanFactory bf;
   private ConfigurableApplicationContext ctx;
 
@@ -64,19 +62,19 @@ public class RemoveLockOnShutdown implements IStoppable, ApplicationContextAware
   public Observable<Void> stop() {
     final Stream<ProviderHook> stream = providerLifeCycle.currentlyActiveProviders().stream();
     return Observable.merge(
-      stream
-        .map(ProviderHook::getProvider)
-        .map(
-          provider -> {
-            ProviderLock pl = new ProviderLock(deviceId, Instant.now().minusMillis(1000));
-            ObjectSerializer serializer = springIt(ctx, new ObjectSerializer(provider));
-            return serializer
-              .put(pl, provider.getLockFile())
-              .doOnCompleted(() -> log.info("removed lock on provider:{}", provider));
-          })
-        .collect(Collectors.toList()))
-      .map(bool -> (Void) null)
-      .doOnCompleted(() -> log.info("lock remove completed"));
+            stream
+                .map(ProviderHook::getProvider)
+                .map(
+                    provider -> {
+                      ProviderLock pl = new ProviderLock(deviceId, Instant.now().minusMillis(1000));
+                      ObjectSerializer serializer = springIt(ctx, new ObjectSerializer(provider));
+                      return serializer
+                          .put(pl, provider.getLockFile())
+                          .doOnCompleted(() -> log.info("removed lock on provider:{}", provider));
+                    })
+                .collect(Collectors.toList()))
+        .map(bool -> (Void) null)
+        .doOnCompleted(() -> log.info("lock remove completed"));
   }
 
   @Override

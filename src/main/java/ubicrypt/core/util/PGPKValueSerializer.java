@@ -26,8 +26,8 @@ public class PGPKValueSerializer extends StdSerializer<PGPKValue> {
 
   @Override
   public void serialize(
-    final PGPKValue value, final JsonGenerator gen, final SerializerProvider provider)
-    throws IOException {
+      final PGPKValue value, final JsonGenerator gen, final SerializerProvider provider)
+      throws IOException {
     gen.writeBinary(value.getValue().getEncoded());
   }
 }

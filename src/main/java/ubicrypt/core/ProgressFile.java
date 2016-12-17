@@ -26,7 +26,7 @@ public class ProgressFile {
   private final boolean error;
 
   public ProgressFile(
-    final FileProvenience provenience, final IRepository target, final long chunk) {
+      final FileProvenience provenience, final IRepository target, final long chunk) {
     this.provenience = provenience;
     this.target = target;
     this.chunk = chunk;
@@ -39,10 +39,10 @@ public class ProgressFile {
   }
 
   public ProgressFile(
-    final FileProvenience provenience,
-    final IRepository target,
-    final boolean completed,
-    final boolean error) {
+      final FileProvenience provenience,
+      final IRepository target,
+      final boolean completed,
+      final boolean error) {
     this.provenience = provenience;
     this.target = target;
     this.chunk = 0;
@@ -51,7 +51,7 @@ public class ProgressFile {
   }
 
   public ProgressFile(
-    final FileProvenience provenience, final boolean completed, final boolean error) {
+      final FileProvenience provenience, final boolean completed, final boolean error) {
     this(provenience, null, completed, error);
   }
 
@@ -88,9 +88,9 @@ public class ProgressFile {
     final ProgressFile that = (ProgressFile) o;
 
     return new EqualsBuilder()
-      .append(provenience, that.provenience)
-      .append(target, that.target)
-      .isEquals();
+        .append(provenience, that.provenience)
+        .append(target, that.target)
+        .isEquals();
   }
 
   @Override
@@ -101,12 +101,12 @@ public class ProgressFile {
   @Override
   public String toString() {
     return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
-      .append("provenience", provenience)
-      .append("target", target)
-      .append("chunk", chunk)
-      .append("completed", completed)
-      .append("error", error)
-      .toString();
+        .append("provenience", provenience)
+        .append("target", target)
+        .append("chunk", chunk)
+        .append("completed", completed)
+        .append("error", error)
+        .toString();
   }
 
   public enum Direction {

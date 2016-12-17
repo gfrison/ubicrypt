@@ -39,22 +39,15 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 public class GDriveController implements Initializable {
   private static final Logger log = getLogger(GDriveController.class);
-  @Inject
-  protected GDriveAuthorizer authorizer;
+  @Inject protected GDriveAuthorizer authorizer;
   protected String url;
   protected StackNavigator navigator;
-  @Inject
-  OSUtil osUtil;
-  @Inject
-  ProviderCommander providerCommander;
-  @FXML
-  Label error;
-  @FXML
-  Label message;
-  @FXML
-  Button back;
-  @FXML
-  Button gdrive;
+  @Inject OSUtil osUtil;
+  @Inject ProviderCommander providerCommander;
+  @FXML Label error;
+  @FXML Label message;
+  @FXML Button back;
+  @FXML Button gdrive;
 
   public void authorize(MouseEvent mouseEvent) {
     osUtil.openUrl(url);
@@ -64,14 +57,14 @@ public class GDriveController implements Initializable {
       GDriveConf conf = authorizer.credential();
       message.setText("Authorization received...");
       providerCommander
-        .register(new GDriveProvider(conf))
-        .subscribe(
-          Actions.empty(),
-          e -> {
-            log.error(e.getMessage(), e);
-            error.setText(e.getMessage());
-          },
-          () -> navigator.popHome());
+          .register(new GDriveProvider(conf))
+          .subscribe(
+              Actions.empty(),
+              e -> {
+                log.error(e.getMessage(), e);
+                error.setText(e.getMessage());
+              },
+              () -> navigator.popHome());
     } catch (IOException e) {
       log.error(e.getMessage(), e);
       error.setText(e.getMessage());

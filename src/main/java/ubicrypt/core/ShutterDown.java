@@ -44,28 +44,28 @@ public class ShutterDown {
   @PostConstruct
   public void init() {
     appEvents.subscribe(
-      ClassMatcher.newMatcher()
-        .on(
-          ShutdownRegistration.class,
-          registration -> {
-            log.debug("shutdown registered:{}", registration.getRef());
-            shutdownRegistered.add(registration.getRef());
-          })
-        .on(
-          ShutdownRequest.class,
-          shutdown -> {
-            Observable.merge(
-              shutdownRegistered
-                .stream()
-                .map(IStoppable::stop)
-                .collect(Collectors.toList()))
-              .subscribe(
-                empty(),
-                logError,
-                () -> {
-                  log.debug("all services shutdown");
-                  appEvents.onNext(new ShutdownOK());
-                });
-          }));
+        ClassMatcher.newMatcher()
+            .on(
+                ShutdownRegistration.class,
+                registration -> {
+                  log.debug("shutdown registered:{}", registration.getRef());
+                  shutdownRegistered.add(registration.getRef());
+                })
+            .on(
+                ShutdownRequest.class,
+                shutdown -> {
+                  Observable.merge(
+                          shutdownRegistered
+                              .stream()
+                              .map(IStoppable::stop)
+                              .collect(Collectors.toList()))
+                      .subscribe(
+                          empty(),
+                          logError,
+                          () -> {
+                            log.debug("all services shutdown");
+                            appEvents.onNext(new ShutdownOK());
+                          });
+                }));
   }
 }

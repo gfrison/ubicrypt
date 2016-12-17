@@ -38,33 +38,29 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 public class CreateKeyController implements Initializable, Consumer<HostServices> {
   private static final Logger log = getLogger(CreateKeyController.class);
-  @FXML
-  PasswordField pwd;
-  @FXML
-  PasswordField pwd2;
-  @FXML
-  Label errorLabel;
-  @FXML
-  Button submit;
+  @FXML PasswordField pwd;
+  @FXML PasswordField pwd2;
+  @FXML Label errorLabel;
+  @FXML Button submit;
   private final EventHandler handler =
-    event -> {
-      if (event instanceof KeyEvent && ((KeyEvent) event).getCode() != KeyCode.ENTER) {
-        return;
-      }
-      if (StringUtils.isNotEmpty(pwd.getText())
-        && StringUtils.isNotEmpty(pwd2.getText())
-        && pwd.getText().equals(pwd2.getText())) {
-        log.debug("password match");
-        errorLabel.setVisible(false);
-        final PublishSubject<char[]> passwordStream = Anchor.anchor().getPasswordStream();
-        passwordStream.onNext(pwd.getText().toCharArray());
-        passwordStream.onCompleted();
-        errorLabel.setVisible(false);
-        submit.setDisable(true);
-        return;
-      }
-      errorLabel.setVisible(true);
-    };
+      event -> {
+        if (event instanceof KeyEvent && ((KeyEvent) event).getCode() != KeyCode.ENTER) {
+          return;
+        }
+        if (StringUtils.isNotEmpty(pwd.getText())
+            && StringUtils.isNotEmpty(pwd2.getText())
+            && pwd.getText().equals(pwd2.getText())) {
+          log.debug("password match");
+          errorLabel.setVisible(false);
+          final PublishSubject<char[]> passwordStream = Anchor.anchor().getPasswordStream();
+          passwordStream.onNext(pwd.getText().toCharArray());
+          passwordStream.onCompleted();
+          errorLabel.setVisible(false);
+          submit.setDisable(true);
+          return;
+        }
+        errorLabel.setVisible(true);
+      };
   private HostServices hostServices;
 
   @Override

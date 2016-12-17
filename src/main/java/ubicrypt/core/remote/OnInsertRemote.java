@@ -46,20 +46,20 @@ public class OnInsertRemote extends RemoteAction {
   public boolean test(FileProvenience fileProvenience, RemoteConfig remoteConfig) {
     UbiFile file = fileProvenience.getFile();
     log.trace(
-      "path:{}, test:{}",
-      file.getPath(),
-      !remoteConfig
+        "path:{}, test:{}",
+        file.getPath(),
+        !remoteConfig
+            .getRemoteFiles()
+            .stream()
+            .filter(file1 -> file1.equals(file))
+            .findFirst()
+            .isPresent());
+    return !remoteConfig
         .getRemoteFiles()
         .stream()
         .filter(file1 -> file1.equals(file))
         .findFirst()
-        .isPresent());
-    return !remoteConfig
-      .getRemoteFiles()
-      .stream()
-      .filter(file1 -> file1.equals(file))
-      .findFirst()
-      .isPresent();
+        .isPresent();
   }
 
   @Override
@@ -76,24 +76,24 @@ public class OnInsertRemote extends RemoteAction {
     rf.setKey(new Key(key));
     fileEventType.set(FileEvent.Type.created);
     return fp.getOrigin()
-      .get(file)
-      .flatMap(
-        is ->
-          provider
-            .post(
-              AESGCM.encryptIs(
-                key,
-                new DeflaterInputStream(
-                  monitor(fp, is), new Deflater(BEST_COMPRESSION))))
-            .map(
-              name -> {
-                log.info("created file:{}, to provider:{}", rf.getPath(), provider);
-                //add name and add to config
-                rf.setRemoteName(name);
-                rconfig.getRemoteFiles().add(rf);
-                return true;
-              }))
-      .defaultIfEmpty(false)
-      .doOnCompleted(fileEvents(fp, fileEventType.get()));
+        .get(file)
+        .flatMap(
+            is ->
+                provider
+                    .post(
+                        AESGCM.encryptIs(
+                            key,
+                            new DeflaterInputStream(
+                                monitor(fp, is), new Deflater(BEST_COMPRESSION))))
+                    .map(
+                        name -> {
+                          log.info("created file:{}, to provider:{}", rf.getPath(), provider);
+                          //add name and add to config
+                          rf.setRemoteName(name);
+                          rconfig.getRemoteFiles().add(rf);
+                          return true;
+                        }))
+        .defaultIfEmpty(false)
+        .doOnCompleted(fileEvents(fp, fileEventType.get()));
   }
 }

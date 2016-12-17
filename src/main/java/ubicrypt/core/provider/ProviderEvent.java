@@ -37,8 +37,8 @@ public class ProviderEvent {
   @Override
   public String toString() {
     return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
-      .append("event", event)
-      .append("hook", hook)
-      .toString();
+        .append("event", event)
+        .append("hook", hook)
+        .toString();
   }
 }

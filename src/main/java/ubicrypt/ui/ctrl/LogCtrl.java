@@ -35,10 +35,8 @@ import static ubicrypt.ui.Anchor.anchor;
 public class LogCtrl implements Initializable {
 
   StackNavigator navigator;
-  @FXML
-  private TextArea text;
-  @FXML
-  private Button back;
+  @FXML private TextArea text;
+  @FXML private Button back;
 
   @Resource
   @Qualifier("systemOut")

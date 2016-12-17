@@ -36,12 +36,9 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 public class AddPKController implements Initializable {
   private static final Logger log = getLogger(AddPKController.class);
-  @FXML
-  Button add;
-  @FXML
-  Button cancel;
-  @FXML
-  TextArea text;
+  @FXML Button add;
+  @FXML Button cancel;
+  @FXML TextArea text;
   StackNavigator navigator;
 
   @Override
@@ -49,23 +46,23 @@ public class AddPKController implements Initializable {
     add.setDisable(true);
     cancel.setOnMouseClicked(event -> navigator.popLayer());
     text.setOnKeyTyped(
-      event -> {
-        if (StringUtils.isEmpty(text.getText())) {
-          add.setDisable(true);
-        } else {
-          add.setDisable(false);
-        }
-      });
+        event -> {
+          if (StringUtils.isEmpty(text.getText())) {
+            add.setDisable(true);
+          } else {
+            add.setDisable(false);
+          }
+        });
     add.setOnMouseClicked(
-      event -> {
-        try {
-          final ArmoredInputStream is =
-            new ArmoredInputStream(new ByteArrayInputStream(text.getText().getBytes()));
-          final PGPPublicKey newPK = PGPEC.decodePK(is);
-          navigator.browse("confirmNewPK", newPK);
-        } catch (final IOException e) {
-          Throwables.propagate(e);
-        }
-      });
+        event -> {
+          try {
+            final ArmoredInputStream is =
+                new ArmoredInputStream(new ByteArrayInputStream(text.getText().getBytes()));
+            final PGPPublicKey newPK = PGPEC.decodePK(is);
+            navigator.browse("confirmNewPK", newPK);
+          } catch (final IOException e) {
+            Throwables.propagate(e);
+          }
+        });
   }
 }

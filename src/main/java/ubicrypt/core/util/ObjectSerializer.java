@@ -42,8 +42,7 @@ public class ObjectSerializer implements IObjectSerializer, EnvironmentAware {
 
   private static final Logger log = getLogger(ObjectSerializer.class);
   private final UbiProvider provider;
-  @Inject
-  IPGPService pgpService;
+  @Inject IPGPService pgpService;
 
   @Value("${pgp.enabled:true}")
   private boolean encrypt = true;
@@ -59,17 +58,17 @@ public class ObjectSerializer implements IObjectSerializer, EnvironmentAware {
     checkNotNull(obj, "object must not be null");
     if (descriptor.getName() == null) {
       return provider
-        .post(encrypt(descriptor, marshallIs(obj)))
-        .doOnNext(descriptor::setRemoteName)
+          .post(encrypt(descriptor, marshallIs(obj)))
+          .doOnNext(descriptor::setRemoteName)
+          .last()
+          .map(i -> obj)
+          .defaultIfEmpty(obj);
+    }
+    return provider
+        .put(descriptor.getName(), encrypt(descriptor, marshallIs(obj)))
         .last()
         .map(i -> obj)
         .defaultIfEmpty(obj);
-    }
-    return provider
-      .put(descriptor.getName(), encrypt(descriptor, marshallIs(obj)))
-      .last()
-      .map(i -> obj)
-      .defaultIfEmpty(obj);
   }
 
   @Override
@@ -78,9 +77,9 @@ public class ObjectSerializer implements IObjectSerializer, EnvironmentAware {
     checkNotNull(obj, "object must not be null");
     if (descriptor.getName() == null) {
       return provider
-        .post(encrypt(descriptor, marshallIs(obj)))
-        .doOnNext(descriptor::setRemoteName)
-        .map(str -> true);
+          .post(encrypt(descriptor, marshallIs(obj)))
+          .doOnNext(descriptor::setRemoteName)
+          .map(str -> true);
     }
     return provider.put(descriptor.getName(), encrypt(descriptor, marshallIs(obj)));
   }
@@ -93,8 +92,8 @@ public class ObjectSerializer implements IObjectSerializer, EnvironmentAware {
       return Observable.error(new NotFoundException("pid null"));
     }
     return provider
-      .get(descriptor.getName())
-      .map(is -> Utils.unmarshall(decrypt(descriptor, is), type));
+        .get(descriptor.getName())
+        .map(is -> Utils.unmarshall(decrypt(descriptor, is), type));
   }
 
   private InputStream encrypt(final RemoteFile file, final InputStream inputStream) {
@@ -104,8 +103,8 @@ public class ObjectSerializer implements IObjectSerializer, EnvironmentAware {
     switch (file.getKey().getType()) {
       case aes:
         return AESGCM.encryptIs(
-          file.getKey().getBytes(),
-          new DeflaterInputStream(inputStream, new Deflater(BEST_COMPRESSION)));
+            file.getKey().getBytes(),
+            new DeflaterInputStream(inputStream, new Deflater(BEST_COMPRESSION)));
       default:
         return pgpService.encrypt(inputStream);
     }

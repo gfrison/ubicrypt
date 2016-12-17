@@ -38,7 +38,7 @@ public class CopyFile implements Func1<Path, Boolean> {
   private final Instant lastModified;
 
   public CopyFile(
-    final long size, final Path target, final boolean newFile, final Instant lastModified) {
+      final long size, final Path target, final boolean newFile, final Instant lastModified) {
     this.size = size;
     this.target = target;
     this.newFile = newFile;
@@ -54,18 +54,18 @@ public class CopyFile implements Func1<Path, Boolean> {
         Files.createDirectories(dir);
       }
       final long nbytes =
-        FileChannel.open(path)
-          .transferTo(
-            0,
-            size,
-            FileChannel.open(
-              target,
-              (newFile) ? StandardOpenOption.CREATE_NEW : StandardOpenOption.CREATE,
-              StandardOpenOption.WRITE));
+          FileChannel.open(path)
+              .transferTo(
+                  0,
+                  size,
+                  FileChannel.open(
+                      target,
+                      (newFile) ? StandardOpenOption.CREATE_NEW : StandardOpenOption.CREATE,
+                      StandardOpenOption.WRITE));
       log.debug("copied from:{} to:{} bytes:{}", path, target, nbytes);
       if (nbytes != size) {
         throw new IllegalStateException(
-          String.format("copied %s bytes instead of %s", nbytes, size));
+            String.format("copied %s bytes instead of %s", nbytes, size));
       }
       Files.setLastModifiedTime(target, FileTime.from(lastModified));
       return true;

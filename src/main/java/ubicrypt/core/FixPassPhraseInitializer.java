@@ -43,7 +43,7 @@ import static ubicrypt.core.Utils.write;
 import static ubicrypt.core.crypto.PGPEC.encrypt;
 
 public class FixPassPhraseInitializer
-  implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+    implements ApplicationContextInitializer<ConfigurableApplicationContext> {
   private static final Logger log = LoggerFactory.getLogger(FixPassPhraseInitializer.class);
   private char[] password;
 
@@ -66,8 +66,8 @@ public class FixPassPhraseInitializer
         keyPair = PGPEC.extractEncryptKeyPair(kring, password);
         signkey = PGPEC.extractSignKey(kring, password);
         write(secFile, new ByteArrayInputStream(kring.getEncoded()))
-          .doOnError(err -> log.error(err.getMessage(), err))
-          .subscribe();
+            .doOnError(err -> log.error(err.getMessage(), err))
+            .subscribe();
       }
       return Tuple.of(signkey, keyPair);
     } catch (final Exception e) {
@@ -86,25 +86,25 @@ public class FixPassPhraseInitializer
     applicationContext.getBeanFactory().registerSingleton("keyPair", keyPair);
     applicationContext.getBeanFactory().registerSingleton("signKey", tuple.getT1());
     final boolean encrypt =
-      Boolean.valueOf(applicationContext.getEnvironment().getProperty("pgp.enabled", "true"));
+        Boolean.valueOf(applicationContext.getEnvironment().getProperty("pgp.enabled", "true"));
 
     final Path configFile = configFile();
     final LocalConfig config;
     if (!configFile.toFile().exists()) {
       config = new LocalConfig();
       write(
-        configFile,
-        encrypt
-          ? encrypt(Collections.singletonList(keyPair.getPublicKey()), marshallIs(config))
-          : new ByteArrayInputStream(marshall(config)))
-        .subscribe();
+              configFile,
+              encrypt
+                  ? encrypt(Collections.singletonList(keyPair.getPublicKey()), marshallIs(config))
+                  : new ByteArrayInputStream(marshall(config)))
+          .subscribe();
     } else {
       InputStream configIs = null;
       try {
         configIs =
-          encrypt
-            ? PGPEC.decrypt(keyPair.getPrivateKey(), Utils.readIs(configFile))
-            : Utils.readIs(configFile);
+            encrypt
+                ? PGPEC.decrypt(keyPair.getPrivateKey(), Utils.readIs(configFile))
+                : Utils.readIs(configFile);
       } catch (final PGPException e) {
         Throwables.propagate(e);
       }

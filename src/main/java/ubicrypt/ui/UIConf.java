@@ -28,17 +28,15 @@ import ubicrypt.core.provider.s3.S3Provider;
 
 @Configuration
 public class UIConf {
-  /**
-   * providers
-   */
+  /** providers */
   @Bean
   public List<ProviderDescriptor> providerDescriptors() {
     return ImmutableList.of(
-      new ProviderDescriptor(
-        FileProvider.class, "file", "local folder", new ImageView("images/folder-48.png")),
-      new ProviderDescriptor(
-        S3Provider.class, "s3", "Amazon S3", new ImageView("images/Amazon-48.png")),
-      new ProviderDescriptor(
-        GDriveProvider.class, "gdrive", "Google Drive", new ImageView("images/gdrive.png")));
+        new ProviderDescriptor(
+            FileProvider.class, "file", "local folder", new ImageView("images/folder-48.png")),
+        new ProviderDescriptor(
+            S3Provider.class, "s3", "Amazon S3", new ImageView("images/Amazon-48.png")),
+        new ProviderDescriptor(
+            GDriveProvider.class, "gdrive", "Google Drive", new ImageView("images/gdrive.png")));
   }
 }

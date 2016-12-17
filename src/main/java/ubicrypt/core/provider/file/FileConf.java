@@ -20,8 +20,7 @@ import ubicrypt.core.dto.ProviderConf;
 public class FileConf extends ProviderConf {
   private Path path;
 
-  public FileConf() {
-  }
+  public FileConf() {}
 
   public FileConf(final Path path) {
     this.path = path;

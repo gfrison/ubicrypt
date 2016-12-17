@@ -51,41 +51,35 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 public class ProvidersController implements Initializable {
   private static final Logger log = getLogger(ProvidersController.class);
-  @FXML
-  VBox root;
-  @FXML
-  ListView<ProviderItem> providers;
-  @FXML
-  ToolBar availableProviders;
-  @Resource
-  List<ProviderDescriptor> providerDescriptors;
+  @FXML VBox root;
+  @FXML ListView<ProviderItem> providers;
+  @FXML ToolBar availableProviders;
+  @Resource List<ProviderDescriptor> providerDescriptors;
 
   @Resource
   @Qualifier("providerEvent")
   Observable<ProviderEvent> providerEvent;
 
-  @Inject
-  private ControllerFactory controllerFactory;
-  @Inject
-  private ProviderCommander providerCommander;
+  @Inject private ControllerFactory controllerFactory;
+  @Inject private ProviderCommander providerCommander;
 
   private final Consumer<UbiProvider> providerRemover =
-    provider ->
-      providerCommander
-        .remove(provider)
-        .subscribe(
-          res -> {
-            log.info("provider:{}, removal result:{}", provider, res);
-            if (res) {
-              providers
-                .getItems()
-                .stream()
-                .filter(ti -> ti.getProvider().equals(provider))
-                .findFirst()
-                .ifPresent(providers.getItems()::remove);
-            }
-          },
-          err -> log.error("error on removing provider:{}", provider, err));
+      provider ->
+          providerCommander
+              .remove(provider)
+              .subscribe(
+                  res -> {
+                    log.info("provider:{}, removal result:{}", provider, res);
+                    if (res) {
+                      providers
+                          .getItems()
+                          .stream()
+                          .filter(ti -> ti.getProvider().equals(provider))
+                          .findFirst()
+                          .ifPresent(providers.getItems()::remove);
+                    }
+                  },
+                  err -> log.error("error on removing provider:{}", provider, err));
   private StackNavigator navigator;
 
   @Override
@@ -93,85 +87,85 @@ public class ProvidersController implements Initializable {
     String fxml = substringBefore(substringAfterLast(url.getFile(), "/"), ".fxml");
     navigator = new StackNavigator(root, fxml, controllerFactory);
     providers.setCellFactory(
-      listView ->
-        new ListCell<ProviderItem>() {
-          @Override
-          protected void updateItem(ProviderItem pi, boolean empty) {
-            super.updateItem(pi, empty);
-            if (empty) {
-              setText(null);
-              setGraphic(null);
-              return;
-            }
-            setContextMenu(pi.getContextMenu());
-            Platform.runLater(() -> setGraphic(pi.getGraphics()));
-          }
-        });
-    providerDescriptors
-      .stream()
-      .forEach(
-        pd -> {
-          Button button = new Button();
-          Image img = pd.getLogo().getImage();
-          ImageView view = new ImageView(img);
-          view.setFitWidth(30.0);
-          view.setPickOnBounds(true);
-          view.setPreserveRatio(true);
-          button.setGraphic(view);
-          button.setOnMouseClicked(
-            mouseEvent -> {
-              log.debug("adding provider :{}", pd.getCode());
-              navigator.browse(format("provider/%s", pd.getCode()));
+        listView ->
+            new ListCell<ProviderItem>() {
+              @Override
+              protected void updateItem(ProviderItem pi, boolean empty) {
+                super.updateItem(pi, empty);
+                if (empty) {
+                  setText(null);
+                  setGraphic(null);
+                  return;
+                }
+                setContextMenu(pi.getContextMenu());
+                Platform.runLater(() -> setGraphic(pi.getGraphics()));
+              }
             });
-          button.setTooltip(new Tooltip("Add " + pd.getDescription()));
-          availableProviders.getItems().add(button);
-        });
+    providerDescriptors
+        .stream()
+        .forEach(
+            pd -> {
+              Button button = new Button();
+              Image img = pd.getLogo().getImage();
+              ImageView view = new ImageView(img);
+              view.setFitWidth(30.0);
+              view.setPickOnBounds(true);
+              view.setPreserveRatio(true);
+              button.setGraphic(view);
+              button.setOnMouseClicked(
+                  mouseEvent -> {
+                    log.debug("adding provider :{}", pd.getCode());
+                    navigator.browse(format("provider/%s", pd.getCode()));
+                  });
+              button.setTooltip(new Tooltip("Add " + pd.getDescription()));
+              availableProviders.getItems().add(button);
+            });
 
     //provider status events
     providerEvent.subscribe(
-      pevent -> {
-        UbiProvider provider = pevent.getHook().getProvider();
-        if (!providers
-          .getItems()
-          .stream()
-          .filter(pi -> pi.getProvider().equals(provider))
-          .findFirst()
-          .isPresent()) {
-          log.info("add new provider:{}", pevent.getHook().getProvider());
-          String code =
-            providerDescriptors
+        pevent -> {
+          UbiProvider provider = pevent.getHook().getProvider();
+          if (!providers
+              .getItems()
               .stream()
-              .filter(pd -> pd.getType() == provider.getClass())
-              .map(ProviderDescriptor::getCode)
+              .filter(pi -> pi.getProvider().equals(provider))
               .findFirst()
-              .get();
-          final ProviderItem providerItem =
-            new ProviderItem(
-              provider,
-              providerDescriptors
-                .stream()
-                .filter(pd -> pd.getType() == provider.getClass())
-                .findFirst()
-                .get(),
-              providerRemover,
-              navigator);
-          providers.getItems().add(providerItem);
-          pevent.getHook().getStatusEvents().subscribe(providerItem::changeStatus);
-        }
-        switch (pevent.getEvent()) {
-          case removed:
-            //TODO: remove provider
-            break;
-          default:
-            log.warn("unmanaged event:{}", pevent.getEvent());
-        }
-        providers
-          .getItems()
-          .stream()
-          .filter(pi -> pi.getProvider().equals(provider))
-          .findFirst()
-          .ifPresent(pi -> pi.changeStatus(pevent.getEvent()));
-      });
+              .isPresent()) {
+            log.info("add new provider:{}", pevent.getHook().getProvider());
+            String code =
+                providerDescriptors
+                    .stream()
+                    .filter(pd -> pd.getType() == provider.getClass())
+                    .map(ProviderDescriptor::getCode)
+                    .findFirst()
+                    .get();
+            final ProviderItem providerItem =
+                new ProviderItem(
+                    provider,
+                    providerDescriptors
+                        .stream()
+                        .filter(pd -> pd.getType() == provider.getClass())
+                        .findFirst()
+                        .get(),
+                    providerRemover,
+                    navigator);
+            providers.getItems().add(providerItem);
+            pevent.getHook().getStatusEvents().subscribe(providerItem::changeStatus);
+          }
+          switch (pevent.getEvent()) {
+            case removed:
+              //TODO: remove provider
+              break;
+            default:
+              log.warn("unmanaged event:{}", pevent.getEvent());
+          }
+          providers
+              .getItems()
+              .stream()
+              .filter(pi -> pi.getProvider().equals(provider))
+              .findFirst()
+              .ifPresent(pi -> pi.changeStatus(pevent.getEvent()));
+        });
   }
 
   public StackNavigator getNavigator() {

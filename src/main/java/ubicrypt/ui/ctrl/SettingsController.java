@@ -52,24 +52,15 @@ public class SettingsController implements Initializable {
   @Qualifier("keyPair")
   PGPKeyPair keyPair;
 
-  @Inject
-  PGPPrivateKey signKey;
-  @FXML
-  Button copyPKClipboard;
-  @FXML
-  Button addNewPK;
-  @FXML
-  Button importConfig;
-  @FXML
-  Button exportConfig;
-  @FXML
-  VBox topbox;
-  @FXML
-  AnchorPane anchor;
-  @FXML
-  VBox main;
-  @Inject
-  ControllerFactory controllerFactory;
+  @Inject PGPPrivateKey signKey;
+  @FXML Button copyPKClipboard;
+  @FXML Button addNewPK;
+  @FXML Button importConfig;
+  @FXML Button exportConfig;
+  @FXML VBox topbox;
+  @FXML AnchorPane anchor;
+  @FXML VBox main;
+  @Inject ControllerFactory controllerFactory;
 
   @Override
   public void initialize(final URL location, final ResourceBundle resources) {
@@ -77,25 +68,25 @@ public class SettingsController implements Initializable {
     StackNavigator navigator = new StackNavigator(main, fxml, controllerFactory);
 
     copyPKClipboard.setOnMouseClicked(
-      event -> {
-        try {
-          final ByteArrayOutputStream out = new ByteArrayOutputStream();
-          final ArmoredOutputStream armor = new ArmoredOutputStream(out);
-          armor.write(PGPEC.signPK(keyPair.getPublicKey(), signKey).getEncoded());
-          armor.close();
-          final Clipboard clipboard = Clipboard.getSystemClipboard();
-          final ClipboardContent content = new ClipboardContent();
-          content.putString(new String(out.toByteArray()));
-          clipboard.setContent(content);
-          //                anchor.getChildren().add(notification);
-          final NotificationPane notification = new NotificationPane(main);
-          notification.setText("Public Key copied in clipboard");
-          notification.show();
-          log.info("public key copied into clipboard");
-        } catch (final IOException e) {
-          Throwables.propagate(e);
-        }
-      });
+        event -> {
+          try {
+            final ByteArrayOutputStream out = new ByteArrayOutputStream();
+            final ArmoredOutputStream armor = new ArmoredOutputStream(out);
+            armor.write(PGPEC.signPK(keyPair.getPublicKey(), signKey).getEncoded());
+            armor.close();
+            final Clipboard clipboard = Clipboard.getSystemClipboard();
+            final ClipboardContent content = new ClipboardContent();
+            content.putString(new String(out.toByteArray()));
+            clipboard.setContent(content);
+            //                anchor.getChildren().add(notification);
+            final NotificationPane notification = new NotificationPane(main);
+            notification.setText("Public Key copied in clipboard");
+            notification.show();
+            log.info("public key copied into clipboard");
+          } catch (final IOException e) {
+            Throwables.propagate(e);
+          }
+        });
 
     addNewPK.setOnMouseClicked(event -> navigator.browse("addNewPK"));
     importConfig.setOnMouseClicked(event -> navigator.browse("importConfig"));

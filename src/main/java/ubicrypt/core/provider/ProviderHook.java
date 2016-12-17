@@ -37,9 +37,9 @@ public class ProviderHook {
   private Observable.OnSubscribe<Boolean> confLockRewriter;
 
   public ProviderHook(
-    final UbiProvider provider,
-    final Observable.OnSubscribe<AcquirerReleaser> acquirer,
-    final RemoteRepository repository) {
+      final UbiProvider provider,
+      final Observable.OnSubscribe<AcquirerReleaser> acquirer,
+      final RemoteRepository repository) {
     log.debug("new hook provider:{}, acquirer:{}, repository:{}", provider, acquirer, repository);
     this.provider = provider;
     this.acquirer = acquirer;
@@ -63,7 +63,7 @@ public class ProviderHook {
   }
 
   public void setConfigSaver(
-    Function<Function<RemoteConfig, RemoteConfig>, Observable<Boolean>> configSaver) {
+      Function<Function<RemoteConfig, RemoteConfig>, Observable<Boolean>> configSaver) {
     this.configSaver = configSaver;
   }
 
@@ -74,17 +74,17 @@ public class ProviderHook {
   @Override
   public String toString() {
     return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
-      .append("provider", provider)
-      .toString();
+        .append("provider", provider)
+        .toString();
   }
 
   Observable<RemoteConfig> getConfig() {
     return create(acquirer)
-      .map(
-        releaser -> {
-          releaser.getReleaser().call();
-          return releaser.getRemoteConfig();
-        });
+        .map(
+            releaser -> {
+              releaser.getReleaser().call();
+              return releaser.getRemoteConfig();
+            });
   }
 
   public Observable.OnSubscribe<AcquirerReleaser> getAcquirer() {

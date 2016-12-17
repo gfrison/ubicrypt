@@ -59,7 +59,7 @@ public class AESGCM {
     final byte[] iv = ByteBuffer.allocate(keyLenght).putLong(ivl.getAndIncrement()).array();
     final AEADBlockCipher cipher = cipherObject(true, new SecretKeySpec(key, "AES"), iv);
     return new SequenceInputStream(
-      new ByteArrayInputStream(iv), new CipherInputStream(plain, cipher));
+        new ByteArrayInputStream(iv), new CipherInputStream(plain, cipher));
   }
 
   public static InputStream decryptIs(final byte[] key, final InputStream cipherStream) {
@@ -77,7 +77,7 @@ public class AESGCM {
   }
 
   private static AEADBlockCipher cipherObject(
-    final boolean encrypt, final SecretKeySpec key, final byte[] iv) {
+      final boolean encrypt, final SecretKeySpec key, final byte[] iv) {
     final AEADBlockCipher cipher = new GCMBlockCipher(new AESEngine());
     cipher.init(encrypt, new AEADParameters(new KeyParameter(key.getEncoded()), 128, iv));
     return cipher;

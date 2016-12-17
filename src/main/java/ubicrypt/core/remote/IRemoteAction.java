@@ -21,6 +21,5 @@ import ubicrypt.core.FileProvenience;
 import ubicrypt.core.dto.RemoteConfig;
 
 public interface IRemoteAction
-  extends BiPredicate<FileProvenience, RemoteConfig>,
-  BiFunction<FileProvenience, RemoteConfig, Observable<Boolean>> {
-}
+    extends BiPredicate<FileProvenience, RemoteConfig>,
+        BiFunction<FileProvenience, RemoteConfig, Observable<Boolean>> {}

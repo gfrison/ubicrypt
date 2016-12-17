@@ -69,129 +69,126 @@ public class ProviderLifeCycle implements ApplicationContextAware {
   @Qualifier("providerEvent")
   private Subject<ProviderEvent, ProviderEvent> providerEvents = BufferUntilSubscriber.create();
 
-  @Inject
-  private LocalConfig localConfig;
-  @Inject
-  private int deviceId;
+  @Inject private LocalConfig localConfig;
+  @Inject private int deviceId;
   private ConfigurableApplicationContext ctx;
-  @Inject
-  private InProgressTracker inProgressTracker;
+  @Inject private InProgressTracker inProgressTracker;
 
   @PostConstruct
   public void init() {
     log.info("init providers");
     localConfig
-      .getProviders()
-      .stream()
-      .forEach(
-        provider ->
-          initializeProvider(provider)
-            .subscribe(
-              Actions.empty(),
-              err -> log.error("error on initializing provider:{}", provider, err)));
+        .getProviders()
+        .stream()
+        .forEach(
+            provider ->
+                initializeProvider(provider)
+                    .subscribe(
+                        Actions.empty(),
+                        err -> log.error("error on initializing provider:{}", provider, err)));
   }
 
   public Observable<Boolean> initializeProvider(UbiProvider provider) {
     return create(
-      subscriber -> {
-        try {
-          ObjectSerializer serializer = springIt(ctx, new ObjectSerializer(provider));
-          ObjectIO<ProviderLock> lockIO =
-            new ObjectIO(serializer, provider.getLockFile(), ProviderLock.class);
-          LockChecker lockCheker =
-            new LockChecker(
-              deviceId,
-              lockIO,
-              lockIO,
-              provider.getDurationLockMs(),
-              provider.getDelayAcquiringLockMs());
-          /** renew lock when download/upload in progress */
-          lockCheker.setShouldExtendLock(() -> inProgressTracker.inProgress());
-          ObjectIO<RemoteConfig> configIO =
-            new ObjectIO<>(serializer, provider.getConfFile(), RemoteConfig.class);
-          ConfigAcquirer acquirer =
-            new ConfigAcquirer(new InitLockChecker(provider, deviceId), lockCheker, configIO);
-          acquirer.setProviderRef(provider.toString());
-          RemoteRepository repository =
-            springIt(ctx, new RemoteRepository(acquirer, provider, configIO));
-          repository.setActions(
-            Arrays.asList(
-              springIt(ctx, new OnUpdateRemote(provider, repository)),
-              springIt(ctx, new OnInsertRemote(provider, repository)),
-              springIt(ctx, new OnErrorRemote(provider, repository))));
-          ProviderHook hook = new ProviderHook(provider, acquirer, repository);
-          hook.setConfigSaver(new ProviderConfSaver(acquirer, configIO));
-          hook.setStatusEvents(acquirer.getStatuses());
-          hook.setConfLockRewriter(new RewriteConfLock(configIO, lockIO));
-          //close provider when expired
-          acquirer
-            .getStatuses()
-            .filter(status -> status == ProviderStatus.expired)
-            .subscribe(status -> provider.close());
-          //broadcast events for this provider
-          acquirer
-            .getStatuses()
-            .map(status -> new ProviderEvent(status, hook))
-            .subscribe(providerEvents);
-          final AtomicBoolean active = new AtomicBoolean(false);
-          statusProvider.put(hook, active);
-          providerListeners.put(
-            hook,
-            hook.getStatusEvents()
-              .subscribe(
-                status -> {
-                  active.set(status != ProviderStatus.error);
-                  if (status == ProviderStatus.active) {
-                    currentlyActiveProviders.add(hook);
-                  } else {
-                    currentlyActiveProviders.remove(hook);
-                  }
-                }));
-          create(acquirer)
-            .subscribe(
-              releaser -> {
-                releaser.getReleaser().call();
-                subscriber.onNext(true);
-              },
-              err -> {
-                log.error("error on provider:{}", provider);
-                subscriber.onError(err);
-              },
-              subscriber::onCompleted);
-        } catch (Exception e) {
-          subscriber.onError(e);
-        }
-      });
+        subscriber -> {
+          try {
+            ObjectSerializer serializer = springIt(ctx, new ObjectSerializer(provider));
+            ObjectIO<ProviderLock> lockIO =
+                new ObjectIO(serializer, provider.getLockFile(), ProviderLock.class);
+            LockChecker lockCheker =
+                new LockChecker(
+                    deviceId,
+                    lockIO,
+                    lockIO,
+                    provider.getDurationLockMs(),
+                    provider.getDelayAcquiringLockMs());
+            /** renew lock when download/upload in progress */
+            lockCheker.setShouldExtendLock(() -> inProgressTracker.inProgress());
+            ObjectIO<RemoteConfig> configIO =
+                new ObjectIO<>(serializer, provider.getConfFile(), RemoteConfig.class);
+            ConfigAcquirer acquirer =
+                new ConfigAcquirer(new InitLockChecker(provider, deviceId), lockCheker, configIO);
+            acquirer.setProviderRef(provider.toString());
+            RemoteRepository repository =
+                springIt(ctx, new RemoteRepository(acquirer, provider, configIO));
+            repository.setActions(
+                Arrays.asList(
+                    springIt(ctx, new OnUpdateRemote(provider, repository)),
+                    springIt(ctx, new OnInsertRemote(provider, repository)),
+                    springIt(ctx, new OnErrorRemote(provider, repository))));
+            ProviderHook hook = new ProviderHook(provider, acquirer, repository);
+            hook.setConfigSaver(new ProviderConfSaver(acquirer, configIO));
+            hook.setStatusEvents(acquirer.getStatuses());
+            hook.setConfLockRewriter(new RewriteConfLock(configIO, lockIO));
+            //close provider when expired
+            acquirer
+                .getStatuses()
+                .filter(status -> status == ProviderStatus.expired)
+                .subscribe(status -> provider.close());
+            //broadcast events for this provider
+            acquirer
+                .getStatuses()
+                .map(status -> new ProviderEvent(status, hook))
+                .subscribe(providerEvents);
+            final AtomicBoolean active = new AtomicBoolean(false);
+            statusProvider.put(hook, active);
+            providerListeners.put(
+                hook,
+                hook.getStatusEvents()
+                    .subscribe(
+                        status -> {
+                          active.set(status != ProviderStatus.error);
+                          if (status == ProviderStatus.active) {
+                            currentlyActiveProviders.add(hook);
+                          } else {
+                            currentlyActiveProviders.remove(hook);
+                          }
+                        }));
+            create(acquirer)
+                .subscribe(
+                    releaser -> {
+                      releaser.getReleaser().call();
+                      subscriber.onNext(true);
+                    },
+                    err -> {
+                      log.error("error on provider:{}", provider);
+                      subscriber.onError(err);
+                    },
+                    subscriber::onCompleted);
+          } catch (Exception e) {
+            subscriber.onError(e);
+          }
+        });
   }
 
   public Observable<Boolean> activateProvider(UbiProvider provider) {
     Optional<Map.Entry<ProviderHook, AtomicBoolean>> first =
-      statusProvider
-        .entrySet()
-        .stream()
-        .filter(entry -> entry.getKey().getProvider().equals(provider))
-        .findFirst();
+        statusProvider
+            .entrySet()
+            .stream()
+            .filter(entry -> entry.getKey().getProvider().equals(provider))
+            .findFirst();
     if (!first.isPresent()) {
       return just(false);
     }
     return create(first.get().getKey().getAcquirer())
-      .map(
-        acquirerReleaser -> {
-          acquirerReleaser.getReleaser().call();
-          return true;
-        })
-      .defaultIfEmpty(false);
+        .map(
+            acquirerReleaser -> {
+              acquirerReleaser.getReleaser().call();
+              return true;
+            })
+        .defaultIfEmpty(false);
   }
 
   public Observable<Boolean> deactivateProvider(UbiProvider provider) {
     try {
       ProviderHook hook =
-        statusProvider
-          .keySet()
-          .stream()
-          .filter(hk -> hk.getProvider().equals(provider))
-          .findFirst()
-          .orElseThrow(() -> new NotFoundException(provider));
+          statusProvider
+              .keySet()
+              .stream()
+              .filter(hk -> hk.getProvider().equals(provider))
+              .findFirst()
+              .orElseThrow(() -> new NotFoundException(provider));
       providerListeners.remove(hook).unsubscribe();
       statusProvider.remove(hook);
       currentlyActiveProviders.remove(hook);
@@ -204,11 +201,11 @@ public class ProviderLifeCycle implements ApplicationContextAware {
 
   public List<ProviderHook> enabledProviders() {
     return statusProvider
-      .entrySet()
-      .stream()
-      .filter(entry -> entry.getValue().get())
-      .map(Map.Entry::getKey)
-      .collect(Collectors.toList());
+        .entrySet()
+        .stream()
+        .filter(entry -> entry.getValue().get())
+        .map(Map.Entry::getKey)
+        .collect(Collectors.toList());
   }
 
   public List<ProviderHook> currentlyActiveProviders() {

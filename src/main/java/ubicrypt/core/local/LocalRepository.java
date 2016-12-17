@@ -61,8 +61,7 @@ public class LocalRepository implements IRepository {
   @Qualifier("onNewLocal")
   Func1<FileProvenience, Observable<Boolean>> onNewFileLocal;
 
-  @Inject
-  private LocalConfig localConfig = new LocalConfig();
+  @Inject private LocalConfig localConfig = new LocalConfig();
 
   @Resource
   @Qualifier("fileEvents")
@@ -88,7 +87,7 @@ public class LocalRepository implements IRepository {
       check(fp);
       final UbiFile rfile = fp.getFile();
       final Optional<LocalFile> lfile =
-        localConfig.getLocalFiles().stream().filter(lf -> lf.equals(rfile)).findFirst();
+          localConfig.getLocalFiles().stream().filter(lf -> lf.equals(rfile)).findFirst();
       if (!lfile.isPresent()) {
         //new file
         return onNewFileLocal.call(fp);
@@ -100,35 +99,35 @@ public class LocalRepository implements IRepository {
             log.info("update file:{} locally from repo:{}", rfile.getPath(), fp.getOrigin());
             AtomicReference<Path> tempFile = new AtomicReference<>();
             return fp.getOrigin()
-              .get(fp.getFile())
-              .flatMap(new StoreTempFile())
-              .map(
-                new CopyFile(
-                  rfile.getSize(),
-                  basePath.resolve(rfile.getPath()),
-                  false,
-                  fp.getFile().getLastModified()))
-              .doOnCompleted(
-                () -> {
-                  if (tempFile.get() != null) {
-                    try {
-                      Files.delete(tempFile.get());
-                    } catch (IOException e) {
-                    }
-                  }
-                })
-              .doOnCompleted(
-                () ->
-                  fileEvents.onNext(
-                    new FileEvent(
-                      fp.getFile(), FileEvent.Type.updated, FileEvent.Location.local)));
+                .get(fp.getFile())
+                .flatMap(new StoreTempFile())
+                .map(
+                    new CopyFile(
+                        rfile.getSize(),
+                        basePath.resolve(rfile.getPath()),
+                        false,
+                        fp.getFile().getLastModified()))
+                .doOnCompleted(
+                    () -> {
+                      if (tempFile.get() != null) {
+                        try {
+                          Files.delete(tempFile.get());
+                        } catch (IOException e) {
+                        }
+                      }
+                    })
+                .doOnCompleted(
+                    () ->
+                        fileEvents.onNext(
+                            new FileEvent(
+                                fp.getFile(), FileEvent.Type.updated, FileEvent.Location.local)));
           }
           //removed or deleted
           fileEvents.onNext(
-            new FileEvent(
-              fp.getFile(),
-              rfile.isDeleted() ? FileEvent.Type.deleted : FileEvent.Type.removed,
-              FileEvent.Location.local));
+              new FileEvent(
+                  fp.getFile(),
+                  rfile.isDeleted() ? FileEvent.Type.deleted : FileEvent.Type.removed,
+                  FileEvent.Location.local));
         }
       }
       return Observable.just(false);
@@ -145,20 +144,20 @@ public class LocalRepository implements IRepository {
   public Observable<InputStream> get(final UbiFile file) {
     checkNotNull(file, "file must be not null");
     return Observable.create(
-      subscriber -> {
-        try {
-          subscriber.onNext(
-            getPathStream(file)
-              .map(LocalFile::getPath)
-              .map(basePath::resolve)
-              .map(Utils::readIs)
-              .findFirst()
-              .orElseThrow(() -> new NotFoundException(basePath.resolve(file.getPath()))));
-          subscriber.onCompleted();
-        } catch (final Exception e) {
-          subscriber.onError(e);
-        }
-      });
+        subscriber -> {
+          try {
+            subscriber.onNext(
+                getPathStream(file)
+                    .map(LocalFile::getPath)
+                    .map(basePath::resolve)
+                    .map(Utils::readIs)
+                    .findFirst()
+                    .orElseThrow(() -> new NotFoundException(basePath.resolve(file.getPath()))));
+            subscriber.onCompleted();
+          } catch (final Exception e) {
+            subscriber.onError(e);
+          }
+        });
   }
 
   @Override
@@ -198,8 +197,8 @@ public class LocalRepository implements IRepository {
   @Override
   public String toString() {
     return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
-      .append("basePath", basePath)
-      .toString();
+        .append("basePath", basePath)
+        .toString();
   }
 
   @Override

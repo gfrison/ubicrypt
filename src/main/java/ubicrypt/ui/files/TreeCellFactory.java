@@ -36,7 +36,7 @@ import static javafx.application.Platform.runLater;
 import static org.slf4j.LoggerFactory.getLogger;
 
 public class TreeCellFactory extends TreeCell<ITreeItem>
-  implements ListChangeListener<TreeItem<ITreeItem>> {
+    implements ListChangeListener<TreeItem<ITreeItem>> {
   private static final Logger log = getLogger(TreeCellFactory.class);
   private final TreeView<ITreeItem> treeView;
   private final CopyOnWriteArrayList<TreeItem<ITreeItem>> selected = new CopyOnWriteArrayList<>();
@@ -46,11 +46,11 @@ public class TreeCellFactory extends TreeCell<ITreeItem>
   private final Path basePath;
 
   public TreeCellFactory(
-    TreeView<ITreeItem> treeView1,
-    Function<UbiFile, Observable<Boolean>> fileUntracker,
-    Observable<Object> appEvents,
-    OSUtil osUtil,
-    Path basePath) {
+      TreeView<ITreeItem> treeView1,
+      Function<UbiFile, Observable<Boolean>> fileUntracker,
+      Observable<Object> appEvents,
+      OSUtil osUtil,
+      Path basePath) {
     this.basePath = basePath;
     this.osUtil = osUtil;
     treeView = treeView1;
@@ -60,31 +60,31 @@ public class TreeCellFactory extends TreeCell<ITreeItem>
     menu = new ContextMenu();
     remove = new MenuItem("Untrack File");
     remove.setOnAction(
-      eventMenu ->
-        Observable.merge(
-          selected
-            .stream()
-            .map(
-              it -> {
-                if (it.getValue() instanceof FileItem) {
-                  return fileUntracker.apply(((FileItem) it.getValue()).getFile());
-                }
-                return Observable.empty();
-              })
-            .collect(Collectors.toList()))
-          .doOnSubscribe(
-            () -> {
-              runLater(() -> remove.setDisable(true));
-            })
-          .subscribe(
-            Actions.empty(),
-            err -> {
-              runLater(() -> remove.setDisable(false));
-              log.error(err.getMessage(), err);
-            },
-            () -> {
-              runLater(() -> remove.setDisable(false));
-            }));
+        eventMenu ->
+            Observable.merge(
+                    selected
+                        .stream()
+                        .map(
+                            it -> {
+                              if (it.getValue() instanceof FileItem) {
+                                return fileUntracker.apply(((FileItem) it.getValue()).getFile());
+                              }
+                              return Observable.empty();
+                            })
+                        .collect(Collectors.toList()))
+                .doOnSubscribe(
+                    () -> {
+                      runLater(() -> remove.setDisable(true));
+                    })
+                .subscribe(
+                    Actions.empty(),
+                    err -> {
+                      runLater(() -> remove.setDisable(false));
+                      log.error(err.getMessage(), err);
+                    },
+                    () -> {
+                      runLater(() -> remove.setDisable(false));
+                    }));
     menu.getItems().add(remove);
   }
 
@@ -101,18 +101,18 @@ public class TreeCellFactory extends TreeCell<ITreeItem>
       setGraphic(item.getGraphics());
       if (item instanceof FileItem) {
         setOnMouseClicked(
-          event -> {
-            if (event.getClickCount() == 2) {
-              log.debug("click event file:{}", ((FileItem) item).getFile());
-              try {
-                osUtil.openUrl(
-                  "file://"
-                    + basePath.resolve(((FileItem) item).getFile().getPath()).toString());
-              } catch (Exception e) {
-                e.printStackTrace();
+            event -> {
+              if (event.getClickCount() == 2) {
+                log.debug("click event file:{}", ((FileItem) item).getFile());
+                try {
+                  osUtil.openUrl(
+                      "file://"
+                          + basePath.resolve(((FileItem) item).getFile().getPath()).toString());
+                } catch (Exception e) {
+                  e.printStackTrace();
+                }
               }
-            }
-          });
+            });
         setContextMenu(menu);
         return;
       }

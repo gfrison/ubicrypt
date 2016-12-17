@@ -28,14 +28,10 @@ import ubicrypt.core.dto.UbiFile;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
-/**
- * Keep track of ongoing upload/download
- */
+/** Keep track of ongoing upload/download */
 public class InProgressTracker {
   private static final Logger log = getLogger(InProgressTracker.class);
-  /**
-   * keep the state of uploads/downloads
-   */
+  /** keep the state of uploads/downloads */
   private final AtomicInteger inProgressCounter = new AtomicInteger();
 
   private final ConcurrentHashMap<UbiFile, Boolean> inProgressList = new ConcurrentHashMap<>();
@@ -47,22 +43,22 @@ public class InProgressTracker {
   @PostConstruct
   public void init() {
     progressEvents.subscribe(
-      event -> {
-        if (event.isCompleted() || event.isError()) {
-          if (inProgressList.remove(event.getProvenience().getFile()) != null) {
-            if (inProgressCounter.decrementAndGet() < 0) {
-              log.warn("inProgressCounter < 0");
+        event -> {
+          if (event.isCompleted() || event.isError()) {
+            if (inProgressList.remove(event.getProvenience().getFile()) != null) {
+              if (inProgressCounter.decrementAndGet() < 0) {
+                log.warn("inProgressCounter < 0");
+              }
             }
+          } else {
+            inProgressList.computeIfAbsent(
+                event.getProvenience().getFile(),
+                file -> {
+                  inProgressCounter.incrementAndGet();
+                  return true;
+                });
           }
-        } else {
-          inProgressList.computeIfAbsent(
-            event.getProvenience().getFile(),
-            file -> {
-              inProgressCounter.incrementAndGet();
-              return true;
-            });
-        }
-      });
+        });
   }
 
   public boolean inProgress() {

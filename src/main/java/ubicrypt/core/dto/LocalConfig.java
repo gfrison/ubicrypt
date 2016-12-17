@@ -73,10 +73,10 @@ public class LocalConfig {
   @Override
   public String toString() {
     return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
-      .append("localFiles", localFiles)
-      .append("version", version)
-      .append("providers", providers)
-      .append("trackedFolders", trackedFolders)
-      .toString();
+        .append("localFiles", localFiles)
+        .append("version", version)
+        .append("providers", providers)
+        .append("trackedFolders", trackedFolders)
+        .toString();
   }
 }

@@ -45,38 +45,26 @@ import static org.slf4j.LoggerFactory.getLogger;
 import static rx.Observable.create;
 
 public class GDriveInfoController
-  implements Initializable,
-  Consumer<Tuple3<GDriveProvider, Consumer<UbiProvider>, ProviderStatus>> {
+    implements Initializable,
+        Consumer<Tuple3<GDriveProvider, Consumer<UbiProvider>, ProviderStatus>> {
   private static final Logger log = getLogger(GDriveInfoController.class);
-  @Inject
-  protected GDriveAuthorizer authorizer;
+  @Inject protected GDriveAuthorizer authorizer;
   protected StackNavigator navigator;
-  @Inject
-  ProviderLifeCycle providerLifeCycle;
-  @FXML
-  Label error;
-  @FXML
-  Label message;
-  @FXML
-  Label email;
-  @FXML
-  Label status;
-  @FXML
-  Label numberFiles;
-  @FXML
-  Label totalSize;
-  @FXML
-  Button gdrive;
-  @FXML
-  Button back;
-  @Inject
-  OSUtil osUtil;
+  @Inject ProviderLifeCycle providerLifeCycle;
+  @FXML Label error;
+  @FXML Label message;
+  @FXML Label email;
+  @FXML Label status;
+  @FXML Label numberFiles;
+  @FXML Label totalSize;
+  @FXML Button gdrive;
+  @FXML Button back;
+  @Inject OSUtil osUtil;
   private GDriveProvider provider;
   private String url;
 
   @Override
-  public void initialize(URL location, ResourceBundle resources) {
-  }
+  public void initialize(URL location, ResourceBundle resources) {}
 
   @Override
   public void accept(Tuple3<GDriveProvider, Consumer<UbiProvider>, ProviderStatus> tuple) {
@@ -94,29 +82,29 @@ public class GDriveInfoController
       }
     } else {
       providerLifeCycle
-        .enabledProviders()
-        .stream()
-        .filter(providerHook -> providerHook.getProvider().equals(tuple.getT1()))
-        .findFirst()
-        .ifPresent(
-          providerHook ->
-            create(providerHook.getAcquirer())
-              .subscribe(
-                acquirerReleaser -> {
-                  runLater(
-                    () ->
-                      numberFiles.setText(
-                        String.valueOf(
-                          acquirerReleaser
-                            .getRemoteConfig()
-                            .getRemoteFiles()
-                            .size())));
-                  acquirerReleaser.getReleaser().call();
-                }));
+          .enabledProviders()
+          .stream()
+          .filter(providerHook -> providerHook.getProvider().equals(tuple.getT1()))
+          .findFirst()
+          .ifPresent(
+              providerHook ->
+                  create(providerHook.getAcquirer())
+                      .subscribe(
+                          acquirerReleaser -> {
+                            runLater(
+                                () ->
+                                    numberFiles.setText(
+                                        String.valueOf(
+                                            acquirerReleaser
+                                                .getRemoteConfig()
+                                                .getRemoteFiles()
+                                                .size())));
+                            acquirerReleaser.getReleaser().call();
+                          }));
       tuple
-        .getT1()
-        .availableSpace()
-        .subscribe(space -> runLater(() -> totalSize.setText(byteCountToDisplaySize(space))));
+          .getT1()
+          .availableSpace()
+          .subscribe(space -> runLater(() -> totalSize.setText(byteCountToDisplaySize(space))));
     }
   }
 
@@ -129,15 +117,15 @@ public class GDriveInfoController
       message.setText("Authorization received...");
       provider.setConf(conf);
       providerLifeCycle
-        .activateProvider(provider)
-        .subscribe(
-          Actions.empty(),
-          err -> {
-            error.setText(err.getMessage());
-            Utils.logError.call(err);
-            back.setDisable(false);
-          },
-          () -> navigator.popHome());
+          .activateProvider(provider)
+          .subscribe(
+              Actions.empty(),
+              err -> {
+                error.setText(err.getMessage());
+                Utils.logError.call(err);
+                back.setDisable(false);
+              },
+              () -> navigator.popHome());
     } catch (IOException e) {
       log.error(e.getMessage(), e);
       error.setText(e.getMessage());

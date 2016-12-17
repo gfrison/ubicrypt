@@ -31,7 +31,7 @@ public class PathConf {
   @Bean
   public Path basePath(@Value("${home:@null}") final String home) {
     final Path ret =
-      StringUtils.isEmpty(home) ? Paths.get(System.getProperty("user.home")) : Paths.get(home);
+        StringUtils.isEmpty(home) ? Paths.get(System.getProperty("user.home")) : Paths.get(home);
     log.info("home folder:{}", ret);
     return ret;
   }

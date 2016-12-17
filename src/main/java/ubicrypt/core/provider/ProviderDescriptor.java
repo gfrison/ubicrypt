@@ -22,7 +22,7 @@ public class ProviderDescriptor {
   private final ImageView logo;
 
   public ProviderDescriptor(
-    final Class type, final String code, final String description, ImageView logo) {
+      final Class type, final String code, final String description, ImageView logo) {
     this.type = type;
     this.code = code;
     this.description = description;

@@ -23,12 +23,12 @@ import ubicrypt.core.provider.lock.AcquirerReleaser;
 import static rx.Observable.create;
 
 public class ProviderConfSaver
-  implements Function<Function<RemoteConfig, RemoteConfig>, Observable<Boolean>> {
+    implements Function<Function<RemoteConfig, RemoteConfig>, Observable<Boolean>> {
   private final Observable.OnSubscribe<AcquirerReleaser> acquirer;
   private final RemoteIO<RemoteConfig> configIO;
 
   public ProviderConfSaver(
-    Observable.OnSubscribe<AcquirerReleaser> acquirer, RemoteIO<RemoteConfig> configIO) {
+      Observable.OnSubscribe<AcquirerReleaser> acquirer, RemoteIO<RemoteConfig> configIO) {
     this.acquirer = acquirer;
     this.configIO = configIO;
   }
@@ -36,11 +36,11 @@ public class ProviderConfSaver
   @Override
   public Observable<Boolean> apply(Function<RemoteConfig, RemoteConfig> function) {
     return create(acquirer)
-      .flatMap(
-        releaser ->
-          configIO
-            .apply(function.apply(releaser.getRemoteConfig()))
-            .doOnError(err -> releaser.getReleaser().call())
-            .doOnCompleted(() -> releaser.getReleaser().call()));
+        .flatMap(
+            releaser ->
+                configIO
+                    .apply(function.apply(releaser.getRemoteConfig()))
+                    .doOnError(err -> releaser.getReleaser().call())
+                    .doOnCompleted(() -> releaser.getReleaser().call()));
   }
 }

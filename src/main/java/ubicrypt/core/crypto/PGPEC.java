@@ -138,7 +138,7 @@ public class PGPEC {
     // 0xff, or about 2 million iterations.  I'll use 0xc0 as a
     // default -- about 130,000 iterations.
     return new BcPBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha256Calc, 0xc0)
-      .build(passPhrase);
+        .build(passPhrase);
   }
 
   public static PGPKeyRingGenerator keyRingGenerator() {
@@ -150,12 +150,12 @@ public class PGPEC {
   }
 
   private static PGPKeyRingGenerator keyRingGenerator(
-    final PGPKeyPair masterKey, final char[] passPhrase) {
+      final PGPKeyPair masterKey, final char[] passPhrase) {
     return keyRingGenerator(masterKey, skEncryptor(passPhrase, HashAlgorithmTags.SHA256));
   }
 
   private static PGPKeyRingGenerator keyRingGenerator(
-    final PGPKeyPair masterKey, final PBESecretKeyEncryptor encryptor) {
+      final PGPKeyPair masterKey, final PBESecretKeyEncryptor encryptor) {
     // Add a self-signature on the id
     final PGPSignatureSubpacketGenerator signhashgen = new PGPSignatureSubpacketGenerator();
 
@@ -165,35 +165,35 @@ public class PGPEC {
     // 2) Set preferences for secondary crypto algorithms to use
     //    when sending messages to this key.
     signhashgen.setPreferredSymmetricAlgorithms(
-      false,
-      new int[]{
-        SymmetricKeyAlgorithmTags.AES_256,
-        SymmetricKeyAlgorithmTags.AES_192,
-        SymmetricKeyAlgorithmTags.AES_128
-      });
+        false,
+        new int[] {
+          SymmetricKeyAlgorithmTags.AES_256,
+          SymmetricKeyAlgorithmTags.AES_192,
+          SymmetricKeyAlgorithmTags.AES_128
+        });
     signhashgen.setPreferredHashAlgorithms(
-      false,
-      new int[]{
-        HashAlgorithmTags.SHA256,
-        //                        HashAlgorithmTags.SHA1,
-        HashAlgorithmTags.SHA384,
-        HashAlgorithmTags.SHA512,
-        HashAlgorithmTags.SHA224,
-      });
+        false,
+        new int[] {
+          HashAlgorithmTags.SHA256,
+          //                        HashAlgorithmTags.SHA1,
+          HashAlgorithmTags.SHA384,
+          HashAlgorithmTags.SHA512,
+          HashAlgorithmTags.SHA224,
+        });
     // 3) Request senders add additional checksums to the
     //    message (useful when verifying unsigned messages.)
     signhashgen.setFeature(false, Features.FEATURE_MODIFICATION_DETECTION);
 
     try {
       return new PGPKeyRingGenerator(
-        PGPSignature.POSITIVE_CERTIFICATION,
-        masterKey,
-        Utils.machineName(),
-        new BcPGPDigestCalculatorProvider().get(HashAlgorithmTags.SHA1),
-        signhashgen.generate(),
-        null,
-        new BcPGPContentSignerBuilder(PGPPublicKey.ECDSA, HashAlgorithmTags.SHA256),
-        encryptor);
+          PGPSignature.POSITIVE_CERTIFICATION,
+          masterKey,
+          Utils.machineName(),
+          new BcPGPDigestCalculatorProvider().get(HashAlgorithmTags.SHA1),
+          signhashgen.generate(),
+          null,
+          new BcPGPContentSignerBuilder(PGPPublicKey.ECDSA, HashAlgorithmTags.SHA256),
+          encryptor);
     } catch (final PGPException e) {
       Throwables.propagate(e);
     }
@@ -202,8 +202,8 @@ public class PGPEC {
 
   public static PGPPublicKey signPK(final PGPPublicKey pk, final PGPPrivateKey priv) {
     final PGPSignatureGenerator sGen =
-      new PGPSignatureGenerator(
-        new JcaPGPContentSignerBuilder(PGPPublicKey.ECDSA, PGPUtil.SHA256).setProvider("BC"));
+        new PGPSignatureGenerator(
+            new JcaPGPContentSignerBuilder(PGPPublicKey.ECDSA, PGPUtil.SHA256).setProvider("BC"));
 
     try {
       sGen.init(PGPSignature.DIRECT_KEY, priv);
@@ -229,14 +229,14 @@ public class PGPEC {
     final ArrayList<List<PGPPublicKey>> keys = new ArrayList<>();
     try {
       final PGPObjectFactory factory =
-        new PGPObjectFactory(PGPUtil.getDecoderStream(input), new JcaKeyFingerprintCalculator());
+          new PGPObjectFactory(PGPUtil.getDecoderStream(input), new JcaKeyFingerprintCalculator());
       Object obj;
       while ((obj = factory.nextObject()) != null) {
         if (obj instanceof PGPPublicKeyRing) {
           keys.add(
-            toStream(((PGPPublicKeyRing) obj).getPublicKeys())
-              .filter(PGPPublicKey::isEncryptionKey)
-              .collect(Collectors.toList()));
+              toStream(((PGPPublicKeyRing) obj).getPublicKeys())
+                  .filter(PGPPublicKey::isEncryptionKey)
+                  .collect(Collectors.toList()));
         }
       }
       return keys.stream().flatMap(List::stream).collect(Collectors.toList());
@@ -270,31 +270,31 @@ public class PGPEC {
   }
 
   public static PGPPrivateKey extractSignKey(final PGPSecretKeyRing skr, final char[] passPhrase)
-    throws PGPException {
+      throws PGPException {
     return extractKeyPair(skr, PGPSecretKey::isSigningKey, passPhrase).getPrivateKey();
   }
 
   public static PGPKeyPair extractEncryptKeyPair(
-    final PGPSecretKeyRing skr, final char[] passPhrase) throws PGPException {
+      final PGPSecretKeyRing skr, final char[] passPhrase) throws PGPException {
     return extractKeyPair(
-      skr,
-      secc -> !secc.getPublicKey().isMasterKey() && secc.getPublicKey().isEncryptionKey(),
-      passPhrase);
+        skr,
+        secc -> !secc.getPublicKey().isMasterKey() && secc.getPublicKey().isEncryptionKey(),
+        passPhrase);
   }
 
   private static PGPKeyPair extractKeyPair(
-    final PGPSecretKeyRing skr, final Predicate<PGPSecretKey> predicate, final char[] passPhrase)
-    throws PGPException {
+      final PGPSecretKeyRing skr, final Predicate<PGPSecretKey> predicate, final char[] passPhrase)
+      throws PGPException {
     final PGPSecretKey sec =
-      Utils.toStream(skr.getSecretKeys())
-        .filter(predicate)
-        .findFirst()
-        .orElseThrow(() -> new PGPException("key not found"));
+        Utils.toStream(skr.getSecretKeys())
+            .filter(predicate)
+            .findFirst()
+            .orElseThrow(() -> new PGPException("key not found"));
     return new PGPKeyPair(
-      sec.getPublicKey(),
-      sec.extractPrivateKey(
-        new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider())
-          .build(passPhrase)));
+        sec.getPublicKey(),
+        sec.extractPrivateKey(
+            new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider())
+                .build(passPhrase)));
   }
 
   public static InputStream encrypt(final List<PGPPublicKey> pks, final InputStream clearBytes) {
@@ -307,35 +307,35 @@ public class PGPEC {
       final PGPLiteralDataGenerator lData = new PGPLiteralDataGenerator();
 
       final PGPEncryptedDataGenerator cPk =
-        new PGPEncryptedDataGenerator(
-          new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256)
-            .setWithIntegrityPacket(true)
-            .setProvider("BC")
-            .setSecureRandom(new SecureRandom()));
+          new PGPEncryptedDataGenerator(
+              new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256)
+                  .setWithIntegrityPacket(true)
+                  .setProvider("BC")
+                  .setSecureRandom(new SecureRandom()));
 
       pks.stream()
-        .forEach(
-          pk ->
-            cPk.addMethod(
-              new JcePublicKeyKeyEncryptionMethodGenerator(pk).setProvider("BC")));
+          .forEach(
+              pk ->
+                  cPk.addMethod(
+                      new JcePublicKeyKeyEncryptionMethodGenerator(pk).setProvider("BC")));
       pgpOut.set(cPk.open(pos.get(), new byte[1 << 16]));
       lout.set(
-        lData.open(
-          pgpOut.get(),
-          PGPLiteralDataGenerator.BINARY,
-          PGPLiteralData.CONSOLE,
-          new Date(),
-          new byte[1 << 64]));
+          lData.open(
+              pgpOut.get(),
+              PGPLiteralDataGenerator.BINARY,
+              PGPLiteralData.CONSOLE,
+              new Date(),
+              new byte[1 << 64]));
 
       Observable.create(new OnSubscribeInputStream(clearBytes, 1 << 64))
-        .subscribeOn(Schedulers.io())
-        .doOnCompleted(() -> Utils.close(lout.get(), pgpOut.get(), pos.get()))
-        .doOnError(
-          err -> {
-            log.error("error on encrypt", err);
-            Utils.close(clearBytes, lout.get(), pgpOut.get(), pos.get());
-          })
-        .subscribe(ConsumerExp.silent(lout.get()::write));
+          .subscribeOn(Schedulers.io())
+          .doOnCompleted(() -> Utils.close(lout.get(), pgpOut.get(), pos.get()))
+          .doOnError(
+              err -> {
+                log.error("error on encrypt", err);
+                Utils.close(clearBytes, lout.get(), pgpOut.get(), pos.get());
+              })
+          .subscribe(ConsumerExp.silent(lout.get()::write));
     } catch (final Exception e) {
       Utils.close(clearBytes, lout.get(), pgpOut.get(), pos.get());
       Throwables.propagate(e);
@@ -344,7 +344,7 @@ public class PGPEC {
   }
 
   public static InputStream decrypt(final PGPPrivateKey privateKey, final InputStream cipherText)
-    throws PGPException {
+      throws PGPException {
     final JcaPGPObjectFactory pgpF = new JcaPGPObjectFactory(cipherText);
 
     try {
@@ -352,20 +352,20 @@ public class PGPEC {
       log.trace("decrypt with sk:{}", privateKey.getKeyID());
 
       final PGPPublicKeyEncryptedData encP =
-        toStream((Iterator<PGPPublicKeyEncryptedData>) encList.iterator())
-          .filter(
-            (PGPPublicKeyEncryptedData ed) -> {
-              log.debug("pgp message encrypted with key:{}", ed.getKeyID());
-              return ed.getKeyID() == privateKey.getKeyID();
-            })
-          .findFirst()
-          .orElseThrow(
-            () ->
-              new PGPException("the message is not encrypted with the related public key"));
+          toStream((Iterator<PGPPublicKeyEncryptedData>) encList.iterator())
+              .filter(
+                  (PGPPublicKeyEncryptedData ed) -> {
+                    log.debug("pgp message encrypted with key:{}", ed.getKeyID());
+                    return ed.getKeyID() == privateKey.getKeyID();
+                  })
+              .findFirst()
+              .orElseThrow(
+                  () ->
+                      new PGPException("the message is not encrypted with the related public key"));
 
       try (InputStream clear =
-             encP.getDataStream(
-               new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(privateKey))) {
+          encP.getDataStream(
+              new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(privateKey))) {
         Object next = new JcaPGPObjectFactory(clear).nextObject();
         if (next instanceof PGPCompressedData) {
           next = new JcaPGPObjectFactory(((PGPCompressedData) next).getDataStream()).nextObject();

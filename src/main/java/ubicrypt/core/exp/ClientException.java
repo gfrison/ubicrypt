@@ -13,5 +13,4 @@
  */
 package ubicrypt.core.exp;
 
-public class ClientException extends RuntimeException {
-}
+public class ClientException extends RuntimeException {}

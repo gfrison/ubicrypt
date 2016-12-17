@@ -43,21 +43,16 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 public class ExportConfigCtrl implements Initializable {
   private static final Logger log = getLogger(ExportConfigCtrl.class);
-  @Inject
-  PGPService pgpService;
-  @Inject
-  LocalConfig localConfig;
+  @Inject PGPService pgpService;
+  @Inject LocalConfig localConfig;
 
   @Autowired
   @Qualifier("keyPair")
   PGPKeyPair keyPair;
 
-  @FXML
-  TextArea text;
-  @FXML
-  Button copy;
-  @FXML
-  Button cancel;
+  @FXML TextArea text;
+  @FXML Button copy;
+  @FXML Button cancel;
   StackNavigator navigator;
 
   @Override
@@ -66,21 +61,21 @@ public class ExportConfigCtrl implements Initializable {
     final ArmoredOutputStream armor = new ArmoredOutputStream(out);
     try {
       armor.write(
-        IOUtils.toByteArray(
-          pgpService.encrypt(
-            Utils.marshallIs(ExportConfig.copyFrom(localConfig, keyPair.getPublicKey())))));
+          IOUtils.toByteArray(
+              pgpService.encrypt(
+                  Utils.marshallIs(ExportConfig.copyFrom(localConfig, keyPair.getPublicKey())))));
       armor.close();
     } catch (final IOException e) {
       log.error(e.getMessage(), e);
     }
     text.setText(out.toString());
     copy.setOnMouseClicked(
-      event -> {
-        final Clipboard clipboard = Clipboard.getSystemClipboard();
-        final ClipboardContent content = new ClipboardContent();
-        content.putString(out.toString());
-        clipboard.setContent(content);
-      });
+        event -> {
+          final Clipboard clipboard = Clipboard.getSystemClipboard();
+          final ClipboardContent content = new ClipboardContent();
+          content.putString(out.toString());
+          clipboard.setContent(content);
+        });
     cancel.setOnMouseClicked(event -> navigator.popLayer());
   }
 }

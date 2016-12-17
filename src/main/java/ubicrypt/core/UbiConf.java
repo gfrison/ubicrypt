@@ -51,8 +51,7 @@ public class UbiConf {
   @Qualifier("keyPair")
   PGPKeyPair keyPair;
 
-  @Inject
-  LocalConfig localConfig;
+  @Inject LocalConfig localConfig;
 
   @Bean
   public ShutterDown shutterDown() {
