@@ -1,10 +1,10 @@
-/**
+/*
  * Copyright (C) 2016 Giancarlo Frison <giancarlo@gfrison.com>
- * <p>
+ *
  * Licensed under the UbiCrypt License, Version 1.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * http://github.com/gfrison/ubicrypt/LICENSE.md
+ *     http://github.com/gfrison/ubicrypt/LICENSE.md
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,15 +21,15 @@ import rx.subjects.Subject;
 
 public class StreamAppender extends WriterAppender {
 
-    private static Subject<String, String> logStream = BufferUntilSubscriber.create();
+  private static Subject<String, String> logStream = BufferUntilSubscriber.create();
 
-    public static Subject<String, String> getLogStream() {
-        return logStream;
-    }
+  public static Subject<String, String> getLogStream() {
+    return logStream;
+  }
 
-    @Override
-    public void append(LoggingEvent event) {
-        final String format = getLayout().format(event);
-        logStream.onNext(format);
-    }
+  @Override
+  public void append(LoggingEvent event) {
+    final String format = getLayout().format(event);
+    logStream.onNext(format);
+  }
 }

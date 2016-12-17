@@ -5,7 +5,8 @@
 <?import javafx.scene.control.TreeView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.StackPane?>
-<fx:root xmlns:fx="http://javafx.com/fxml/1" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity"
+<fx:root xmlns:fx="http://javafx.com/fxml/1" maxHeight="-Infinity" maxWidth="-Infinity"
+         minHeight="-Infinity"
          minWidth="-Infinity" prefHeight="175.0" prefWidth="600.0" type="AnchorPane"
          xmlns="http://javafx.com/javafx/8">
     <children>

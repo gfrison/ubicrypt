@@ -12,8 +12,8 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
-<BorderPane fx:id="mainPane" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/8.0.65"
-            xmlns:fx="http://javafx.com/fxml/1"
+<BorderPane xmlns:fx="http://javafx.com/fxml/1" fx:id="mainPane" VBox.vgrow="ALWAYS"
+            xmlns="http://javafx.com/javafx/8.0.65"
             fx:controller="ubicrypt.ui.ctrl.providers.GDriveInfoController">
     <top>
         <VBox fx:id="topbox" alignment="CENTER" prefHeight="24.0" prefWidth="190.0" spacing="10.0">

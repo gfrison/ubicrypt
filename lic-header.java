@@ -11,25 +11,3 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ubicrypt.core.provider.lock;
-
-import rx.functions.Action0;
-import ubicrypt.core.dto.RemoteConfig;
-
-public class AcquirerReleaser {
-  private final RemoteConfig remoteConfig;
-  private final Action0 releaser;
-
-  public AcquirerReleaser(RemoteConfig remoteConfig, Action0 releaser) {
-    this.remoteConfig = remoteConfig;
-    this.releaser = releaser;
-  }
-
-  public RemoteConfig getRemoteConfig() {
-    return remoteConfig;
-  }
-
-  public Action0 getReleaser() {
-    return releaser;
-  }
-}

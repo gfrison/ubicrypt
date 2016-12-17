@@ -3,7 +3,7 @@ import org.apache.tools.ant.taskdefs.condition.Os
 plugins {
     id "com.github.johnrengelman.shadow" version "1.2.3"
     id "com.jfrog.bintray" version "1.7.1"
-    id "com.github.hierynomus.license" version "0.13.1"
+    id "com.diffplug.gradle.spotless" version "2.4.0"
 }
 
 apply plugin: 'java'
@@ -13,7 +13,7 @@ apply plugin: 'application'
 apply plugin: 'idea'
 apply plugin: 'jacoco'
 
-version = '0.17'
+version = '0.19'
 sourceCompatibility = 1.8
 
 project.group = 'ubicrypt'
@@ -43,7 +43,7 @@ bintray {
         repo = 'maven'
         name = 'ubicrypt'
         licenses = ['Apache-2.0']
-        vcsUrl = 'https://github.com/gfrison/ubicrypt/ubicrypt.git'
+        vcsUrl = 'https://github.com/gfrison/ubicrypt.git'
     }
 }
 
@@ -109,7 +109,7 @@ dependencies {
     // Reactor Core
     compile 'io.projectreactor:reactor-core:2.0.7.RELEASE'
 
-    compile 'org.controlsfx:controlsfx:8.40.11'
+    compile 'org.controlsfx:controlsfx:8.40.12'
     compile 'de.jensd:fontawesomefx-commons:8.13'
     //AWS
     compile "com.amazonaws:aws-java-sdk-s3:$awsVersion"
@@ -128,6 +128,7 @@ dependencies {
     testCompile 'org.assertj:assertj-core:3.5.2'
     testCompile 'org.apache.ftpserver:ftpserver:1.0.6'
     testCompile 'org.apache.ftpserver:ftpserver-core:1.0.6'
+    testCompile 'org.junit:junit5-api:5.0.0-SNAPSHOT'
 
 }
 
@@ -147,12 +148,10 @@ task packageNative(type: Exec, dependsOn: shadowJar) {
     args updatefxVersion, shadowJar.archivePath, mainClassName
 }
 
-license {
-    header = file('lic-header.txt')
-    ext.year = Calendar.getInstance().get(Calendar.YEAR)
-    includes(["**/*.java", "**/*.properties"])
-    ignoreFailures = true
+
+spotless {
+    java {
+        googleJavaFormat('1.1')
+        licenseHeaderFile 'lic-header.java'
+    }
 }
-
-
-

@@ -13,29 +13,31 @@
  */
 package ubicrypt.core;
 
+import com.amazonaws.regions.Regions;
+
+import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.Optional;
+import java.security.GeneralSecurityException;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import javax.annotation.Resource;
 import javax.inject.Inject;
 
-import reactor.fn.tuple.Tuple2;
 import rx.Observable;
 import rx.Subscription;
 import ubicrypt.core.dto.LocalConfig;
@@ -43,22 +45,26 @@ import ubicrypt.core.events.SynchDoneEvent;
 import ubicrypt.core.provider.FileEvent;
 import ubicrypt.core.provider.ProviderCommander;
 import ubicrypt.core.provider.ProviderEvent;
-import ubicrypt.core.provider.ProviderHook;
 import ubicrypt.core.provider.ProviderLifeCycle;
 import ubicrypt.core.provider.UbiProvider;
-import ubicrypt.core.provider.file.FileProvider;
-import ubicrypt.core.provider.lock.AcquirerReleaser;
+import ubicrypt.core.provider.s3.S3Conf;
+import ubicrypt.core.provider.s3.S3Provider;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static ubicrypt.core.GDriveDownloadIT.uploadFiles;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(
-  value = {UbiConf.class, TestPathConf.class},
-  initializers = {TestKeyInitializer.class}
+  value = {UbiConf.class, GDriveDownloadIT.Conf.class},
+  initializers = {GDriveDownloadIT.KeyInitializer.class}
 )
-@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
-public class ProviderSyncIT {
-  public static final Path tmp3 = Paths.get(System.getProperty("java.io.tmpdir")).resolve("ubiq3");
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ConditionalOnProperty(name = "aws.accessKey")
+public class S3DownloadIT {
+  private static int nfiles = 10;
+  private static int size = 1 << 16;
+  private static Set<UbiProvider> providers;
+  private static S3Provider provider;
 
   @Inject ProviderCommander providerCommander;
   @Inject FileFacade fileFacade;
@@ -80,40 +86,47 @@ public class ProviderSyncIT {
   @Qualifier("appEvents")
   private Observable<Object> appEvents;
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeClass
+  public static void createConfig() throws Exception {
     TestUtils.deleteDirs();
-    TestUtils.deleteR(tmp3);
     TestUtils.createDirs();
-    Files.createDirectories(tmp3);
+    if (StringUtils.isEmpty(System.getenv("aws.accessKey"))) {
+      return;
+    }
+    provider =
+        new S3Provider() {
+          {
+            setConf(
+                new S3Conf() {
+                  {
+                    setAccessKeyId(System.getenv("aws.accessKey"));
+                    setSecrectKey(System.getenv("aws.secret"));
+                    setRegion(Regions.EU_CENTRAL_1);
+                    setBucket("test-gfrison");
+                  }
+                });
+          }
+        };
+    uploadFiles(provider);
+  }
+
+  @Before
+  public void init() throws GeneralSecurityException, IOException {
+    TestUtils.deleteDirs();
+    TestUtils.createDirs();
   }
 
   @After
   public void tearDown() throws Exception {
     TestUtils.deleteDirs();
-    TestUtils.deleteR(tmp3);
-  }
-
-  public void addProvider(UbiProvider provider) {
-    assertThat(providerCommander.register(provider).toBlocking().last()).isTrue();
   }
 
   @Test
-  public void syncProvider() throws Exception {
-    addProvider(TestUtils.fileProvider(TestUtils.tmp2));
-    //create 20 files
-    List<Observable<Boolean>> ls =
-        IntStream.range(0, 20)
-            .mapToObj(
-                i -> TestUtils.createRandomFile(TestUtils.tmp.resolve(String.valueOf(i)), 1 << 64))
-            .map(fileFacade::addFile)
-            .map(ob -> ob.toBlocking().first())
-            .map(Tuple2::getT2)
-            .collect(Collectors.toList());
-    //track files
-    assertThat(Observable.merge(ls).toBlocking().last()).isTrue();
-    //add 2nd provider
-    CountDownLatch cd = new CountDownLatch(2);
+  public void downloadFiles() throws Exception {
+    if (StringUtils.isEmpty(System.getenv("aws.accessKey"))) {
+      return;
+    }
+    CountDownLatch cd = new CountDownLatch(1);
     Subscription sub =
         appEvents.subscribe(
             event -> {
@@ -121,24 +134,18 @@ public class ProviderSyncIT {
                 cd.countDown();
               }
             });
-    final FileProvider provider2 = TestUtils.fileProvider(tmp3);
-    addProvider(provider2);
-    assertThat(cd.await(5, TimeUnit.SECONDS)).isTrue();
+    assertThat(cd.await(20, TimeUnit.SECONDS)).isTrue();
     sub.unsubscribe();
-
-    assertThat(localConfig.getLocalFiles()).hasSize(20);
-
-    Optional<ProviderHook> opt =
-        providerLifeCycle
-            .currentlyActiveProviders()
-            .stream()
-            .filter(providerHook -> providerHook.getProvider().equals(provider2))
-            .findFirst();
-
-    assertThat(opt.isPresent()).isTrue();
-    AcquirerReleaser acquirer = Observable.create(opt.get().getAcquirer()).toBlocking().first();
-    assertThat(acquirer).isNotNull();
-    assertThat(acquirer.getRemoteConfig().getRemoteFiles()).hasSize(20);
-    assertThat(Files.list(tmp3)).hasSize(22);
+    assertThat(Files.list(TestUtils.tmp2)).hasSize(nfiles);
+    S3Provider provider =
+        (S3Provider) providerLifeCycle.currentlyActiveProviders().get(0).getProvider();
+    provider
+        .getClient()
+        .listObjects("test-gfrison")
+        .getObjectSummaries()
+        .stream()
+        .forEach(
+            s3ObjectSummary ->
+                provider.getClient().deleteObject("test-gfrison", s3ObjectSummary.getKey()));
   }
 }

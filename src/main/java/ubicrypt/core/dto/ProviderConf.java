@@ -1,10 +1,10 @@
-/**
+/*
  * Copyright (C) 2016 Giancarlo Frison <giancarlo@gfrison.com>
- * <p>
+ *
  * Licensed under the UbiCrypt License, Version 1.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * http://github.com/gfrison/ubicrypt/LICENSE.md
+ *     http://github.com/gfrison/ubicrypt/LICENSE.md
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,49 +14,49 @@
 package ubicrypt.core.dto;
 
 public class ProviderConf {
-    private String username;
-    private char[] password;
-    private boolean anonymous;
-    private long delayAcquiringLockMs = 2000;
-    private long durationLockMs = 5 * 60 * 1000;//5mins
+  private String username;
+  private char[] password;
+  private boolean anonymous;
+  private long delayAcquiringLockMs = 2000;
+  private long durationLockMs = 5 * 60 * 1000; //5mins
 
-    public String getUsername() {
-        return username;
-    }
+  public String getUsername() {
+    return username;
+  }
 
-    public void setUsername(final String username) {
-        this.username = username;
-    }
+  public void setUsername(final String username) {
+    this.username = username;
+  }
 
-    public char[] getPassword() {
-        return password;
-    }
+  public char[] getPassword() {
+    return password;
+  }
 
-    public void setPassword(final char[] password) {
-        this.password = password;
-    }
+  public void setPassword(final char[] password) {
+    this.password = password;
+  }
 
-    public boolean isAnonymous() {
-        return anonymous;
-    }
+  public boolean isAnonymous() {
+    return anonymous;
+  }
 
-    public void setAnonymous(final boolean anonymous) {
-        this.anonymous = anonymous;
-    }
+  public void setAnonymous(final boolean anonymous) {
+    this.anonymous = anonymous;
+  }
 
-    public long getDelayAcquiringLockMs() {
-        return delayAcquiringLockMs;
-    }
+  public long getDelayAcquiringLockMs() {
+    return delayAcquiringLockMs;
+  }
 
-    public void setDelayAcquiringLockMs(final long delayAcquiringLockMs) {
-        this.delayAcquiringLockMs = delayAcquiringLockMs;
-    }
+  public void setDelayAcquiringLockMs(final long delayAcquiringLockMs) {
+    this.delayAcquiringLockMs = delayAcquiringLockMs;
+  }
 
-    public long getDurationLockMs() {
-        return durationLockMs;
-    }
+  public long getDurationLockMs() {
+    return durationLockMs;
+  }
 
-    public void setDurationLockMs(final long durationLockMs) {
-        this.durationLockMs = durationLockMs;
-    }
+  public void setDurationLockMs(final long durationLockMs) {
+    this.durationLockMs = durationLockMs;
+  }
 }

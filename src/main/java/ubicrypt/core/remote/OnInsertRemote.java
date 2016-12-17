@@ -1,10 +1,10 @@
-/**
+/*
  * Copyright (C) 2016 Giancarlo Frison <giancarlo@gfrison.com>
- * <p>
+ *
  * Licensed under the UbiCrypt License, Version 1.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * http://github.com/gfrison/ubicrypt/LICENSE.md
+ *     http://github.com/gfrison/ubicrypt/LICENSE.md
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -36,45 +36,64 @@ import static org.slf4j.LoggerFactory.getLogger;
 import static rx.Observable.just;
 
 public class OnInsertRemote extends RemoteAction {
-    private static final Logger log = getLogger(OnInsertRemote.class);
+  private static final Logger log = getLogger(OnInsertRemote.class);
 
-    public OnInsertRemote(UbiProvider provider, IRepository repository) {
-        super(provider, repository);
+  public OnInsertRemote(UbiProvider provider, IRepository repository) {
+    super(provider, repository);
+  }
+
+  @Override
+  public boolean test(FileProvenience fileProvenience, RemoteConfig remoteConfig) {
+    UbiFile file = fileProvenience.getFile();
+    log.trace(
+      "path:{}, test:{}",
+      file.getPath(),
+      !remoteConfig
+        .getRemoteFiles()
+        .stream()
+        .filter(file1 -> file1.equals(file))
+        .findFirst()
+        .isPresent());
+    return !remoteConfig
+      .getRemoteFiles()
+      .stream()
+      .filter(file1 -> file1.equals(file))
+      .findFirst()
+      .isPresent();
+  }
+
+  @Override
+  public Observable<Boolean> apply(FileProvenience fp, RemoteConfig rconfig) {
+    UbiFile<UbiFile> file = fp.getFile();
+    final AtomicReference<FileEvent.Type> fileEventType = new AtomicReference<>();
+
+    if (!Utils.trackedFile.test(file)) {
+      return just(false);
     }
-
-    @Override
-    public boolean test(FileProvenience fileProvenience, RemoteConfig remoteConfig) {
-        UbiFile file = fileProvenience.getFile();
-        log.trace("path:{}, test:{}", file.getPath(), !remoteConfig.getRemoteFiles().stream().filter(file1 -> file1.equals(file)).findFirst().isPresent());
-        return !remoteConfig.getRemoteFiles().stream().filter(file1 -> file1.equals(file)).findFirst().isPresent();
-    }
-
-    @Override
-    public Observable<Boolean> apply(FileProvenience fp, RemoteConfig rconfig) {
-        UbiFile<UbiFile> file = fp.getFile();
-        final AtomicReference<FileEvent.Type> fileEventType = new AtomicReference<>();
-
-        if (!Utils.trackedFile.test(file)) {
-            return just(false);
-        }
-        //create new one remotely
-        RemoteFile rf = RemoteFile.createFrom(file);
-        final byte[] key = AESGCM.rndKey();
-        rf.setKey(new Key(key));
-        fileEventType.set(FileEvent.Type.created);
-        return fp.getOrigin().get(file)
-                .flatMap(is ->
-                        provider.post(AESGCM.encryptIs(key, new DeflaterInputStream(monitor(fp, is), new Deflater(BEST_COMPRESSION))))
-                                .map(name -> {
-                                    log.info("created file:{}, to provider:{}", rf.getPath(), provider);
-                                    //add name and add to config
-                                    rf.setRemoteName(name);
-                                    rconfig.getRemoteFiles().add(rf);
-                                    return true;
-                                }))
-                .defaultIfEmpty(false)
-                .doOnCompleted(fileEvents(fp, fileEventType.get()));
-    }
-
-
+    //create new one remotely
+    RemoteFile rf = RemoteFile.createFrom(file);
+    final byte[] key = AESGCM.rndKey();
+    rf.setKey(new Key(key));
+    fileEventType.set(FileEvent.Type.created);
+    return fp.getOrigin()
+      .get(file)
+      .flatMap(
+        is ->
+          provider
+            .post(
+              AESGCM.encryptIs(
+                key,
+                new DeflaterInputStream(
+                  monitor(fp, is), new Deflater(BEST_COMPRESSION))))
+            .map(
+              name -> {
+                log.info("created file:{}, to provider:{}", rf.getPath(), provider);
+                //add name and add to config
+                rf.setRemoteName(name);
+                rconfig.getRemoteFiles().add(rf);
+                return true;
+              }))
+      .defaultIfEmpty(false)
+      .doOnCompleted(fileEvents(fp, fileEventType.get()));
+  }
 }

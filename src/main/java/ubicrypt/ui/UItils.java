@@ -1,10 +1,10 @@
-/**
+/*
  * Copyright (C) 2016 Giancarlo Frison <giancarlo@gfrison.com>
- * <p>
+ *
  * Licensed under the UbiCrypt License, Version 1.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * http://github.com/gfrison/ubicrypt/LICENSE.md
+ *     http://github.com/gfrison/ubicrypt/LICENSE.md
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -29,32 +29,43 @@ import ubicrypt.ui.files.ITreeItem;
 import static org.slf4j.LoggerFactory.getLogger;
 
 public class UItils {
-    private static final Logger log = getLogger(UItils.class);
-    public static final Path emptyPath = Paths.get("");
+  public static final Path emptyPath = Paths.get("");
+  private static final Logger log = getLogger(UItils.class);
 
-    public static Optional<TreeItem<ITreeItem>> searchFile(final TreeItem<ITreeItem> filesRoot, final UbiFile file) {
-        return searchFile(filesRoot, file, file.getPath().iterator(), emptyPath);
-    }
+  public static Optional<TreeItem<ITreeItem>> searchFile(
+    final TreeItem<ITreeItem> filesRoot, final UbiFile file) {
+    return searchFile(filesRoot, file, file.getPath().iterator(), emptyPath);
+  }
 
-    private static Optional<TreeItem<ITreeItem>> searchFile(final TreeItem<ITreeItem> filesRoot, final UbiFile file, final Iterator<Path> it,
-                                                            final Path basePath) {
-        if (!it.hasNext()) {
-            if (filesRoot.getValue() instanceof FileItem) {
-                if (((FileItem) filesRoot.getValue()).getFile().equals(file)) {
-                    return Optional.of(filesRoot);
-                }
-            }
-            return Optional.empty();
+  private static Optional<TreeItem<ITreeItem>> searchFile(
+    final TreeItem<ITreeItem> filesRoot,
+    final UbiFile file,
+    final Iterator<Path> it,
+    final Path basePath) {
+    if (!it.hasNext()) {
+      if (filesRoot.getValue() instanceof FileItem) {
+        if (((FileItem) filesRoot.getValue()).getFile().equals(file)) {
+          return Optional.of(filesRoot);
         }
-        final Path path = it.next();
-        final Path resolvedPath = basePath.resolve(path);
-        return filesRoot.getChildren().stream()
-                .filter(item -> {
-                    if (item.getValue() instanceof FileItem) {
-                        return ((FolderItem) item.getValue()).getPath().toString().equals(resolvedPath.toString());
-                    }
-                    return ((FolderItem) item.getValue()).getPath().toString().equals(path.toString());
-                })
-                .findFirst().flatMap(item -> searchFile(item, file, it, resolvedPath));
+      }
+      return Optional.empty();
     }
+    final Path path = it.next();
+    final Path resolvedPath = basePath.resolve(path);
+    return filesRoot
+      .getChildren()
+      .stream()
+      .filter(
+        item -> {
+          if (item.getValue() instanceof FileItem) {
+            return ((FolderItem) item.getValue())
+              .getPath()
+              .toString()
+              .equals(resolvedPath.toString());
+          }
+          return ((FolderItem) item.getValue()).getPath().toString().equals(path.toString());
+        })
+      .findFirst()
+      .flatMap(item -> searchFile(item, file, it, resolvedPath));
+  }
 }

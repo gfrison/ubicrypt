@@ -1,10 +1,10 @@
-/**
+/*
  * Copyright (C) 2016 Giancarlo Frison <giancarlo@gfrison.com>
- * <p>
+ *
  * Licensed under the UbiCrypt License, Version 1.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * http://github.com/gfrison/ubicrypt/LICENSE.md
+ *     http://github.com/gfrison/ubicrypt/LICENSE.md
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,49 +25,43 @@ import static org.apache.commons.lang3.builder.ToStringStyle.NO_CLASS_NAME_STYLE
  * associate the file with its own origin provider
  */
 public class FileProvenience {
-    private final UbiFile file;
-    private final IRepository origin;
+  private final UbiFile file;
+  private final IRepository origin;
 
-    public FileProvenience(final UbiFile file, final IRepository origin) {
-        this.file = file;
-        this.origin = origin;
-    }
+  public FileProvenience(final UbiFile file, final IRepository origin) {
+    this.file = file;
+    this.origin = origin;
+  }
 
-    public UbiFile<UbiFile> getFile() {
-        return file;
-    }
+  public UbiFile<UbiFile> getFile() {
+    return file;
+  }
 
-    public IRepository getOrigin() {
-        return origin;
-    }
+  public IRepository getOrigin() {
+    return origin;
+  }
 
-    @Override
-    public boolean equals(final Object o) {
-        if (this == o) return true;
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
 
-        if (o == null || getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) return false;
 
-        final FileProvenience that = (FileProvenience) o;
+    final FileProvenience that = (FileProvenience) o;
 
-        return new EqualsBuilder()
-                .append(file, that.file)
-                .append(origin, that.origin)
-                .isEquals();
-    }
+    return new EqualsBuilder().append(file, that.file).append(origin, that.origin).isEquals();
+  }
 
-    @Override
-    public int hashCode() {
-        return new HashCodeBuilder(17, 37)
-                .append(file)
-                .append(origin)
-                .toHashCode();
-    }
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder(17, 37).append(file).append(origin).toHashCode();
+  }
 
-    @Override
-    public String toString() {
-        return new ToStringBuilder(this, NO_CLASS_NAME_STYLE)
-                .append("file", file.getPath())
-                .append("origin", origin)
-                .toString();
-    }
+  @Override
+  public String toString() {
+    return new ToStringBuilder(this, NO_CLASS_NAME_STYLE)
+      .append("file", file.getPath())
+      .append("origin", origin)
+      .toString();
+  }
 }

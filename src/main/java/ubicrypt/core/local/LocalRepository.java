@@ -1,10 +1,10 @@
-/**
+/*
  * Copyright (C) 2016 Giancarlo Frison <giancarlo@gfrison.com>
- * <p>
+ *
  * Licensed under the UbiCrypt License, Version 1.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * http://github.com/gfrison/ubicrypt/LICENSE.md
+ *     http://github.com/gfrison/ubicrypt/LICENSE.md
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -54,151 +54,167 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class LocalRepository implements IRepository {
 
-    private static final Logger log = LoggerFactory.getLogger(LocalRepository.class);
-    @Inject
-    private LocalConfig localConfig = new LocalConfig();
-    private final Path basePath;
-    @Resource
-    @Qualifier("fileEvents")
-    private Subject<FileEvent, FileEvent> fileEvents;
-    @Resource
-    @Qualifier("conflictEvents")
-    private Subject<UbiFile, UbiFile> conflictEvents;
-    @Resource
-    @Qualifier("onNewLocal")
-    Func1<FileProvenience, Observable<Boolean>> onNewFileLocal;
+  private static final Logger log = LoggerFactory.getLogger(LocalRepository.class);
+  private final Path basePath;
 
+  @Resource
+  @Qualifier("onNewLocal")
+  Func1<FileProvenience, Observable<Boolean>> onNewFileLocal;
 
-    public LocalRepository(final Path basePath) {
-        this.basePath = basePath;
-    }
+  @Inject
+  private LocalConfig localConfig = new LocalConfig();
 
-    private static void check(final FileProvenience fp) {
-        checkNotNull(fp, "FileProvenience must not be null");
-        checkNotNull(fp.getFile(), "file must not be null");
-        checkNotNull(fp.getOrigin(), "file must not be null");
-    }
+  @Resource
+  @Qualifier("fileEvents")
+  private Subject<FileEvent, FileEvent> fileEvents;
 
-    @Override
-    public Observable<Boolean> save(final FileProvenience fp) {
-        try {
-            check(fp);
-            final UbiFile rfile = fp.getFile();
-            final Optional<LocalFile> lfile = localConfig.getLocalFiles().stream().filter(lf -> lf.equals(rfile)).findFirst();
-            if (!lfile.isPresent()) {
-                //new file
-                return onNewFileLocal.call(fp);
-            } else {
-                final VClock.Comparison comparison = rfile.getVclock().compare(lfile.get().getVclock());
-                if (comparison == VClock.Comparison.newer) {
-                    lfile.get().copyFrom(rfile);
-                    if (!rfile.isDeleted() && !rfile.isRemoved()) {
-                        log.info("update file:{} locally from repo:{}", rfile.getPath(), fp.getOrigin());
-                        AtomicReference<Path> tempFile = new AtomicReference<>();
-                        return fp.getOrigin().get(fp.getFile())
-                                .flatMap(new StoreTempFile())
-                                .map(new CopyFile(rfile.getSize(), basePath.resolve(rfile.getPath()), false, fp.getFile().getLastModified()))
-                                .doOnCompleted(() -> {
-                                    if (tempFile.get() != null) {
-                                        try {
-                                            Files.delete(tempFile.get());
-                                        } catch (IOException e) {
-                                        }
-                                    }
-                                })
-                                .doOnCompleted(() -> fileEvents.onNext(new FileEvent(fp.getFile(), FileEvent.Type.updated, FileEvent.Location.local)));
+  @Resource
+  @Qualifier("conflictEvents")
+  private Subject<UbiFile, UbiFile> conflictEvents;
+
+  public LocalRepository(final Path basePath) {
+    this.basePath = basePath;
+  }
+
+  private static void check(final FileProvenience fp) {
+    checkNotNull(fp, "FileProvenience must not be null");
+    checkNotNull(fp.getFile(), "file must not be null");
+    checkNotNull(fp.getOrigin(), "file must not be null");
+  }
+
+  @Override
+  public Observable<Boolean> save(final FileProvenience fp) {
+    try {
+      check(fp);
+      final UbiFile rfile = fp.getFile();
+      final Optional<LocalFile> lfile =
+        localConfig.getLocalFiles().stream().filter(lf -> lf.equals(rfile)).findFirst();
+      if (!lfile.isPresent()) {
+        //new file
+        return onNewFileLocal.call(fp);
+      } else {
+        final VClock.Comparison comparison = rfile.getVclock().compare(lfile.get().getVclock());
+        if (comparison == VClock.Comparison.newer) {
+          lfile.get().copyFrom(rfile);
+          if (!rfile.isDeleted() && !rfile.isRemoved()) {
+            log.info("update file:{} locally from repo:{}", rfile.getPath(), fp.getOrigin());
+            AtomicReference<Path> tempFile = new AtomicReference<>();
+            return fp.getOrigin()
+              .get(fp.getFile())
+              .flatMap(new StoreTempFile())
+              .map(
+                new CopyFile(
+                  rfile.getSize(),
+                  basePath.resolve(rfile.getPath()),
+                  false,
+                  fp.getFile().getLastModified()))
+              .doOnCompleted(
+                () -> {
+                  if (tempFile.get() != null) {
+                    try {
+                      Files.delete(tempFile.get());
+                    } catch (IOException e) {
                     }
-                    //removed or deleted
-                    fileEvents.onNext(new FileEvent(fp.getFile(), rfile.isDeleted() ? FileEvent.Type.deleted : FileEvent.Type.removed, FileEvent.Location.local));
-
-                }
-            }
-            return Observable.just(false);
-        } catch (Exception e) {
-            return Observable.error(e);
+                  }
+                })
+              .doOnCompleted(
+                () ->
+                  fileEvents.onNext(
+                    new FileEvent(
+                      fp.getFile(), FileEvent.Type.updated, FileEvent.Location.local)));
+          }
+          //removed or deleted
+          fileEvents.onNext(
+            new FileEvent(
+              fp.getFile(),
+              rfile.isDeleted() ? FileEvent.Type.deleted : FileEvent.Type.removed,
+              FileEvent.Location.local));
         }
+      }
+      return Observable.just(false);
+    } catch (Exception e) {
+      return Observable.error(e);
     }
+  }
 
-    private Stream<LocalFile> getPathStream(final UbiFile file) {
-        return localConfig.getLocalFiles().stream().filter(file1 -> file1.equals(file));
-    }
+  private Stream<LocalFile> getPathStream(final UbiFile file) {
+    return localConfig.getLocalFiles().stream().filter(file1 -> file1.equals(file));
+  }
 
-    @Override
-    public Observable<InputStream> get(final UbiFile file) {
-        checkNotNull(file, "file must be not null");
-        return Observable.create(subscriber -> {
-            try {
-                subscriber.onNext(getPathStream(file)
-                        .map(LocalFile::getPath)
-                        .map(basePath::resolve)
-                        .map(Utils::readIs).findFirst().orElseThrow(() -> new NotFoundException(basePath.resolve(file.getPath()))));
-                subscriber.onCompleted();
-            } catch (final Exception e) {
-                subscriber.onError(e);
-            }
-        });
-
-    }
-
-    @Override
-    public boolean isLocal() {
-        return true;
-    }
-
-
-    public LocalConfig getLocalConfig() {
-        return localConfig;
-    }
-
-    public void setLocalConfig(LocalConfig localConfig) {
-        this.localConfig = localConfig;
-    }
-
-    public BasicFileAttributes attributes(final Path path) {
+  @Override
+  public Observable<InputStream> get(final UbiFile file) {
+    checkNotNull(file, "file must be not null");
+    return Observable.create(
+      subscriber -> {
         try {
-            return Files.readAttributes(basePath.resolve(path), BasicFileAttributes.class);
-        } catch (final IOException e) {
-            Throwables.propagate(e);
+          subscriber.onNext(
+            getPathStream(file)
+              .map(LocalFile::getPath)
+              .map(basePath::resolve)
+              .map(Utils::readIs)
+              .findFirst()
+              .orElseThrow(() -> new NotFoundException(basePath.resolve(file.getPath()))));
+          subscriber.onCompleted();
+        } catch (final Exception e) {
+          subscriber.onError(e);
         }
-        return null;
+      });
+  }
+
+  @Override
+  public boolean isLocal() {
+    return true;
+  }
+
+  public LocalConfig getLocalConfig() {
+    return localConfig;
+  }
+
+  public void setLocalConfig(LocalConfig localConfig) {
+    this.localConfig = localConfig;
+  }
+
+  public BasicFileAttributes attributes(final Path path) {
+    try {
+      return Files.readAttributes(basePath.resolve(path), BasicFileAttributes.class);
+    } catch (final IOException e) {
+      Throwables.propagate(e);
     }
+    return null;
+  }
 
-    public Path getBasePath() {
-        return basePath;
-    }
+  public Path getBasePath() {
+    return basePath;
+  }
 
-    public void setFileEvents(final Subject<FileEvent, FileEvent> fileEvents) {
-        this.fileEvents = fileEvents;
-    }
+  public void setFileEvents(final Subject<FileEvent, FileEvent> fileEvents) {
+    this.fileEvents = fileEvents;
+  }
 
-    public void setOnNewFileLocal(Func1<FileProvenience, Observable<Boolean>> onNewFileLocal) {
-        this.onNewFileLocal = onNewFileLocal;
-    }
+  public void setOnNewFileLocal(Func1<FileProvenience, Observable<Boolean>> onNewFileLocal) {
+    this.onNewFileLocal = onNewFileLocal;
+  }
 
-    @Override
-    public String toString() {
-        return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
-                .append("basePath", basePath)
-                .toString();
-    }
+  @Override
+  public String toString() {
+    return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
+      .append("basePath", basePath)
+      .toString();
+  }
 
-    @Override
-    public boolean equals(final Object o) {
-        if (this == o) return true;
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
 
-        if (o == null || getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) return false;
 
-        final LocalRepository that = (LocalRepository) o;
+    final LocalRepository that = (LocalRepository) o;
 
-        return new EqualsBuilder()
-                .append(basePath, that.basePath)
-                .isEquals();
-    }
+    return new EqualsBuilder().append(basePath, that.basePath).isEquals();
+  }
 
-    @Override
-    public int hashCode() {
-        return new HashCodeBuilder(17, 37)
-                .append(basePath)
-                .toHashCode();
-    }
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder(17, 37).append(basePath).toHashCode();
+  }
 }

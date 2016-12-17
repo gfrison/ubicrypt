@@ -9,8 +9,8 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
-<BorderPane xmlns="http://javafx.com/javafx/8.0.65"
-            xmlns:fx="http://javafx.com/fxml/1"
+<BorderPane xmlns:fx="http://javafx.com/fxml/1"
+            xmlns="http://javafx.com/javafx/8.0.65"
             fx:controller="ubicrypt.ui.ctrl.FileProviderController" VBox.vgrow="ALWAYS">
     <top>
         <VBox fx:id="topbox" alignment="CENTER" prefHeight="24.0" prefWidth="180.0" spacing="10.0">

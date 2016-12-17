@@ -1,10 +1,10 @@
-/**
+/*
  * Copyright (C) 2016 Giancarlo Frison <giancarlo@gfrison.com>
- * <p>
+ *
  * Licensed under the UbiCrypt License, Version 1.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * http://github.com/gfrison/ubicrypt/LICENSE.md
+ *     http://github.com/gfrison/ubicrypt/LICENSE.md
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -51,188 +51,215 @@ import static rx.Observable.create;
 import static rx.Observable.just;
 
 public class RemoteRepository implements IRepository {
-    private static final Logger log = getLogger(RemoteRepository.class);
-    final AtomicReference<AcquirerReleaser> releaserRef = new AtomicReference<>();
-    private final Observable.OnSubscribe<AcquirerReleaser> acquirer;
-    private final RemoteIO<RemoteConfig> configIO;
-    private final UbiProvider provider;
-    @Resource
-    private PublishSubject<ProgressFile> progressEvents = PublishSubject.create();
-    @Resource
-    private Subject<FileEvent, FileEvent> fileEvents = PublishSubject.create();
-    @Resource
-    private QueueLiner queueLiner;
-    private Func1<Observable<Boolean>, Observable<Boolean>> outboundQueue;
-    private Func1<Observable<InputStream>, Observable<InputStream>> inboundQueue;
-    private RemoteFileGetter fileGetter;
-    private List<IRemoteAction> actions;
+  private static final Logger log = getLogger(RemoteRepository.class);
+  final AtomicReference<AcquirerReleaser> releaserRef = new AtomicReference<>();
+  private final Observable.OnSubscribe<AcquirerReleaser> acquirer;
+  private final RemoteIO<RemoteConfig> configIO;
+  private final UbiProvider provider;
+  @Resource
+  private PublishSubject<ProgressFile> progressEvents = PublishSubject.create();
+  @Resource
+  private Subject<FileEvent, FileEvent> fileEvents = PublishSubject.create();
+  @Resource
+  private QueueLiner queueLiner;
+  private Func1<Observable<Boolean>, Observable<Boolean>> outboundQueue;
+  private Func1<Observable<InputStream>, Observable<InputStream>> inboundQueue;
+  private RemoteFileGetter fileGetter;
+  private List<IRemoteAction> actions;
 
+  public RemoteRepository(
+    final Observable.OnSubscribe<AcquirerReleaser> acquirer,
+    final UbiProvider provider,
+    final RemoteIO<RemoteConfig> configIO) {
+    this.acquirer = acquirer;
+    this.provider = provider;
+    this.configIO = configIO;
+    fileGetter = new RemoteFileGetter(acquirer, provider);
+    this.outboundQueue = (booleanObservable -> booleanObservable);
+  }
 
-    public RemoteRepository(final Observable.OnSubscribe<AcquirerReleaser> acquirer, final UbiProvider provider, final RemoteIO<RemoteConfig> configIO) {
-        this.acquirer = acquirer;
-        this.provider = provider;
-        this.configIO = configIO;
-        fileGetter = new RemoteFileGetter(acquirer, provider);
-        this.outboundQueue = (booleanObservable -> booleanObservable);
-    }
+  @PostConstruct
+  public void init() {
+    this.outboundQueue =
+      queueLiner.createEpiloguer(() -> saveConf(releaserRef.get().getRemoteConfig()));
+    this.inboundQueue = queueLiner.createEpiloguer();
+  }
 
-
-    @PostConstruct
-    public void init() {
-        this.outboundQueue = queueLiner.createEpiloguer(() -> saveConf(releaserRef.get().getRemoteConfig()));
-        this.inboundQueue = queueLiner.createEpiloguer();
-    }
-
-    @Override
-    public void error(UbiFile file) {
-        AtomicReference<Action0> releaser = new AtomicReference<>();
-        create(acquirer)
-                .doOnNext(acquirerReleaser -> releaser.set(acquirerReleaser.getReleaser()))
-                .map(AcquirerReleaser::getRemoteConfig)
-                .flatMap(rc -> {
-                    rc.getRemoteFiles().stream()
-                            .filter(f -> f.equals(file))
-                            .findFirst()
-                            .ifPresent(rcf -> rcf.setError(true));
-                    return saveConf(rc);
-                })
-                .doOnError(err -> {
-                    if (releaser.get() != null) {
-                        releaser.get().call();
-                    }
-                })
-                .doOnCompleted(() -> releaser.get().call())
-                .subscribe(Actions.empty(), Utils.logError);
-
-    }
-
-    @Override
-    public Observable<InputStream> get(final UbiFile file) {
-        return inboundQueue.call(fileGetter.call(file,
-                (rfile, is) -> new MonitorInputStream(new InflaterInputStream(AESGCM.decryptIs(rfile.getKey().getBytes(), is))))
-                .cast(MonitorInputStream.class)
-                .flatMap(is -> create(subscriber -> {
-                    final FileProvenience fp = new FileProvenience(file, this);
-                    is.monitor().subscribe(chunk -> progressEvents.onNext(new ProgressFile(fp, chunk)),
-                            err -> {
-                                Utils.logError.call(err);
-                                progressEvents.onNext(new ProgressFile(fp, false, true));
-                                subscriber.onError(err);
-                                Utils.close(is);
-                            }, () -> {
-                                progressEvents.onNext(new ProgressFile(fp, true, false));
-                                subscriber.onCompleted();
-                                Utils.close(is);
-                            });
-                    subscriber.onNext(is);
-                })));
-    }
-
-    private Observable<Boolean> saveConf(final RemoteConfig remoteConfig) {
-        AtomicReference<Action0> releaser = new AtomicReference<>();
-        return create(acquirer)
-                .doOnNext(acquirerReleaser -> releaser.set(acquirerReleaser.getReleaser()))
-                .flatMap(rel -> configIO.apply(remoteConfig)
-                        .doOnError(err -> releaser.get().call())
-                        .doOnCompleted(() -> releaser.get().call()));
-    }
-
-
-    @Override
-    public boolean isLocal() {
-        return false;
-    }
-
-    @Override
-    public Observable<Boolean> save(final FileProvenience fp) {
-        //only one remote save at time
-        return outboundQueue.call(saveSerial(fp));
-    }
-
-    private Observable<Boolean> saveSerial(final FileProvenience fp) {
-        //acquire permission
-        return create(acquirer).flatMap(releaser -> {
-            releaserRef.set(releaser);
-            final RemoteConfig remoteConfig = releaser.getRemoteConfig();
-            UbiFile<UbiFile> file = fp.getFile();
-            return actions.stream()
-                    .filter(test -> test.test(fp, remoteConfig))
-                    .map(action -> action.apply(fp, remoteConfig))
-                    .findFirst()
-                    .orElseGet(() -> {
-                        log.trace("no action for file:{} provider:{}", file.getPath(), provider);
-                        return just(false);
-                    });
+  @Override
+  public void error(UbiFile file) {
+    AtomicReference<Action0> releaser = new AtomicReference<>();
+    create(acquirer)
+      .doOnNext(acquirerReleaser -> releaser.set(acquirerReleaser.getReleaser()))
+      .map(AcquirerReleaser::getRemoteConfig)
+      .flatMap(
+        rc -> {
+          rc.getRemoteFiles()
+            .stream()
+            .filter(f -> f.equals(file))
+            .findFirst()
+            .ifPresent(rcf -> rcf.setError(true));
+          return saveConf(rc);
         })
-                .doOnError(releaserRef.get() != null ? err -> releaserRef.get().getReleaser().call() : Actions.empty())
-                .doOnError(err -> progressEvents.onNext(new ProgressFile(fp, this, false, true)))
-                .doOnError(err -> fileEvents(fp, FileEvent.Type.error))
-                .onErrorReturn(err -> {
-                    log.error(err.getMessage(), err);
-                    return false;
-                })
-                .doOnCompleted(releaserRef.get() != null ? releaserRef.get().getReleaser()::call : Actions.empty());
-    }
+      .doOnError(
+        err -> {
+          if (releaser.get() != null) {
+            releaser.get().call();
+          }
+        })
+      .doOnCompleted(() -> releaser.get().call())
+      .subscribe(
+        Actions.empty(),
+        err -> {
+          log.error(err.getMessage());
+          Utils.logError.call(err);
+        });
+  }
 
+  @Override
+  public Observable<InputStream> get(final UbiFile file) {
+    return inboundQueue.call(
+      fileGetter
+        .call(
+          file,
+          (rfile, is) ->
+            new MonitorInputStream(
+              new InflaterInputStream(AESGCM.decryptIs(rfile.getKey().getBytes(), is))))
+        .cast(MonitorInputStream.class)
+        .flatMap(
+          is ->
+            create(
+              subscriber -> {
+                final FileProvenience fp = new FileProvenience(file, this);
+                is.monitor()
+                  .subscribe(
+                    chunk -> progressEvents.onNext(new ProgressFile(fp, chunk)),
+                    err -> {
+                      Utils.logError.call(err);
+                      progressEvents.onNext(new ProgressFile(fp, false, true));
+                      subscriber.onError(err);
+                      Utils.close(is);
+                    },
+                    () -> {
+                      progressEvents.onNext(new ProgressFile(fp, true, false));
+                      subscriber.onCompleted();
+                      Utils.close(is);
+                    });
+                subscriber.onNext(is);
+              })));
+  }
 
-    private Action0 fileEvents(final FileProvenience fp, final FileEvent.Type fileEventType) {
-        return () -> fileEvents.onNext(new FileEvent(fp.getFile(), fileEventType, FileEvent.Location.remote));
-    }
+  private Observable<Boolean> saveConf(final RemoteConfig remoteConfig) {
+    AtomicReference<Action0> releaser = new AtomicReference<>();
+    return create(acquirer)
+      .doOnNext(acquirerReleaser -> releaser.set(acquirerReleaser.getReleaser()))
+      .flatMap(
+        rel ->
+          configIO
+            .apply(remoteConfig)
+            .doOnError(err -> releaser.get().call())
+            .doOnCompleted(() -> releaser.get().call()));
+  }
 
-    private InputStream monitor(final FileProvenience fp, final InputStream inputStream) {
-        final MonitorInputStream mis = new MonitorInputStream(inputStream);
-        mis.monitor().subscribe(chunk -> progressEvents.onNext(new ProgressFile(fp, this, chunk)),
-                err -> {
-                    log.error(err.getMessage(), err);
-                    progressEvents.onNext(new ProgressFile(fp, this, false, true));
-                },
-                () -> {
-                    log.debug("send complete progress file:{}", fp.getFile());
-                    progressEvents.onNext(new ProgressFile(fp, this, true, false));
-                });
-        return mis;
-    }
+  @Override
+  public boolean isLocal() {
+    return false;
+  }
 
+  @Override
+  public Observable<Boolean> save(final FileProvenience fp) {
+    //only one remote save at time
+    return outboundQueue.call(saveSerial(fp));
+  }
 
-    public void setProgressEvents(final PublishSubject<ProgressFile> progressEvents) {
-        this.progressEvents = progressEvents;
-    }
+  private Observable<Boolean> saveSerial(final FileProvenience fp) {
+    //acquire permission
+    return create(acquirer)
+      .flatMap(
+        releaser -> {
+          releaserRef.set(releaser);
+          final RemoteConfig remoteConfig = releaser.getRemoteConfig();
+          UbiFile<UbiFile> file = fp.getFile();
+          return actions
+            .stream()
+            .filter(test -> test.test(fp, remoteConfig))
+            .map(action -> action.apply(fp, remoteConfig))
+            .findFirst()
+            .orElseGet(
+              () -> {
+                log.trace("no action for file:{} provider:{}", file.getPath(), provider);
+                return just(false);
+              });
+        })
+      .doOnError(
+        releaserRef.get() != null
+          ? err -> releaserRef.get().getReleaser().call()
+          : Actions.empty())
+      .doOnError(err -> progressEvents.onNext(new ProgressFile(fp, this, false, true)))
+      .doOnError(err -> fileEvents(fp, FileEvent.Type.error))
+      .onErrorReturn(
+        err -> {
+          log.error(err.getMessage(), err);
+          return false;
+        })
+      .doOnCompleted(
+        releaserRef.get() != null ? releaserRef.get().getReleaser()::call : Actions.empty());
+  }
 
-    public void setFileEvents(final Subject<FileEvent, FileEvent> fileEvents) {
-        this.fileEvents = fileEvents;
-    }
+  private Action0 fileEvents(final FileProvenience fp, final FileEvent.Type fileEventType) {
+    return () ->
+      fileEvents.onNext(new FileEvent(fp.getFile(), fileEventType, FileEvent.Location.remote));
+  }
 
-    @Override
-    public String toString() {
-        return provider.toString();
-    }
+  private InputStream monitor(final FileProvenience fp, final InputStream inputStream) {
+    final MonitorInputStream mis = new MonitorInputStream(inputStream);
+    mis.monitor()
+      .subscribe(
+        chunk -> progressEvents.onNext(new ProgressFile(fp, this, chunk)),
+        err -> {
+          log.error(err.getMessage(), err);
+          progressEvents.onNext(new ProgressFile(fp, this, false, true));
+        },
+        () -> {
+          log.debug("send complete progress file:{}", fp.getFile());
+          progressEvents.onNext(new ProgressFile(fp, this, true, false));
+        });
+    return mis;
+  }
 
-    @Override
-    public boolean equals(final Object o) {
-        if (this == o) return true;
+  public void setProgressEvents(final PublishSubject<ProgressFile> progressEvents) {
+    this.progressEvents = progressEvents;
+  }
 
-        if (o == null || getClass() != o.getClass()) return false;
+  public void setFileEvents(final Subject<FileEvent, FileEvent> fileEvents) {
+    this.fileEvents = fileEvents;
+  }
 
-        final RemoteRepository that = (RemoteRepository) o;
+  @Override
+  public String toString() {
+    return provider.toString();
+  }
 
-        return new EqualsBuilder()
-                .append(provider, that.provider)
-                .isEquals();
-    }
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
 
-    @Override
-    public int hashCode() {
-        return new HashCodeBuilder(17, 37)
-                .append(provider)
-                .toHashCode();
-    }
+    if (o == null || getClass() != o.getClass()) return false;
 
+    final RemoteRepository that = (RemoteRepository) o;
 
-    public void setQueueLiner(final QueueLiner queueLiner) {
-        this.queueLiner = queueLiner;
-    }
+    return new EqualsBuilder().append(provider, that.provider).isEquals();
+  }
 
-    public void setActions(List<IRemoteAction> actions) {
-        this.actions = actions;
-    }
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder(17, 37).append(provider).toHashCode();
+  }
+
+  public void setQueueLiner(final QueueLiner queueLiner) {
+    this.queueLiner = queueLiner;
+  }
+
+  public void setActions(List<IRemoteAction> actions) {
+    this.actions = actions;
+  }
 }

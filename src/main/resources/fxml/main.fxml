@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import org.controlsfx.control.StatusBar?>
+<?import org.controlsfx.glyphfont.Glyph?>
 <?import java.net.URL?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Menu?>
@@ -12,9 +13,9 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
-<VBox id="vbox" prefHeight="500.0" prefWidth="500.0" xmlns="http://javafx.com/javafx/8.0.65"
-      VBox.vgrow="ALWAYS"
-      xmlns:fx="http://javafx.com/fxml/1" fx:controller="ubicrypt.ui.ctrl.MainController">
+<VBox xmlns:fx="http://javafx.com/fxml/1" id="vbox" prefHeight="500.0" prefWidth="500.0"
+      xmlns="http://javafx.com/javafx/8.0.65"
+      VBox.vgrow="ALWAYS" fx:controller="ubicrypt.ui.ctrl.MainController">
     <stylesheets>
         <URL value="@../main.css"/>
     </stylesheets>
@@ -22,16 +23,31 @@
         <menus>
             <Menu text="File">
                 <items>
-                    <MenuItem text="Add Files" onAction="#addFiles"/>
-                    <MenuItem text="Add Folder" onAction="#addFolder"/>
+                    <MenuItem text="Add Files" onAction="#addFiles">
+                        <graphic>
+                            <Glyph fontFamily="FontAwesome" icon="FILE"/>
+                        </graphic>
+                    </MenuItem>
+                    <MenuItem text="Add Folder" onAction="#addFolder">
+                        <graphic>
+                            <Glyph fontFamily="FontAwesome" icon="FOLDER"/>
+                        </graphic>
+                    </MenuItem>
                     <SeparatorMenuItem/>
                     <MenuItem text="Exit" onAction="#exit"/>
                 </items>
             </Menu>
             <Menu text="Cloud Storage">
                 <items>
-                    <MenuItem text="Add Local Folder" onAction="#addFileProvider"/>
-                    <MenuItem text="Add Amazon S3" onAction="#addS3Provider"/>
+                    <MenuItem text="Add Local Folder" onAction="#addFileProvider">
+                        <!--
+                                                <graphic>
+                                                    <Glyph fontFamily="FontAwesome" icon="FOLDER"/>
+                                                </graphic>
+                        -->
+                    </MenuItem>
+                    <MenuItem text="Add Amazon S3" onAction="#addS3Provider">
+                    </MenuItem>
                     <MenuItem text="Add Google Drive" onAction="#addGdriveProvider"/>
                 </items>
             </Menu>

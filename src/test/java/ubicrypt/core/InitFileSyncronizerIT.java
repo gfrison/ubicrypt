@@ -1,10 +1,10 @@
-/**
+/*
  * Copyright (C) 2016 Giancarlo Frison <giancarlo@gfrison.com>
- * <p>
+ *
  * Licensed under the UbiCrypt License, Version 1.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * http://github.com/gfrison/ubicrypt/LICENSE.md
+ *     http://github.com/gfrison/ubicrypt/LICENSE.md
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -63,191 +63,235 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Ignore
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(loader = AnnotationConfigContextLoader.class, classes = {InitFileSyncronizerIT.Config.class})
+@ContextConfiguration(
+  loader = AnnotationConfigContextLoader.class,
+  classes = {InitFileSyncronizerIT.Config.class}
+)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class InitFileSyncronizerIT implements ApplicationContextAware {
-    @Resource
-    @Qualifier("providerEvent")
-    Subject<ProviderEvent, ProviderEvent> providerStatusEvents;
-    @Inject
-    LocalConfig localConfig;
-    @Inject
-    LocalRepository localRepository;
-    @Inject
-    InitFileSyncronizer syncronizer;
-    @Inject
-    IPGPService ipgpService;
-    int deviceId = Utils.deviceId();
-    private ApplicationContext ctx;
+  @Resource
+  @Qualifier("providerEvent")
+  Subject<ProviderEvent, ProviderEvent> providerStatusEvents;
 
-    @Before
-    public void setUp() throws Exception {
-        TestUtils.deleteDirs();
-        TestUtils.createDirs();
-    }
+  @Inject LocalConfig localConfig;
+  @Inject LocalRepository localRepository;
+  @Inject InitFileSyncronizer syncronizer;
+  @Inject IPGPService ipgpService;
+  int deviceId = Utils.deviceId();
+  private ApplicationContext ctx;
 
-    @After
-    public void tearDown() throws Exception {
-        TestUtils.deleteDirs();
-    }
+  @Before
+  public void setUp() throws Exception {
+    TestUtils.deleteDirs();
+    TestUtils.createDirs();
+  }
 
-    @Test
-    public void local2Remote() throws Exception {
-        Utils.write(TestUtils.tmp.resolve("origin"), "ciao".getBytes()).toBlocking().last();
-        final LocalFile origin = new LocalFile() {{
+  @After
+  public void tearDown() throws Exception {
+    TestUtils.deleteDirs();
+  }
+
+  @Test
+  public void local2Remote() throws Exception {
+    Utils.write(TestUtils.tmp.resolve("origin"), "ciao".getBytes()).toBlocking().last();
+    final LocalFile origin =
+        new LocalFile() {
+          {
             setPath(Paths.get("origin"));
-        }};
-        localConfig.getLocalFiles().add(origin);
+          }
+        };
+    localConfig.getLocalFiles().add(origin);
 
-        final CountDownLatch cd = new CountDownLatch(1);
-        syncronizer.setOnComplete(cd::countDown);
-        final FileProvider fp1 = TestUtils.fileProvider(TestUtils.tmp2);
-        final ProviderHook hk1 = ctx.getBean(ProviderHook.class, fp1);
+    final CountDownLatch cd = new CountDownLatch(1);
+    syncronizer.setOnComplete(cd::countDown);
+    final FileProvider fp1 = TestUtils.fileProvider(TestUtils.tmp2);
+    final ProviderHook hk1 = ctx.getBean(ProviderHook.class, fp1);
 
-        assertThat(cd.await(4, SECONDS)).isTrue();
-        assertThat(IOUtils.readLines(hk1.getRepository().get(origin).toBlocking().last())).contains("ciao");
-    }
+    assertThat(cd.await(4, SECONDS)).isTrue();
+    assertThat(IOUtils.readLines(hk1.getRepository().get(origin).toBlocking().last()))
+        .contains("ciao");
+  }
 
-    @Test
-    public void local2Remote2Providers() throws Exception {
-        Utils.write(TestUtils.tmp.resolve("origin"), "ciao".getBytes()).toBlocking().last();
-        final LocalFile origin = new LocalFile() {{
+  @Test
+  public void local2Remote2Providers() throws Exception {
+    Utils.write(TestUtils.tmp.resolve("origin"), "ciao".getBytes()).toBlocking().last();
+    final LocalFile origin =
+        new LocalFile() {
+          {
             setPath(Paths.get("origin"));
-        }};
-        localConfig.getLocalFiles().add(origin);
+          }
+        };
+    localConfig.getLocalFiles().add(origin);
 
-        final CountDownLatch cd = new CountDownLatch(1);
-        syncronizer.setOnComplete(cd::countDown);
-        final FileProvider fp1 = TestUtils.fileProvider(TestUtils.tmp);
-        final FileProvider fp2 = TestUtils.fileProvider(TestUtils.tmp2);
-        final ProviderHook hk1 = ctx.getBean(ProviderHook.class, fp1);
-        final ProviderHook hk2 = ctx.getBean(ProviderHook.class, fp2);
+    final CountDownLatch cd = new CountDownLatch(1);
+    syncronizer.setOnComplete(cd::countDown);
+    final FileProvider fp1 = TestUtils.fileProvider(TestUtils.tmp);
+    final FileProvider fp2 = TestUtils.fileProvider(TestUtils.tmp2);
+    final ProviderHook hk1 = ctx.getBean(ProviderHook.class, fp1);
+    final ProviderHook hk2 = ctx.getBean(ProviderHook.class, fp2);
 
-        assertThat(cd.await(4, SECONDS)).isTrue();
-        Thread.sleep(100);
-        assertThat(IOUtils.readLines(hk1.getRepository().get(origin).toBlocking().first())).contains("ciao");
-        assertThat(IOUtils.readLines(hk2.getRepository().get(origin).toBlocking().first())).contains("ciao");
-    }
+    assertThat(cd.await(4, SECONDS)).isTrue();
+    Thread.sleep(100);
+    assertThat(IOUtils.readLines(hk1.getRepository().get(origin).toBlocking().first()))
+        .contains("ciao");
+    assertThat(IOUtils.readLines(hk2.getRepository().get(origin).toBlocking().first()))
+        .contains("ciao");
+  }
 
-    @Test
-    public void local2RemoteRemoved() throws Exception {
-        Utils.write(TestUtils.tmp.resolve("origin"), "ciao".getBytes()).toBlocking().last();
-        final LocalFile origin = new LocalFile() {{
+  @Test
+  public void local2RemoteRemoved() throws Exception {
+    Utils.write(TestUtils.tmp.resolve("origin"), "ciao".getBytes()).toBlocking().last();
+    final LocalFile origin =
+        new LocalFile() {
+          {
             setPath(Paths.get("origin"));
             setRemoved(true);
-        }};
-        localConfig.getLocalFiles().add(origin);
+          }
+        };
+    localConfig.getLocalFiles().add(origin);
 
-        final CountDownLatch cd = new CountDownLatch(1);
-        syncronizer.setOnComplete(cd::countDown);
-        final FileProvider fp1 = TestUtils.fileProvider(TestUtils.tmp2);
-        final ProviderHook hk1 = ctx.getBean(ProviderHook.class, fp1);
+    final CountDownLatch cd = new CountDownLatch(1);
+    syncronizer.setOnComplete(cd::countDown);
+    final FileProvider fp1 = TestUtils.fileProvider(TestUtils.tmp2);
+    final ProviderHook hk1 = ctx.getBean(ProviderHook.class, fp1);
 
-        assertThat(cd.await(4, SECONDS)).isTrue();
-    }
+    assertThat(cd.await(4, SECONDS)).isTrue();
+  }
 
-    @Test
-    public void remote2Local() throws Exception {
-        final RemoteFile remoteFile = new RemoteFile() {{
+  @Test
+  public void remote2Local() throws Exception {
+    final RemoteFile remoteFile =
+        new RemoteFile() {
+          {
             setRemoteName("origin");
-        }};
-        final CountDownLatch cd = new CountDownLatch(1);
-        syncronizer.setOnComplete(cd::countDown);
-        final FileProvider fp1 = TestUtils.fileProvider(TestUtils.tmp2);
-        fp1.put("origin", AESGCM.encryptIs(remoteFile.getKey().getBytes(), new DeflaterInputStream(new ByteArrayInputStream("ciao".getBytes())))).toBlocking().last();
-        final ObjectSerializer os = new ObjectSerializer(fp1) {{
+          }
+        };
+    final CountDownLatch cd = new CountDownLatch(1);
+    syncronizer.setOnComplete(cd::countDown);
+    final FileProvider fp1 = TestUtils.fileProvider(TestUtils.tmp2);
+    fp1.put(
+            "origin",
+            AESGCM.encryptIs(
+                remoteFile.getKey().getBytes(),
+                new DeflaterInputStream(new ByteArrayInputStream("ciao".getBytes()))))
+        .toBlocking()
+        .last();
+    final ObjectSerializer os =
+        new ObjectSerializer(fp1) {
+          {
             setPgpService(ipgpService);
-        }};
-        os.putObject(new RemoteConfig() {{
-            getRemoteFiles().add(remoteFile);
-        }}, fp1.getConfFile()).toBlocking().last();
-        final ProviderHook hk1 = ctx.getBean(ProviderHook.class, fp1);
-        assertThat(cd.await(4, SECONDS)).isTrue();
-        assertThat(localConfig.getLocalFiles()).hasSize(1);
-    }
+          }
+        };
+    os.putObject(
+            new RemoteConfig() {
+              {
+                getRemoteFiles().add(remoteFile);
+              }
+            },
+            fp1.getConfFile())
+        .toBlocking()
+        .last();
+    final ProviderHook hk1 = ctx.getBean(ProviderHook.class, fp1);
+    assertThat(cd.await(4, SECONDS)).isTrue();
+    assertThat(localConfig.getLocalFiles()).hasSize(1);
+  }
 
-    @Test
-    public void remote2localRemoved() throws Exception {
-        Utils.write(TestUtils.tmp.resolve("origin"), "ciao".getBytes()).toBlocking().last();
-        final LocalFile origin = new LocalFile() {{
+  @Test
+  public void remote2localRemoved() throws Exception {
+    Utils.write(TestUtils.tmp.resolve("origin"), "ciao".getBytes()).toBlocking().last();
+    final LocalFile origin =
+        new LocalFile() {
+          {
             setPath(Paths.get("origin"));
             getVclock().increment(deviceId);
-        }};
-        localConfig.getLocalFiles().add(origin);
+          }
+        };
+    localConfig.getLocalFiles().add(origin);
 
-        final RemoteFile remoteFile = new RemoteFile() {{
+    final RemoteFile remoteFile =
+        new RemoteFile() {
+          {
             setId(origin.getId());
             setRemoteName("origin");
             setPath(Paths.get("origin"));
             setRemoved(true);
             getVclock().increment(deviceId);
             getVclock().increment(deviceId);
-        }};
-        final CountDownLatch cd = new CountDownLatch(1);
-        syncronizer.setOnComplete(cd::countDown);
-        final FileProvider fp1 = TestUtils.fileProvider(TestUtils.tmp2);
-        final ObjectSerializer os = new ObjectSerializer(fp1) {{
+          }
+        };
+    final CountDownLatch cd = new CountDownLatch(1);
+    syncronizer.setOnComplete(cd::countDown);
+    final FileProvider fp1 = TestUtils.fileProvider(TestUtils.tmp2);
+    final ObjectSerializer os =
+        new ObjectSerializer(fp1) {
+          {
             setPgpService(ipgpService);
-        }};
-        os.putObject(new RemoteConfig() {{
-            getRemoteFiles().add(remoteFile);
-        }}, fp1.getConfFile()).toBlocking().last();
-        final ProviderHook hk1 = ctx.getBean(ProviderHook.class, fp1);
+          }
+        };
+    os.putObject(
+            new RemoteConfig() {
+              {
+                getRemoteFiles().add(remoteFile);
+              }
+            },
+            fp1.getConfFile())
+        .toBlocking()
+        .last();
+    final ProviderHook hk1 = ctx.getBean(ProviderHook.class, fp1);
 
-        assertThat(cd.await(4, SECONDS)).isTrue();
-        assertThat(localConfig.getLocalFiles()).hasSize(1);
-        assertThat(localConfig.getLocalFiles().iterator().next().isRemoved()).isTrue();
+    assertThat(cd.await(4, SECONDS)).isTrue();
+    assertThat(localConfig.getLocalFiles()).hasSize(1);
+    assertThat(localConfig.getLocalFiles().iterator().next().isRemoved()).isTrue();
+  }
+
+  @Override
+  public void setApplicationContext(final ApplicationContext applicationContext)
+      throws BeansException {
+    this.ctx = applicationContext;
+  }
+
+  @Configuration
+  @Import(RemoteCtxConf.class)
+  public static class Config {
+
+    @Bean
+    public static PropertySourcesPlaceholderConfigurer propertyConfigIn() {
+      return new PropertySourcesPlaceholderConfigurer();
     }
 
-    @Override
-    public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
-        this.ctx = applicationContext;
+    @Bean
+    public Subject<Boolean, Boolean> synchProcessing() {
+      return PublishSubject.create();
     }
 
-    @Configuration
-    @Import(RemoteCtxConf.class)
-    public static class Config {
-
-
-        @Bean
-        public static PropertySourcesPlaceholderConfigurer propertyConfigIn() {
-            return new PropertySourcesPlaceholderConfigurer();
-        }
-
-        @Bean
-        public Subject<Boolean, Boolean> synchProcessing() {
-            return PublishSubject.create();
-        }
-
-        @Bean
-        public LocalConfig localConfig() {
-            return new LocalConfig();
-        }
-
-        @Bean
-        public InitFileSyncronizer initFileSyncronizer() {
-            return new InitFileSyncronizer();
-        }
-
-        @Bean
-        public LocalRepository localRepository() {
-            return new LocalRepository(TestUtils.tmp);
-        }
-
-        @Bean
-        public IPGPService pgpService() {
-            return new PGPService();
-        }
-
-        @Bean
-        public PGPKeyPair keyPair() {
-            return PGPEC.encryptionKey();
-        }
-
-        @Bean
-        public int deviceId() {
-            return Utils.deviceId();
-        }
+    @Bean
+    public LocalConfig localConfig() {
+      return new LocalConfig();
     }
 
+    @Bean
+    public InitFileSyncronizer initFileSyncronizer() {
+      return new InitFileSyncronizer();
+    }
+
+    @Bean
+    public LocalRepository localRepository() {
+      return new LocalRepository(TestUtils.tmp);
+    }
+
+    @Bean
+    public IPGPService pgpService() {
+      return new PGPService();
+    }
+
+    @Bean
+    public PGPKeyPair keyPair() {
+      return PGPEC.encryptionKey();
+    }
+
+    @Bean
+    public int deviceId() {
+      return Utils.deviceId();
+    }
+  }
 }

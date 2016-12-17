@@ -1,10 +1,10 @@
-/**
+/*
  * Copyright (C) 2016 Giancarlo Frison <giancarlo@gfrison.com>
- * <p>
+ *
  * Licensed under the UbiCrypt License, Version 1.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * http://github.com/gfrison/ubicrypt/LICENSE.md
+ *     http://github.com/gfrison/ubicrypt/LICENSE.md
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -49,106 +49,106 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(loader = AnnotationConfigContextLoader.class, classes = {RemoveLockOnShutdownIT.Config.class})
+@ContextConfiguration(
+  loader = AnnotationConfigContextLoader.class,
+  classes = {RemoveLockOnShutdownIT.Config.class}
+)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class RemoveLockOnShutdownIT {
-    @Inject
-    ProviderLifeCycle providerLifeCycle;
-    @Inject
-    RemoveLockOnShutdown removeLockOnShutdown;
-    @Mock
-    UbiProvider provider;
-    @Mock
-    ProviderHook hook;
+  @Inject ProviderLifeCycle providerLifeCycle;
+  @Inject RemoveLockOnShutdown removeLockOnShutdown;
+  @Mock UbiProvider provider;
+  @Mock ProviderHook hook;
 
-    @Before
-    public final void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+  @Before
+  public final void setUp() throws Exception {
+    MockitoAnnotations.initMocks(this);
+  }
+
+  @Test
+  public void shutdown() throws Exception {
+    assertThat(removeLockOnShutdown).isNotNull();
+    when(provider.getLockFile())
+        .thenReturn(
+            new RemoteFile() {
+              {
+                setRemoteName("remote");
+              }
+            });
+    when(provider.put(eq("remote"), any(InputStream.class))).thenReturn(Observable.just(true));
+    when(provider.delete(eq("remote"))).thenReturn(Observable.just(true));
+    when(provider.toString()).thenReturn("test");
+    when(hook.getProvider()).thenReturn(provider);
+    when(providerLifeCycle.currentlyActiveProviders()).thenReturn(asList(hook));
+    removeLockOnShutdown.stop().toBlocking().last();
+  }
+
+  @Configuration
+  public static class Config {
+
+    @Bean
+    public static PropertySourcesPlaceholderConfigurer propertyConfigInDev() {
+      return new PropertySourcesPlaceholderConfigurer();
     }
 
-    @Test
-    public void shutdown() throws Exception {
-        assertThat(removeLockOnShutdown).isNotNull();
-        when(provider.getLockFile()).thenReturn(new RemoteFile() {{
-            setRemoteName("remote");
-        }});
-        when(provider.put(eq("remote"), any(InputStream.class))).thenReturn(Observable.just(true));
-        when(provider.delete(eq("remote"))).thenReturn(Observable.just(true));
-        when(provider.toString()).thenReturn("test");
-        when(hook.getProvider()).thenReturn(provider);
-        when(providerLifeCycle.currentlyActiveProviders()).thenReturn(asList(hook));
-        removeLockOnShutdown.stop().toBlocking().last();
+    @Bean
+    public RemoveLockOnShutdown removeLockOnShutdown() {
+      return new RemoveLockOnShutdown();
     }
 
-    @Configuration
-    public static class Config {
-
-        @Bean
-        public RemoveLockOnShutdown removeLockOnShutdown() {
-            return new RemoveLockOnShutdown();
-        }
-
-        @Bean
-        public ProviderLifeCycle providerLifeCycle() {
-            return mock(ProviderLifeCycle.class);
-        }
-
-
-        @Bean
-        public Subject appEvents() {
-            return BufferUntilSubscriber.create();
-        }
-
-        @Bean
-        public Subject providerEvent() {
-            return BufferUntilSubscriber.create();
-        }
-
-        @Bean
-        public Subject progressEvents() {
-            return BufferUntilSubscriber.create();
-        }
-
-        @Bean
-        public InProgressTracker inProgressTracker() {
-            return new InProgressTracker();
-        }
-
-        @Bean
-        public static PropertySourcesPlaceholderConfigurer propertyConfigInDev() {
-            return new PropertySourcesPlaceholderConfigurer();
-        }
-
-        @Bean
-        public LocalConfig localConfig() {
-            return new LocalConfig();
-        }
-
-        @Bean
-        public int deviceId() {
-            return 1;
-        }
-
-        @Bean
-        IPGPService pgpService() {
-            return new IPGPService() {
-                @Override
-                public InputStream encrypt(InputStream clearBytes) {
-                    return clearBytes;
-                }
-
-                @Override
-                public InputStream decrypt(InputStream cipherText) {
-                    return cipherText;
-                }
-
-                @Override
-                public long keyId() {
-                    return 0;
-                }
-            };
-        }
-
+    @Bean
+    public ProviderLifeCycle providerLifeCycle() {
+      return mock(ProviderLifeCycle.class);
     }
 
+    @Bean
+    public Subject appEvents() {
+      return BufferUntilSubscriber.create();
+    }
+
+    @Bean
+    public Subject providerEvent() {
+      return BufferUntilSubscriber.create();
+    }
+
+    @Bean
+    public Subject progressEvents() {
+      return BufferUntilSubscriber.create();
+    }
+
+    @Bean
+    public InProgressTracker inProgressTracker() {
+      return new InProgressTracker();
+    }
+
+    @Bean
+    public LocalConfig localConfig() {
+      return new LocalConfig();
+    }
+
+    @Bean
+    public int deviceId() {
+      return 1;
+    }
+
+    @Bean
+    IPGPService pgpService() {
+      return new IPGPService() {
+        @Override
+        public InputStream encrypt(InputStream clearBytes) {
+          return clearBytes;
+        }
+
+        @Override
+        public InputStream decrypt(InputStream cipherText) {
+          return cipherText;
+        }
+
+        @Override
+        public long keyId() {
+          return 0;
+        }
+      };
+    }
+  }
 }

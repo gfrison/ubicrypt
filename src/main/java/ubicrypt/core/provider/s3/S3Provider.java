@@ -1,10 +1,10 @@
-/**
+/*
  * Copyright (C) 2016 Giancarlo Frison <giancarlo@gfrison.com>
- * <p>
+ *
  * Licensed under the UbiCrypt License, Version 1.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * http://github.com/gfrison/ubicrypt/LICENSE.md
+ *     http://github.com/gfrison/ubicrypt/LICENSE.md
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,6 +19,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.S3Object;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,200 +44,242 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.substringAfter;
 
 public class S3Provider extends UbiProvider {
-    private S3Conf conf;
-    private transient AmazonS3 client;
-    private transient String prefix;
-    private transient final AtomicBoolean initialized = new AtomicBoolean(false);
-    private transient final AtomicLong maxKey = new AtomicLong(0);
-    private transient final Function<String, Observable<Tuple2<String, String>>> checker = (pid) -> Observable.create(subscriber -> {
-        if (!initialized.get()) {
+  private final transient AtomicBoolean initialized = new AtomicBoolean(false);
+  private final transient AtomicLong maxKey = new AtomicLong(0);
+  private final transient Function<String, Observable<Tuple2<String, String>>> checker =
+    (pid) ->
+      Observable.create(
+        subscriber -> {
+          if (!initialized.get()) {
             subscriber.onError(new RuntimeException("s3 not initialized"));
             return;
-        }
-        String[] ids = pid.split(":");
-        if (ids.length != 2) {
+          }
+          String[] ids = pid.split(":");
+          if (ids.length != 2) {
             subscriber.onError(new RuntimeException("Invalid object ID:" + pid));
             return;
-        }
-        if (isEmpty(ids[0])) {
+          }
+          if (isEmpty(ids[0])) {
             subscriber.onError(new RuntimeException("no bucket provided in the ID"));
             return;
-        }
-        if (isEmpty(ids[1])) {
+          }
+          if (isEmpty(ids[1])) {
             subscriber.onError(new RuntimeException("no key provided in the ID"));
             return;
-        }
-        subscriber.onNext(Tuple.of(ids[0], ids[1]));
-        subscriber.onCompleted();
-    });
+          }
+          subscriber.onNext(Tuple.of(ids[0], ids[1]));
+          subscriber.onCompleted();
+        });
+  private S3Conf conf;
+  private transient AmazonS3 client;
+  private transient String prefix;
 
-    @Override
-    public Observable<ProviderStatus> init(long userId) {
-        return Observable.<ProviderStatus>create(subscriber -> {
-            if (conf == null) {
-                subscriber.onError(new RuntimeException("conf not specified"));
+  @Override
+  public Observable<ProviderStatus> init(long userId) {
+    return Observable.<ProviderStatus>create(
+      subscriber -> {
+        if (conf == null) {
+          subscriber.onError(new RuntimeException("conf not specified"));
+          return;
+        }
+        try {
+          client =
+            new AmazonS3Client(
+              new AWSCredentials() {
+                @Override
+                public String getAWSAccessKeyId() {
+                  return conf.getAccessKeyId();
+                }
+
+                @Override
+                public String getAWSSecretKey() {
+                  return conf.getSecrectKey();
+                }
+              });
+          if (conf.getRegion() != null) {
+            client.setRegion(Region.getRegion(conf.getRegion()));
+          }
+          prefix = Long.toString(userId, MAX_RADIX) + "/";
+          try {
+            if (!client.doesBucketExist(conf.getBucket())) {
+              client.createBucket(conf.getBucket());
+            }
+          } catch (AmazonS3Exception e) {
+            S3Error error = S3Error.from(e.getErrorResponseXml());
+            switch (error.getCode()) {
+              case "BucketAlreadyOwnedByYou":
+                //already present
+                break;
+              default:
+                subscriber.onError(e);
                 return;
             }
-            try {
-                client = new AmazonS3Client(new AWSCredentials() {
-                    @Override
-                    public String getAWSAccessKeyId() {
-                        return conf.getAccessKeyId();
-                    }
+          }
+          maxKey.set(
+            client
+              .listObjects(conf.getBucket(), prefix)
+              .getObjectSummaries()
+              .stream()
+              .map(
+                obj -> {
+                  try {
+                    return Long.valueOf(
+                      substringAfter(obj.getKey(), prefix), MAX_RADIX);
+                  } catch (Exception e) {
+                    return 0L;
+                  }
+                })
+              .max(Long::compareTo)
+              .orElse(0L));
 
-                    @Override
-                    public String getAWSSecretKey() {
-                        return conf.getSecrectKey();
-                    }
-                });
-                if (conf.getRegion() != null) {
-                    client.setRegion(Region.getRegion(conf.getRegion()));
-                }
-                prefix = Long.toString(userId, MAX_RADIX) + "/";
-                try {
-                    if (!client.doesBucketExist(conf.getBucket())) {
-                        client.createBucket(conf.getBucket());
-                    }
-                } catch (AmazonS3Exception e) {
-                    S3Error error = S3Error.from(e.getErrorResponseXml());
-                    switch (error.getCode()) {
-                        case "BucketAlreadyOwnedByYou":
-                            //already present
-                            break;
-                        default:
-                            subscriber.onError(e);
-                            return;
-                    }
-                }
-                maxKey.set(client.listObjects(conf.getBucket(), prefix).getObjectSummaries().stream().map(obj -> {
-                    try {
-                        return Long.valueOf(substringAfter(obj.getKey(), prefix), MAX_RADIX);
-                    } catch (Exception e) {
-                        return 0L;
-                    }
-                }).max(Long::compareTo).orElse(0L));
+          initialized.set(true);
+          subscriber.onNext(ProviderStatus.initialized);
+          subscriber.onCompleted();
+        } catch (Exception e) {
+          subscriber.onError(e);
+        }
+      })
+      .subscribeOn(Schedulers.io());
+  }
 
-                initialized.set(true);
-                subscriber.onNext(ProviderStatus.initialized);
-                subscriber.onCompleted();
-            } catch (Exception e) {
-                subscriber.onError(e);
-            }
-        }).subscribeOn(Schedulers.io());
-    }
+  @Override
+  public Observable<String> post(InputStream is) {
+    String key =
+      conf.getBucket() + ":" + prefix + Long.toString(maxKey.incrementAndGet(), MAX_RADIX);
+    return put(key, is).map(res -> key);
+  }
 
-    @Override
-    public Observable<String> post(InputStream is) {
-        String key = conf.getBucket() + ":" + prefix + Long.toString(maxKey.incrementAndGet(), MAX_RADIX);
-        return put(key, is).map(res -> key);
-    }
-
-    @Override
-    public Observable<Boolean> delete(String pid) {
-        return checker.apply(pid).flatMap(pids -> Observable.<Boolean>create(subscriber -> {
-            if (!initialized.get()) {
+  @Override
+  public Observable<Boolean> delete(String pid) {
+    return checker
+      .apply(pid)
+      .flatMap(
+        pids ->
+          Observable.<Boolean>create(
+            subscriber -> {
+              if (!initialized.get()) {
                 subscriber.onError(new RuntimeException("s3 not initialized"));
                 return;
-            }
-            try {
+              }
+              try {
                 client.deleteObject(pids.getT1(), pids.getT2());
                 subscriber.onNext(true);
                 subscriber.onCompleted();
-            } catch (AmazonS3Exception e) {
+              } catch (AmazonS3Exception e) {
                 error(pid, subscriber, e);
-            } catch (Exception e) {
+              } catch (Exception e) {
                 subscriber.onError(e);
-            }
-        })).subscribeOn(Schedulers.io());
-    }
+              }
+            }))
+      .subscribeOn(Schedulers.io());
+  }
 
+  @Override
+  public Observable<Boolean> put(String pid, InputStream is) {
+    return checker
+      .apply(pid)
+      .flatMap(
+        pids ->
+          Observable.<Boolean>create(
+            subscriber -> {
+              try {
+                new StoreTempFile()
+                  .call(is)
+                  .subscribe(
+                    path -> {
+                      try {
+                        client.putObject(pids.getT1(), pids.getT2(), path.toFile());
+                        subscriber.onNext(true);
+                        subscriber.onCompleted();
+                      } catch (Exception e) {
+                        subscriber.onError(e);
+                        return;
+                      }
+                      try {
+                        Files.delete(path);
+                      } catch (IOException e) {
+                      }
+                    },
+                    subscriber::onError);
 
-    @Override
-    public Observable<Boolean> put(String pid, InputStream is) {
-        return checker.apply(pid).flatMap(pids -> Observable.<Boolean>create(subscriber -> {
-            try {
-                new StoreTempFile().call(is)
-                        .subscribe(path -> {
-                            try {
-                                client.putObject(pids.getT1(), pids.getT2(), path.toFile());
-                                subscriber.onNext(true);
-                                subscriber.onCompleted();
-                            } catch (Exception e) {
-                                subscriber.onError(e);
-                                return;
-                            }
-                            try {
-                                Files.delete(path);
-                            } catch (IOException e) {
-                            }
-                        }, subscriber::onError);
-
-            } catch (Exception e) {
+              } catch (Exception e) {
                 subscriber.onError(e);
                 Utils.close(is);
-            }
-        })).subscribeOn(Schedulers.io());
-    }
+              }
+            }))
+      .subscribeOn(Schedulers.io());
+  }
 
-    @Override
-    public Observable<InputStream> get(String pid) {
-        return checker.apply(pid).flatMap(pids -> Observable.<InputStream>create(subscriber -> {
-            if (!initialized.get()) {
+  @Override
+  public Observable<InputStream> get(String pid) {
+    return checker
+      .apply(pid)
+      .flatMap(
+        pids ->
+          Observable.<InputStream>create(
+            subscriber -> {
+              if (!initialized.get()) {
                 subscriber.onError(new RuntimeException("s3 not initialized"));
                 return;
-            }
-            InputStream is = null;
-            try {
+              }
+              InputStream is = null;
+              try {
                 S3Object obj = client.getObject(pids.getT1(), pids.getT2());
                 is = obj.getObjectContent();
                 subscriber.onNext(is);
                 subscriber.onCompleted();
-            } catch (AmazonS3Exception e) {
+              } catch (AmazonS3Exception e) {
                 Utils.close(is);
                 error(pid, subscriber, e);
-            } catch (Exception e) {
+              } catch (Exception e) {
                 subscriber.onError(e);
                 Utils.close(is);
-            }
-        })).subscribeOn(Schedulers.io());
-    }
+              }
+            }))
+      .subscribeOn(Schedulers.io());
+  }
 
-    @Override
-    public void close() {
-        initialized.set(false);
-    }
+  @Override
+  public void close() {
+    initialized.set(false);
+  }
 
-    @Override
-    public String code() {
-        return "s3";
-    }
+  @Override
+  public String code() {
+    return "s3";
+  }
 
-    @Override
-    public String providerId() {
-        return "s3://" + conf.getBucket();
-    }
+  @Override
+  public String providerId() {
+    return "s3://" + conf.getBucket();
+  }
 
-    public S3Conf getConf() {
-        return conf;
-    }
+  public S3Conf getConf() {
+    return conf;
+  }
 
-    public void setConf(S3Conf conf) {
-        this.conf = conf;
-    }
+  public void setConf(S3Conf conf) {
+    this.conf = conf;
+  }
 
-    @Override
-    public String toString() {
-        return providerId();
-    }
+  @Override
+  public String toString() {
+    return providerId();
+  }
 
-    private void error(String pid, Subscriber subscriber, AmazonS3Exception e) {
-        S3Error error = S3Error.from(e.getErrorResponseXml());
-        switch (error.getCode()) {
-            case "NoSuchKey":
-                subscriber.onError(new NotFoundException(pid));
-                break;
-            default:
-                subscriber.onError(e);
-        }
+  private void error(String pid, Subscriber subscriber, AmazonS3Exception e) {
+    S3Error error = S3Error.from(e.getErrorResponseXml());
+    switch (error.getCode()) {
+      case "NoSuchKey":
+        subscriber.onError(new NotFoundException(pid));
+        break;
+      default:
+        subscriber.onError(e);
     }
+  }
+
+  @JsonIgnore
+  public AmazonS3 getClient() {
+    return client;
+  }
 }

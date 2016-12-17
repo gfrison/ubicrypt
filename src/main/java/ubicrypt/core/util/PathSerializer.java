@@ -1,10 +1,10 @@
-/**
+/*
  * Copyright (C) 2016 Giancarlo Frison <giancarlo@gfrison.com>
- * <p>
+ *
  * Licensed under the UbiCrypt License, Version 1.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * http://github.com/gfrison/ubicrypt/LICENSE.md
+ *     http://github.com/gfrison/ubicrypt/LICENSE.md
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,12 +21,13 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 public class PathSerializer extends StdSerializer<Path> {
-    public PathSerializer(Class<Path> t) {
-        super(t);
-    }
+  public PathSerializer(Class<Path> t) {
+    super(t);
+  }
 
-    @Override
-    public void serialize(Path value, JsonGenerator gen, SerializerProvider provider) throws IOException {
-        gen.writeString(value.toString());
-    }
+  @Override
+  public void serialize(Path value, JsonGenerator gen, SerializerProvider provider)
+    throws IOException {
+    gen.writeString(value.toString());
+  }
 }
