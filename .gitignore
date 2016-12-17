@@ -12,3 +12,4 @@ out
 # Vim
 *.sw[op]
 nohup*
+package/
