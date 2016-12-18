@@ -27,6 +27,17 @@ import ubicrypt.core.dto.UbiFile;
 
 public abstract class UbiProvider {
   private transient long userId = -1;
+  private RemoteFile indexListFile =
+      new RemoteFile() {
+        {
+          setKey(
+              new Key() {
+                {
+                  setType(UbiFile.KeyType.pgp);
+                }
+              });
+        }
+      };
   private RemoteFile confFile =
       new RemoteFile() {
         {
@@ -79,6 +90,14 @@ public abstract class UbiProvider {
 
   public void setLockFile(final RemoteFile lockFile) {
     this.lockFile = lockFile;
+  }
+
+  public RemoteFile getIndexListFile() {
+    return indexListFile;
+  }
+
+  public void setIndexListFile(RemoteFile indexListFile) {
+    this.indexListFile = indexListFile;
   }
 
   @Override
