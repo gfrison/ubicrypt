@@ -38,16 +38,16 @@ import static java.util.zip.Deflater.BEST_COMPRESSION;
 import static org.slf4j.LoggerFactory.getLogger;
 import static ubicrypt.core.Utils.marshallIs;
 
-public class ObjectSerializer implements IObjectSerializer, EnvironmentAware {
+public class Persist implements IPersist, EnvironmentAware {
 
-  private static final Logger log = getLogger(ObjectSerializer.class);
+  private static final Logger log = getLogger(Persist.class);
   private final UbiProvider provider;
   @Inject IPGPService pgpService;
 
   @Value("${pgp.enabled:true}")
   private boolean encrypt = true;
 
-  public ObjectSerializer(final UbiProvider provider) {
+  public Persist(final UbiProvider provider) {
     checkNotNull(provider);
     this.provider = provider;
   }
@@ -69,6 +69,19 @@ public class ObjectSerializer implements IObjectSerializer, EnvironmentAware {
         .last()
         .map(i -> obj)
         .defaultIfEmpty(obj);
+  }
+
+  @Override
+  public Observable<Boolean> delete(final RemoteFile descriptor) {
+    checkNotNull(descriptor, "file descriptor must not be null");
+    return provider
+        .delete(descriptor.getName())
+        .doOnNext(
+            res -> {
+              if (res) {
+                descriptor.setRemoteName(null);
+              }
+            });
   }
 
   @Override
@@ -96,7 +109,7 @@ public class ObjectSerializer implements IObjectSerializer, EnvironmentAware {
         .map(is -> Utils.unmarshall(decrypt(descriptor, is), type));
   }
 
-  private InputStream encrypt(final RemoteFile file, final InputStream inputStream) {
+  protected InputStream encrypt(final RemoteFile file, final InputStream inputStream) {
     if (!encrypt) {
       return inputStream;
     }
@@ -110,7 +123,7 @@ public class ObjectSerializer implements IObjectSerializer, EnvironmentAware {
     }
   }
 
-  private InputStream decrypt(final RemoteFile file, final InputStream inputStream) {
+  protected InputStream decrypt(final RemoteFile file, final InputStream inputStream) {
     if (!encrypt) {
       return inputStream;
     }
@@ -130,5 +143,9 @@ public class ObjectSerializer implements IObjectSerializer, EnvironmentAware {
 
   public void setPgpService(final IPGPService pgpService) {
     this.pgpService = pgpService;
+  }
+
+  public void setEncrypt(boolean encrypt) {
+    this.encrypt = encrypt;
   }
 }

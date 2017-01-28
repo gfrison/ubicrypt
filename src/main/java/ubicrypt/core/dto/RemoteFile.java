@@ -13,6 +13,9 @@
  */
 package ubicrypt.core.dto;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 import java.util.Optional;
 
 import ubicrypt.core.crypto.AESGCM;
@@ -69,5 +72,14 @@ public class RemoteFile extends UbiFile<RemoteFile> {
 
   public void setError(boolean error) {
     this.error = error;
+  }
+
+  @Override
+  public String toString() {
+    return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
+        .append("remoteName", remoteName)
+        .append("error", error)
+        .append("vclock", vclock)
+        .toString();
   }
 }

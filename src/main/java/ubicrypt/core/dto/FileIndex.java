@@ -13,17 +13,21 @@
  */
 package ubicrypt.core.dto;
 
-import java.util.List;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class FileIndex {
-  List<RemoteFile> files;
-  RemoteFile nextIndex;
+  Set<RemoteFile> files = ConcurrentHashMap.newKeySet();
+  RemoteFile nextIndex = new RemoteFile();
 
-  public List<RemoteFile> getFiles() {
+  public Set<RemoteFile> getFiles() {
     return files;
   }
 
-  public void setFiles(List<RemoteFile> files) {
+  public void setFiles(Set<RemoteFile> files) {
     this.files = files;
   }
 
@@ -33,5 +37,46 @@ public class FileIndex {
 
   public void setNextIndex(RemoteFile nextIndex) {
     this.nextIndex = nextIndex;
+  }
+
+  public static final class FileIndexBuilder {
+    Set<RemoteFile> files = ConcurrentHashMap.newKeySet();
+    RemoteFile nextIndex;
+
+    private FileIndexBuilder() {}
+
+    public static FileIndexBuilder aFileIndex() {
+      return new FileIndexBuilder();
+    }
+
+    public FileIndexBuilder withFiles(Set<RemoteFile> files) {
+      this.files = files;
+      return this;
+    }
+
+    public FileIndexBuilder addFile(RemoteFile file) {
+      this.files.add(file);
+      return this;
+    }
+
+    public FileIndexBuilder withNextIndex(RemoteFile nextIndex) {
+      this.nextIndex = nextIndex;
+      return this;
+    }
+
+    public FileIndex build() {
+      FileIndex fileIndex = new FileIndex();
+      fileIndex.setFiles(files);
+      fileIndex.setNextIndex(nextIndex);
+      return fileIndex;
+    }
+  }
+
+  @Override
+  public String toString() {
+    return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
+        .append("files", files)
+        .append("nextIndex", nextIndex)
+        .toString();
   }
 }

@@ -45,17 +45,14 @@ public class PGPECTest {
   public void encDecCompressed() throws Exception {
     long ts = System.currentTimeMillis();
     final PGPKeyPair kp = encryptionKey();
-    System.out.printf("encryption key :%s \n", System.currentTimeMillis() - ts);
     ts = System.currentTimeMillis();
     final String str = "ciaoo";
     final InputStream encrypt =
         encrypt(
             Collections.singletonList(kp.getPublicKey()),
             new ByteArrayInputStream(StringUtils.repeat(str, 1).getBytes()));
-    System.out.printf("encryption :%s \n", System.currentTimeMillis() - ts);
     ts = System.currentTimeMillis();
     final InputStream is = decrypt(kp.getPrivateKey(), encrypt);
-    System.out.printf("decryption :%s \n", System.currentTimeMillis() - ts);
     ts = System.currentTimeMillis();
     assertThat(new String(IOUtils.toByteArray(is))).isEqualTo(str);
   }
@@ -64,16 +61,13 @@ public class PGPECTest {
   public void encDec() throws Exception {
     long ts = System.currentTimeMillis();
     final PGPKeyPair kp = encryptionKey();
-    System.out.printf("encryption key :%s \n", System.currentTimeMillis() - ts);
     ts = System.currentTimeMillis();
     final String str = StringUtils.repeat("ciaoo", 1000);
     final InputStream encrypt =
         encrypt(
             Collections.singletonList(kp.getPublicKey()), new ByteArrayInputStream(str.getBytes()));
-    System.out.printf("encryption :%s \n", System.currentTimeMillis() - ts);
     ts = System.currentTimeMillis();
     final InputStream is = decrypt(kp.getPrivateKey(), encrypt);
-    System.out.printf("decryption :%s \n", System.currentTimeMillis() - ts);
     ts = System.currentTimeMillis();
     assertThat(new String(IOUtils.toByteArray(is))).isEqualTo(str);
   }

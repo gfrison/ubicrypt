@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import ubicrypt.core.TestUtils;
 import ubicrypt.core.crypto.IPGPService;
 import ubicrypt.core.dto.RemoteConfig;
-import ubicrypt.core.util.ObjectSerializer;
+import ubicrypt.core.util.Persist;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -39,8 +39,8 @@ public class FileProviderTest {
   public void setUp() throws Exception {
     TestUtils.createDirs();
     fp = TestUtils.fileProvider(TestUtils.tmp);
-    final ObjectSerializer ser =
-        new ObjectSerializer(fp) {
+    final Persist ser =
+        new Persist(fp) {
           {
             setPgpService(mock(IPGPService.class));
           }

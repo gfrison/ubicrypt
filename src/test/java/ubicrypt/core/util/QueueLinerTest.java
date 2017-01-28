@@ -118,14 +118,12 @@ public class QueueLinerTest {
     final QueueLiner.QueueEpilogued epi1 =
         liner.createEpiloguer(
             () -> {
-              System.out.println("increment1");
               epilogeCounter1.incrementAndGet();
               return just(0);
             });
     final QueueLiner.QueueEpilogued epi2 =
         liner.createEpiloguer(
             () -> {
-              System.out.println("increment2");
               epilogeCounter2.incrementAndGet();
               return just(0);
             });

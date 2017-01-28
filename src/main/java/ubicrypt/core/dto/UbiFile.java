@@ -179,7 +179,6 @@ public abstract class UbiFile<T extends UbiFile> implements Comparable<UbiFile> 
   @Override
   public String toString() {
     return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
-        .append("id", id)
         .append("vclock", vclock)
         .append("lastModified", lastModified)
         .append("deleted", deleted)

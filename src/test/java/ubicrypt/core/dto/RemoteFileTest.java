@@ -33,7 +33,6 @@ public class RemoteFileTest {
 
     uf.setKey(new Key(key));
     final byte[] marshall = Utils.marshall(uf);
-    System.out.println(new String(marshall));
     final RemoteFile uf2 = Utils.unmarshall(marshall, RemoteFile.class);
     assertThat(uf.getKey()).isEqualTo(uf2.getKey());
     assertThat(uf.getId().toString()).isEqualTo(uf2.getId().toString());

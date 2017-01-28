@@ -36,7 +36,7 @@ import ubicrypt.core.dto.ProviderLock;
 import ubicrypt.core.events.ShutdownRegistration;
 import ubicrypt.core.provider.ProviderHook;
 import ubicrypt.core.provider.ProviderLifeCycle;
-import ubicrypt.core.util.ObjectSerializer;
+import ubicrypt.core.util.Persist;
 
 import static org.slf4j.LoggerFactory.getLogger;
 import static ubicrypt.core.Utils.springIt;
@@ -67,7 +67,7 @@ public class RemoveLockOnShutdown implements IStoppable, ApplicationContextAware
                 .map(
                     provider -> {
                       ProviderLock pl = new ProviderLock(deviceId, Instant.now().minusMillis(1000));
-                      ObjectSerializer serializer = springIt(ctx, new ObjectSerializer(provider));
+                      Persist serializer = springIt(ctx, new Persist(provider));
                       return serializer
                           .put(pl, provider.getLockFile())
                           .doOnCompleted(() -> log.info("removed lock on provider:{}", provider));

@@ -13,37 +13,41 @@
  */
 package ubicrypt.core.fdx;
 
-import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 
-import reactor.fn.tuple.Tuple;
-import reactor.fn.tuple.Tuple2;
 import rx.Observable;
 import rx.Subscriber;
 import ubicrypt.core.dto.FileIndex;
 import ubicrypt.core.dto.RemoteFile;
-import ubicrypt.core.util.IObjectSerializer;
+import ubicrypt.core.util.IPersist;
 
+import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static rx.Observable.create;
 import static rx.Observable.empty;
 
-public class FDXLoader implements Observable.OnSubscribe<Tuple2<RemoteFile, List<RemoteFile>>> {
-  private final IObjectSerializer serializer;
+public class FDXLoader implements Observable.OnSubscribe<FileIndex> {
+  private final IPersist serializer;
   private final RemoteFile fileIndexFile;
 
-  public FDXLoader(IObjectSerializer serializer, RemoteFile fileIndexFile) {
+  public FDXLoader(IPersist serializer, RemoteFile fileIndexFile) {
     this.serializer = serializer;
     this.fileIndexFile = fileIndexFile;
   }
 
   @Override
-  public void call(Subscriber<? super Tuple2<RemoteFile, List<RemoteFile>>> subscriber) {
+  public void call(Subscriber<? super FileIndex> subscriber) {
+    if (isEmpty(fileIndexFile.getName())) {
+      subscriber.onCompleted();
+      return;
+    }
     serializer
         .getObject(fileIndexFile, FileIndex.class)
         .flatMap(
             fdx -> {
-              subscriber.onNext(Tuple.of(fileIndexFile, fdx.getFiles()));
+              subscriber.onNext(fdx);
               final RemoteFile nextIndex = fdx.getNextIndex();
-              if (nextIndex != null) {
+              if (nextIndex != null && isNotEmpty(nextIndex.getName())) {
                 return create(new FDXLoader(serializer, nextIndex));
               }
               return empty();

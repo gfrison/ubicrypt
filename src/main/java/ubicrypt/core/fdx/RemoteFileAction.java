@@ -11,15 +11,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ubicrypt.core.util;
+package ubicrypt.core.fdx;
 
-import rx.Observable;
 import ubicrypt.core.dto.RemoteFile;
 
-public interface IObjectSerializer {
-  <T> Observable<T> putObject(T obj, RemoteFile descriptor);
+public class RemoteFileAction {
+  public RemoteFileAction(Action action, RemoteFile remoteFile) {
+    this.action = action;
+    this.remoteFile = remoteFile;
+  }
 
-  Observable<Boolean> put(Object obj, RemoteFile descriptor);
+  public enum Action {
+    add,
+    update,
+    delete
+  }
 
-  <T> Observable<T> getObject(RemoteFile descriptor, Class<T> type);
+  private final Action action;
+  private final RemoteFile remoteFile;
+
+  public Action getAction() {
+    return action;
+  }
+
+  public RemoteFile getRemoteFile() {
+    return remoteFile;
+  }
 }

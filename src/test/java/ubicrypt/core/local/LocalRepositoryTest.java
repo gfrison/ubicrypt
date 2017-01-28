@@ -49,7 +49,7 @@ import ubicrypt.core.provider.file.FileProvider;
 import ubicrypt.core.provider.lock.AcquirerReleaser;
 import ubicrypt.core.provider.lock.ObjectIO;
 import ubicrypt.core.remote.RemoteRepository;
-import ubicrypt.core.util.ObjectSerializer;
+import ubicrypt.core.util.Persist;
 import ubicrypt.core.util.QueueLiner;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -160,8 +160,8 @@ public class LocalRepositoryTest {
           subscriber.onNext(new AcquirerReleaser(remoteConfig, Actions.empty()));
           subscriber.onCompleted();
         };
-    final ObjectSerializer ser =
-        new ObjectSerializer(provider) {
+    final Persist ser =
+        new Persist(provider) {
           {
             setPgpService(mock(IPGPService.class));
           }

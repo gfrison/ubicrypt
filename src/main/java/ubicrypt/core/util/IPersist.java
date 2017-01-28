@@ -11,32 +11,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ubicrypt.core.provider.lock;
+package ubicrypt.core.util;
 
 import rx.Observable;
-import rx.Subscriber;
-import ubicrypt.core.RemoteIO;
 import ubicrypt.core.dto.RemoteFile;
-import ubicrypt.core.util.IPersist;
 
-public class ObjectIO<T> implements RemoteIO<T> {
-  private final IPersist serializer;
-  private final RemoteFile rfile;
-  private final Class<T> type;
+public interface IPersist {
+  <T> Observable<T> putObject(T obj, RemoteFile descriptor);
 
-  public ObjectIO(IPersist serializer, RemoteFile rfile, Class<T> type) {
-    this.serializer = serializer;
-    this.rfile = rfile;
-    this.type = type;
-  }
+  Observable<Boolean> delete(RemoteFile descriptor);
 
-  @Override
-  public Observable<Boolean> apply(T t) {
-    return serializer.put(t, rfile);
-  }
+  Observable<Boolean> put(Object obj, RemoteFile descriptor);
 
-  @Override
-  public void call(Subscriber<? super T> subscriber) {
-    serializer.getObject(rfile, type).subscribe(subscriber);
-  }
+  <T> Observable<T> getObject(RemoteFile descriptor, Class<T> type);
 }

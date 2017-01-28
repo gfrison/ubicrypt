@@ -51,7 +51,7 @@ import ubicrypt.core.remote.OnInsertRemote;
 import ubicrypt.core.remote.OnUpdateRemote;
 import ubicrypt.core.remote.RemoteRepository;
 import ubicrypt.core.util.InProgressTracker;
-import ubicrypt.core.util.ObjectSerializer;
+import ubicrypt.core.util.Persist;
 
 import static org.slf4j.LoggerFactory.getLogger;
 import static rx.Observable.create;
@@ -92,7 +92,7 @@ public class ProviderLifeCycle implements ApplicationContextAware {
     return create(
         subscriber -> {
           try {
-            ObjectSerializer serializer = springIt(ctx, new ObjectSerializer(provider));
+            Persist serializer = springIt(ctx, new Persist(provider));
             ObjectIO<ProviderLock> lockIO =
                 new ObjectIO(serializer, provider.getLockFile(), ProviderLock.class);
             LockChecker lockCheker =

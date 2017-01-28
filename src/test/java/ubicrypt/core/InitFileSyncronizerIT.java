@@ -56,7 +56,7 @@ import ubicrypt.core.provider.ProviderEvent;
 import ubicrypt.core.provider.ProviderHook;
 import ubicrypt.core.provider.RemoteCtxConf;
 import ubicrypt.core.provider.file.FileProvider;
-import ubicrypt.core.util.ObjectSerializer;
+import ubicrypt.core.util.Persist;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -176,8 +176,8 @@ public class InitFileSyncronizerIT implements ApplicationContextAware {
                 new DeflaterInputStream(new ByteArrayInputStream("ciao".getBytes()))))
         .toBlocking()
         .last();
-    final ObjectSerializer os =
-        new ObjectSerializer(fp1) {
+    final Persist os =
+        new Persist(fp1) {
           {
             setPgpService(ipgpService);
           }
@@ -222,8 +222,8 @@ public class InitFileSyncronizerIT implements ApplicationContextAware {
     final CountDownLatch cd = new CountDownLatch(1);
     syncronizer.setOnComplete(cd::countDown);
     final FileProvider fp1 = TestUtils.fileProvider(TestUtils.tmp2);
-    final ObjectSerializer os =
-        new ObjectSerializer(fp1) {
+    final Persist os =
+        new Persist(fp1) {
           {
             setPgpService(ipgpService);
           }

@@ -50,7 +50,7 @@ import ubicrypt.core.provider.FileEvent;
 import ubicrypt.core.provider.file.FileProvider;
 import ubicrypt.core.provider.lock.AcquirerReleaser;
 import ubicrypt.core.provider.lock.ObjectIO;
-import ubicrypt.core.util.ObjectSerializer;
+import ubicrypt.core.util.Persist;
 import ubicrypt.core.util.QueueLiner;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -115,8 +115,8 @@ public class RemoteRepositoryIT {
           subscriber.onCompleted();
         };
     final FileProvider provider = fileProvider(TestUtils.tmp);
-    final ObjectSerializer ser =
-        new ObjectSerializer(provider) {
+    final Persist ser =
+        new Persist(provider) {
           {
             setPgpService(pgp);
           }
@@ -197,16 +197,6 @@ public class RemoteRepositoryIT {
     assertThat(cd1.await(2, SECONDS)).isTrue();
     sub.unsubscribe();
 
-    //update
-    //        file2Events = BufferUntilSubscriber.create();
-    /*
-            CountDownLatch cd2 = new CountDownLatch(1);
-            file2Events.subscribe(fileEvent2 -> {
-                System.out.println("incoming filevent");
-
-                cd2.countDown();
-            }, Utils.logError);
-    */
     CountDownLatch cd2 = new CountDownLatch(1);
     sub =
         file2Events.subscribe(

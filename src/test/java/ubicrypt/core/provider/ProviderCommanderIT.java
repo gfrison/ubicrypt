@@ -54,7 +54,7 @@ import ubicrypt.core.local.LocalRepository;
 import ubicrypt.core.provider.file.FileConf;
 import ubicrypt.core.provider.file.FileProvider;
 import ubicrypt.core.util.EqualsValue;
-import ubicrypt.core.util.ObjectSerializer;
+import ubicrypt.core.util.Persist;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static ubicrypt.core.TestUtils.fileProvider;
@@ -168,7 +168,7 @@ public class ProviderCommanderIT {
     assertThat(pc.register(fp).toBlocking().first()).isTrue();
 
     assertThat(pc.addOwnedPK(nk.getPublicKey()).toBlocking().first()).isTrue();
-    final ObjectSerializer os = new ObjectSerializer(fp);
+    final Persist os = new Persist(fp);
     os.setPgpService(new PGPService(nk, localConfig));
     assertThat(os.getObject(fp.getConfFile(), RemoteConfig.class).toBlocking().first()).isNotNull();
   }
