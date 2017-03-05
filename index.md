@@ -2,19 +2,19 @@
 layout: home
 permalink: /
 image:
-  feature: wood-texture-1600x800.jpg
+  feature: vault_s.jpg
 ---
 
 <div class="tiles">
 
 <div class="tile">
-  <h2 class="post-title">Built for Jekyll 3</h2>
-  <p class="post-excerpt">Takes advantage of native Sass support and data files to make customizing your site easier.</p>
+  <h2 class="post-title">Strong Encryption</h2>
+  <p class="post-excerpt">Your files are encrypted using AES-GCM-256 the safest algorithm for securely prevent any unwanted access and modification of the data.</p>
 </div><!-- /.tile -->
 
 <div class="tile">
-  <h2 class="post-title">Content First</h2>
-  <p class="post-excerpt">Designed to put the focus on you and your writing. Headers, navigation, sidebars, and footers have been purposely deemphasized.</p>
+  <h2 class="post-title">Store Files Anywhere</h2>
+  <p class="post-excerpt">You will no longer have to rely on your disks or other external storage that can be damaged or lost.</p>
 </div><!-- /.tile -->
 
 <div class="tile">
