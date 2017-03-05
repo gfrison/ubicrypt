@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.junit:junit-commons:5.0.0-SNAPSHOT">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.junit/junit-commons/5.0.0-SNAPSHOT/721a63777b33fa4bc08b9b4295bf93629f14417e/junit-commons-5.0.0-SNAPSHOT.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.junit/junit-commons/5.0.0-SNAPSHOT/ba01746794c4a64afe6855d45c699240f254328/junit-commons-5.0.0-SNAPSHOT-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

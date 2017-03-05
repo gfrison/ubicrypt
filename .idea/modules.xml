@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ubicrypt.iml" filepath="$PROJECT_DIR$/.idea/modules/ubicrypt.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ubicrypt_main.iml" filepath="$PROJECT_DIR$/.idea/modules/ubicrypt_main.iml" group="ubicrypt" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ubicrypt_test.iml" filepath="$PROJECT_DIR$/.idea/modules/ubicrypt_test.iml" group="ubicrypt" />
+    </modules>
+  </component>
+</project>
