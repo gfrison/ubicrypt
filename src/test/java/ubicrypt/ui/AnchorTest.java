@@ -13,14 +13,13 @@
  */
 package ubicrypt.ui;
 
-import com.sun.javafx.application.PlatformImpl;
-
 import org.junit.Before;
 import org.junit.Test;
 
 import java.nio.file.Paths;
 import java.util.Optional;
 
+import javafx.application.Platform;
 import javafx.scene.control.TreeItem;
 import ubicrypt.core.dto.LocalFile;
 import ubicrypt.ui.files.FileItem;
@@ -31,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class AnchorTest {
   @Before
   public void setUp() throws Exception {
-    PlatformImpl.startup(() -> {});
+    Platform.startup(() -> {});
   }
 
   @Test

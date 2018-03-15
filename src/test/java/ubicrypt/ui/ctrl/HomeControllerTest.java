@@ -13,13 +13,12 @@
  */
 package ubicrypt.ui.ctrl;
 
-import com.sun.javafx.application.PlatformImpl;
-
 import org.junit.Test;
 
 import java.nio.file.Paths;
 import java.util.Optional;
 
+import javafx.application.Platform;
 import javafx.scene.control.TreeItem;
 import ubicrypt.core.dto.LocalFile;
 import ubicrypt.ui.UItils;
@@ -33,7 +32,7 @@ public class HomeControllerTest {
 
   @Test
   public void searchFile() throws Exception {
-    PlatformImpl.startup(() -> {});
+    Platform.startup(() -> {});
     final TreeItem<ITreeItem> filesRoot = new TreeItem<>();
     final TreeItem<ITreeItem> dirA = new TreeItem<>(new FolderItem(Paths.get("dirA"), null, null));
     filesRoot.getChildren().add(dirA);
