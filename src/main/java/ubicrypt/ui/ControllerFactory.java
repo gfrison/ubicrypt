@@ -32,7 +32,7 @@ public class ControllerFactory implements Callback<Class<?>, Object> {
   @Override
   public Object call(Class<?> aClass) {
     try {
-      return springIt(ctx, aClass.newInstance());
+      return springIt(ctx, aClass.getDeclaredConstructor().newInstance());
     } catch (Exception e) {
       Throwables.propagate(e);
       return null;

@@ -21,6 +21,7 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import rx.Observable;
@@ -107,7 +108,7 @@ public class ObjectLockSubscriberTest {
                             })) //
                     .subscribeOn(Schedulers.io())
                     .subscribe(n -> cd.countDown()))
-        .count();
+        .collect(Collectors.toList());
     if (!cd.await(9, TimeUnit.SECONDS)) {
       Assertions.fail("fail");
     }

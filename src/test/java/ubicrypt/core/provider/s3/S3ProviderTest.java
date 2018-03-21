@@ -14,17 +14,22 @@
 package ubicrypt.core.provider.s3;
 
 import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;
+import org.junit.After;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.Charset;
+import java.util.UUID;
 
 import ubicrypt.core.Utils;
 import ubicrypt.core.exp.NotFoundException;
@@ -33,6 +38,43 @@ import ubicrypt.core.provider.ProviderStatus;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class S3ProviderTest {
+
+  private String bucket = UUID.randomUUID().toString();
+
+  @After
+  public void tearDown() throws Exception {
+    S3Conf conf = createConf();
+    AmazonS3ClientBuilder clientb =
+        AmazonS3ClientBuilder.standard()
+            .withCredentials(
+                new AWSCredentialsProvider() {
+                  @Override
+                  public AWSCredentials getCredentials() {
+                    return new AWSCredentials() {
+                      @Override
+                      public String getAWSAccessKeyId() {
+                        return conf.getAccessKeyId();
+                      }
+
+                      @Override
+                      public String getAWSSecretKey() {
+                        return conf.getSecrectKey();
+                      }
+                    };
+                  }
+
+                  @Override
+                  public void refresh() {}
+                });
+    if (conf.getRegion() != null) {
+      clientb.withRegion(conf.getRegion());
+    }
+    //                ClientConfiguration clientConfiguration = new ClientConfiguration();
+    //                clientConfiguration.setSignerOverride("S3SignerType");
+    //                clientb.setClientConfiguration(clientConfiguration);
+    AmazonS3 client = clientb.build();
+    client.deleteBucket(conf.getBucket());
+  }
 
   @Test
   public void name() throws Exception {
@@ -99,7 +141,7 @@ public class S3ProviderTest {
     conf.setAccessKeyId(System.getenv("aws.accessKey"));
     conf.setSecrectKey(System.getenv("aws.secret"));
     conf.setRegion(Regions.EU_CENTRAL_1);
-    conf.setBucket("qwerqwer");
+    conf.setBucket(bucket);
     return conf;
   }
 
@@ -111,6 +153,6 @@ public class S3ProviderTest {
     S3Provider test = new S3Provider();
     test.setConf(createConf());
     test.init(Utils.deviceId()).toBlocking().first();
-    test.get("qwerqwer:sdfsefwf23").toBlocking().first();
+    test.get(bucket + ":sdfsefwf23").toBlocking().first();
   }
 }

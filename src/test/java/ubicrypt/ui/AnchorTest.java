@@ -13,13 +13,14 @@
  */
 package ubicrypt.ui;
 
-import org.junit.Before;
+import de.saxsys.javafx.test.JfxRunner;
+
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.nio.file.Paths;
 import java.util.Optional;
 
-import javafx.application.Platform;
 import javafx.scene.control.TreeItem;
 import ubicrypt.core.dto.LocalFile;
 import ubicrypt.ui.files.FileItem;
@@ -27,11 +28,8 @@ import ubicrypt.ui.files.ITreeItem;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@RunWith(JfxRunner.class)
 public class AnchorTest {
-  @Before
-  public void setUp() throws Exception {
-    Platform.startup(() -> {});
-  }
 
   @Test
   public void search1() throws Exception {

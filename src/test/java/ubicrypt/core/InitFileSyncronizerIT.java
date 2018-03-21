@@ -58,6 +58,7 @@ import ubicrypt.core.provider.RemoteCtxConf;
 import ubicrypt.core.provider.file.FileProvider;
 import ubicrypt.core.util.Persist;
 
+import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -108,7 +109,9 @@ public class InitFileSyncronizerIT implements ApplicationContextAware {
     final ProviderHook hk1 = ctx.getBean(ProviderHook.class, fp1);
 
     assertThat(cd.await(4, SECONDS)).isTrue();
-    assertThat(IOUtils.readLines(hk1.getRepository().get(origin).toBlocking().last()))
+    assertThat(
+            IOUtils.readLines(
+                hk1.getRepository().get(origin).toBlocking().last(), defaultCharset()))
         .contains("ciao");
   }
 
@@ -132,9 +135,13 @@ public class InitFileSyncronizerIT implements ApplicationContextAware {
 
     assertThat(cd.await(4, SECONDS)).isTrue();
     Thread.sleep(100);
-    assertThat(IOUtils.readLines(hk1.getRepository().get(origin).toBlocking().first()))
+    assertThat(
+            IOUtils.readLines(
+                hk1.getRepository().get(origin).toBlocking().first(), defaultCharset()))
         .contains("ciao");
-    assertThat(IOUtils.readLines(hk2.getRepository().get(origin).toBlocking().first()))
+    assertThat(
+            IOUtils.readLines(
+                hk2.getRepository().get(origin).toBlocking().first(), defaultCharset()))
         .contains("ciao");
   }
 

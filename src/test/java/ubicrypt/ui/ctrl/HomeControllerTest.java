@@ -13,12 +13,14 @@
  */
 package ubicrypt.ui.ctrl;
 
+import de.saxsys.javafx.test.JfxRunner;
+
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.nio.file.Paths;
 import java.util.Optional;
 
-import javafx.application.Platform;
 import javafx.scene.control.TreeItem;
 import ubicrypt.core.dto.LocalFile;
 import ubicrypt.ui.UItils;
@@ -28,11 +30,11 @@ import ubicrypt.ui.files.ITreeItem;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@RunWith(JfxRunner.class)
 public class HomeControllerTest {
 
   @Test
-  public void searchFile() throws Exception {
-    Platform.startup(() -> {});
+  public void searchFile() {
     final TreeItem<ITreeItem> filesRoot = new TreeItem<>();
     final TreeItem<ITreeItem> dirA = new TreeItem<>(new FolderItem(Paths.get("dirA"), null, null));
     filesRoot.getChildren().add(dirA);

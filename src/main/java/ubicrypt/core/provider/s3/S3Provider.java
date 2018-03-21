@@ -14,10 +14,11 @@
 package ubicrypt.core.provider.s3;
 
 import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.regions.Region;
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.amazonaws.services.s3.model.HeadBucketRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -83,32 +84,39 @@ public class S3Provider extends UbiProvider {
                 return;
               }
               try {
-                client =
-                    new AmazonS3Client(
-                        new AWSCredentials() {
-                          @Override
-                          public String getAWSAccessKeyId() {
-                            return conf.getAccessKeyId();
-                          }
+                AmazonS3ClientBuilder clientb =
+                    AmazonS3ClientBuilder.standard()
+                        .withCredentials(
+                            new AWSCredentialsProvider() {
+                              @Override
+                              public AWSCredentials getCredentials() {
+                                return new AWSCredentials() {
+                                  @Override
+                                  public String getAWSAccessKeyId() {
+                                    return conf.getAccessKeyId();
+                                  }
 
-                          @Override
-                          public String getAWSSecretKey() {
-                            return conf.getSecrectKey();
-                          }
-                        });
+                                  @Override
+                                  public String getAWSSecretKey() {
+                                    return conf.getSecrectKey();
+                                  }
+                                };
+                              }
+
+                              @Override
+                              public void refresh() {}
+                            });
                 if (conf.getRegion() != null) {
-                  client.setRegion(Region.getRegion(conf.getRegion()));
+                  clientb.withRegion(conf.getRegion());
                 }
+                client = clientb.build();
                 prefix = Long.toString(userId, MAX_RADIX) + "/";
                 try {
-                  if (!client.doesBucketExist(conf.getBucket())) {
-                    client.createBucket(conf.getBucket());
-                  }
+                  client.headBucket(new HeadBucketRequest(conf.getBucket()));
                 } catch (AmazonS3Exception e) {
-                  S3Error error = S3Error.from(e.getErrorResponseXml());
-                  switch (error.getCode()) {
-                    case "BucketAlreadyOwnedByYou":
-                      //already present
+                  switch (e.getErrorCode()) {
+                    case "404 Not Found":
+                      client.createBucket(conf.getBucket());
                       break;
                     default:
                       subscriber.onError(e);
