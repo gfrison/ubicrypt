@@ -19,6 +19,8 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static ubicrypt.core.Utils.copySynchronized;
+
 public class FileIndex {
   Set<RemoteFile> files = ConcurrentHashMap.newKeySet();
   RemoteFile nextIndex = new RemoteFile();
@@ -28,7 +30,7 @@ public class FileIndex {
   }
 
   public void setFiles(Set<RemoteFile> files) {
-    this.files = files;
+    this.files = copySynchronized(files);
   }
 
   public RemoteFile getNextIndex() {
