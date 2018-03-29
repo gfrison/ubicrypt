@@ -127,6 +127,29 @@ public class SingleLocalProviderIT {
   }
 
   @Test
+  public void addProviderAfterFiles() throws Exception {
+    CountDownLatch cd = new CountDownLatch(1);
+    Observable.range(0, 10)
+        .map(i -> basePath.resolve(String.valueOf(i)))
+        .flatMap(
+            path -> {
+              TestUtils.createRandomFile(path, 1 << 16);
+              return fileFacade.addFile(path);
+            })
+        .flatMap(tupla -> tupla.getT2())
+        .subscribe(
+            result -> assertThat(result).isFalse(),
+            err -> err.printStackTrace(),
+            () -> cd.countDown());
+    assertThat(cd.await(5, TimeUnit.SECONDS)).isTrue();
+    CountDownLatch fileCounter = new CountDownLatch(10);
+    addProvider();
+    Subscription sub = fileEvents.subscribe(fileEvent -> fileCounter.countDown());
+    assertThat(fileCounter.await(5, TimeUnit.SECONDS)).isTrue();
+    sub.unsubscribe();
+  }
+
+  @Test
   public void addFiles() throws Exception {
     addProvider();
     CountDownLatch fileCounter = new CountDownLatch(10);
