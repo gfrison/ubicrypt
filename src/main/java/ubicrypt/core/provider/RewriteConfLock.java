@@ -17,7 +17,7 @@ import rx.Observable;
 import rx.Subscriber;
 import ubicrypt.core.RemoteIO;
 import ubicrypt.core.dto.ProviderLock;
-import ubicrypt.core.dto.RemoteConfig;
+import ubicrypt.core.remote.RemoteConfig;
 
 import static rx.Observable.create;
 

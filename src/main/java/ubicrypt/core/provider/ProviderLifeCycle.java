@@ -40,7 +40,7 @@ import rx.internal.operators.BufferUntilSubscriber;
 import rx.subjects.Subject;
 import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.dto.ProviderLock;
-import ubicrypt.core.dto.RemoteConfig;
+import ubicrypt.core.remote.RemoteConfig;
 import ubicrypt.core.exp.NotFoundException;
 import ubicrypt.core.provider.lock.ConfigAcquirer;
 import ubicrypt.core.provider.lock.InitLockChecker;

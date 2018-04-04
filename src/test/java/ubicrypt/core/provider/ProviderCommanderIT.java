@@ -48,7 +48,7 @@ import ubicrypt.core.Utils;
 import ubicrypt.core.crypto.PGPEC;
 import ubicrypt.core.crypto.PGPService;
 import ubicrypt.core.dto.LocalConfig;
-import ubicrypt.core.dto.RemoteConfig;
+import ubicrypt.core.remote.RemoteConfig;
 import ubicrypt.core.exp.NotFoundException;
 import ubicrypt.core.local.LocalRepository;
 import ubicrypt.core.provider.file.FileConf;

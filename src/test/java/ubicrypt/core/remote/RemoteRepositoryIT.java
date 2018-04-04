@@ -40,7 +40,6 @@ import ubicrypt.core.crypto.PGPService;
 import ubicrypt.core.dto.Key;
 import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.dto.LocalFile;
-import ubicrypt.core.dto.RemoteConfig;
 import ubicrypt.core.dto.RemoteFile;
 import ubicrypt.core.dto.UbiFile;
 import ubicrypt.core.dto.VClock;
@@ -79,7 +78,7 @@ public class RemoteRepositoryIT {
   @Test
   public void error() throws Exception {
     RemoteFile rf = new RemoteFile();
-    final RemoteConfig remoteConfig = new RemoteConfig();
+    final RemoteConfig remoteConfig = new RemoteConfig(providers, records, maxFilesPerIndex);
     remoteConfig.getRemoteFiles().add(rf);
     CountDownLatch cd = new CountDownLatch(1);
     Observable.OnSubscribe<AcquirerReleaser> acquirer =
@@ -108,7 +107,7 @@ public class RemoteRepositoryIT {
   public void save() throws Exception {
     final PGPService pgp = new PGPService(PGPEC.encryptionKey(), new LocalConfig());
 
-    final RemoteConfig remoteConfig = new RemoteConfig();
+    final RemoteConfig remoteConfig = new RemoteConfig(providers, records, maxFilesPerIndex);
     Observable.OnSubscribe<AcquirerReleaser> acquirer =
         subscriber -> {
           subscriber.onNext(new AcquirerReleaser(remoteConfig, empty()));

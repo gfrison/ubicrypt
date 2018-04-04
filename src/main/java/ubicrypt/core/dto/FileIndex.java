@@ -13,17 +13,51 @@
  */
 package ubicrypt.core.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import ubicrypt.core.Action;
+
 import static ubicrypt.core.Utils.copySynchronized;
 
 public class FileIndex {
-  Set<RemoteFile> files = ConcurrentHashMap.newKeySet();
-  RemoteFile nextIndex = new RemoteFile();
+  private Set<RemoteFile> files = ConcurrentHashMap.newKeySet();
+  private RemoteFile nextIndex;
+  @JsonIgnore
+  private volatile Action status = Action.unchanged;
+  @JsonIgnore
+  private volatile FileIndex next;
+  @JsonIgnore
+  private volatile FileIndex parent;
+
+  public FileIndex getParent() {
+    return parent;
+  }
+
+  public void setParent(FileIndex parent) {
+    this.parent = parent;
+  }
+
+  public Action getStatus() {
+    return status;
+  }
+
+  public void setStatus(Action status) {
+    this.status = status;
+  }
+
+  public FileIndex getNext() {
+    return next;
+  }
+
+  public void setNext(FileIndex next) {
+    this.next = next;
+  }
 
   public Set<RemoteFile> getFiles() {
     return files;
@@ -41,11 +75,25 @@ public class FileIndex {
     this.nextIndex = nextIndex;
   }
 
-  public static final class FileIndexBuilder {
-    Set<RemoteFile> files = ConcurrentHashMap.newKeySet();
-    RemoteFile nextIndex;
 
-    private FileIndexBuilder() {}
+  @Override
+  public String toString() {
+    return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
+        .append("files", files)
+        .append("nextIndex", nextIndex)
+        .toString();
+  }
+
+
+  public static final class FileIndexBuilder {
+    private Set<RemoteFile> files = ConcurrentHashMap.newKeySet();
+    private RemoteFile nextIndex;
+    private volatile Action status = Action.unchanged;
+    private volatile FileIndex next;
+    private volatile FileIndex parent;
+
+    private FileIndexBuilder() {
+    }
 
     public static FileIndexBuilder aFileIndex() {
       return new FileIndexBuilder();
@@ -56,13 +104,23 @@ public class FileIndex {
       return this;
     }
 
-    public FileIndexBuilder addFile(RemoteFile file) {
-      this.files.add(file);
+    public FileIndexBuilder withNextIndex(RemoteFile nextIndex) {
+      this.nextIndex = nextIndex;
       return this;
     }
 
-    public FileIndexBuilder withNextIndex(RemoteFile nextIndex) {
-      this.nextIndex = nextIndex;
+    public FileIndexBuilder withStatus(Action status) {
+      this.status = status;
+      return this;
+    }
+
+    public FileIndexBuilder withNext(FileIndex next) {
+      this.next = next;
+      return this;
+    }
+
+    public FileIndexBuilder withParent(FileIndex parent) {
+      this.parent = parent;
       return this;
     }
 
@@ -70,15 +128,10 @@ public class FileIndex {
       FileIndex fileIndex = new FileIndex();
       fileIndex.setFiles(files);
       fileIndex.setNextIndex(nextIndex);
+      fileIndex.setStatus(status);
+      fileIndex.setNext(next);
+      fileIndex.setParent(parent);
       return fileIndex;
     }
-  }
-
-  @Override
-  public String toString() {
-    return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
-        .append("files", files)
-        .append("nextIndex", nextIndex)
-        .toString();
   }
 }

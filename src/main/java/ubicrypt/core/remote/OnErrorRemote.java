@@ -19,7 +19,6 @@ import java.util.Optional;
 
 import ubicrypt.core.FileProvenience;
 import ubicrypt.core.IRepository;
-import ubicrypt.core.dto.RemoteConfig;
 import ubicrypt.core.dto.RemoteFile;
 import ubicrypt.core.dto.UbiFile;
 import ubicrypt.core.provider.UbiProvider;

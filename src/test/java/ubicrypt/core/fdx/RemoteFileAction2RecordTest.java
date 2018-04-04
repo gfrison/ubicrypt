@@ -21,6 +21,7 @@ import org.junit.Test;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import ubicrypt.core.Action;
 import ubicrypt.core.dto.FileIndex;
 import ubicrypt.core.dto.RemoteFile;
 
@@ -31,7 +32,7 @@ import static ubicrypt.core.dto.FileIndex.FileIndexBuilder.aFileIndex;
 import static ubicrypt.core.fdx.IndexRecord.IRStatus.created;
 import static ubicrypt.core.fdx.IndexRecord.IRStatus.modified;
 import static ubicrypt.core.fdx.IndexRecord.IRStatus.unchanged;
-import static ubicrypt.core.fdx.RemoteFileAction.Action.add;
+import static ubicrypt.core.Action.add;
 
 public class RemoteFileAction2RecordTest {
 
@@ -81,7 +82,7 @@ public class RemoteFileAction2RecordTest {
     RemoteFileAction2Record rfs = new RemoteFileAction2Record(first, indexes, 5);
     final RemoteFileAction element =
         new RemoteFileAction(
-            RemoteFileAction.Action.update, indexes.get(0).getFiles().iterator().next());
+            Action.update, indexes.get(0).getFiles().iterator().next());
     List<IndexRecord> res = rfs.call(ImmutableList.of(element));
 
     assertThat(res).hasSize(20);

@@ -17,7 +17,7 @@ import java.util.function.Function;
 
 import rx.Observable;
 import ubicrypt.core.RemoteIO;
-import ubicrypt.core.dto.RemoteConfig;
+import ubicrypt.core.remote.RemoteConfig;
 import ubicrypt.core.provider.lock.AcquirerReleaser;
 
 import static rx.Observable.create;

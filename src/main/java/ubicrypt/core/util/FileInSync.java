@@ -19,7 +19,7 @@ import javax.inject.Inject;
 
 import rx.Observable;
 import rx.functions.Func1;
-import ubicrypt.core.dto.RemoteConfig;
+import ubicrypt.core.remote.RemoteConfig;
 import ubicrypt.core.dto.UbiFile;
 import ubicrypt.core.dto.VClock;
 import ubicrypt.core.provider.ProviderHook;

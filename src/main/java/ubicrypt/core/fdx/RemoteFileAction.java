@@ -13,18 +13,13 @@
  */
 package ubicrypt.core.fdx;
 
+import ubicrypt.core.Action;
 import ubicrypt.core.dto.RemoteFile;
 
 public class RemoteFileAction {
   public RemoteFileAction(Action action, RemoteFile remoteFile) {
     this.action = action;
     this.remoteFile = remoteFile;
-  }
-
-  public enum Action {
-    add,
-    update,
-    delete
   }
 
   private final Action action;

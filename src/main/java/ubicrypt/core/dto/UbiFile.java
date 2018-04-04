@@ -13,8 +13,6 @@
  */
 package ubicrypt.core.dto;
 
-import com.google.common.base.Throwables;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -53,11 +51,7 @@ public abstract class UbiFile<T extends UbiFile> implements Comparable<UbiFile> 
 
   public T copyFrom(UbiFile file) {
     id = UUID.fromString(file.getId().toString());
-    try {
-      vclock = (VClock) file.getVclock().clone();
-    } catch (CloneNotSupportedException e) {
-      Throwables.propagate(e);
-    }
+    vclock = (VClock) file.getVclock().clone();
     sha1 = file.getSha1();
     lastModified = file.getLastModified();
     deleted = file.isDeleted();

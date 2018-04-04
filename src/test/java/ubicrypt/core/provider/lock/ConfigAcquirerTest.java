@@ -29,7 +29,7 @@ import rx.Subscriber;
 import rx.subjects.PublishSubject;
 import ubicrypt.core.JustOnSubscribe;
 import ubicrypt.core.RemoteIO;
-import ubicrypt.core.dto.RemoteConfig;
+import ubicrypt.core.remote.RemoteConfig;
 import ubicrypt.core.exp.NotFoundException;
 import ubicrypt.core.provider.ProviderStatus;
 import ubicrypt.core.provider.UbiProvider;
@@ -82,7 +82,7 @@ public class ConfigAcquirerTest {
         .doOnNext(config -> assertThat(config).isNotNull())
         .subscribe(config -> cd.countDown());
     lockPub.onNext(LockStatus.available);
-    configPub.onNext(new RemoteConfig());
+    configPub.onNext(new RemoteConfig(providers, records, maxFilesPerIndex));
     configPub.onCompleted();
     assertThat(cd.await(10, TimeUnit.SECONDS)).isTrue();
   }
@@ -94,7 +94,7 @@ public class ConfigAcquirerTest {
         .doOnCompleted(() -> cd.countDown())
         .subscribe();
     lockPub.onNext(LockStatus.unavailable);
-    configPub.onNext(new RemoteConfig());
+    configPub.onNext(new RemoteConfig(providers, records, maxFilesPerIndex));
     configPub.onCompleted();
     assertThat(cd.await(10, TimeUnit.SECONDS)).isTrue();
   }
@@ -108,7 +108,7 @@ public class ConfigAcquirerTest {
         .subscribe(config -> cd.countDown());
     Thread.sleep(10);
     lockPub.onNext(LockStatus.available);
-    configPub.onNext(new RemoteConfig());
+    configPub.onNext(new RemoteConfig(providers, records, maxFilesPerIndex));
     configPub.onCompleted();
     assertThat(cd.await(10, TimeUnit.SECONDS)).isTrue();
   }
@@ -130,7 +130,7 @@ public class ConfigAcquirerTest {
     Observable.create(acquirer).doOnNext(ref::set).subscribe(config -> cd.countDown());
     lockPub.onNext(LockStatus.available);
     configPub.onNext(
-        new RemoteConfig() {
+        new RemoteConfig(providers, records, maxFilesPerIndex) {
           {
             setProviders(ImmutableSet.of(mock(UbiProvider.class)));
           }

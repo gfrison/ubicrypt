@@ -23,7 +23,7 @@ import rx.Subscriber;
 import rx.subjects.PublishSubject;
 import rx.subjects.Subject;
 import ubicrypt.core.RemoteIO;
-import ubicrypt.core.dto.RemoteConfig;
+import ubicrypt.core.remote.RemoteConfig;
 import ubicrypt.core.exp.NotFoundException;
 import ubicrypt.core.provider.ProviderStatus;
 
@@ -160,7 +160,7 @@ public class ConfigAcquirer implements Observable.OnSubscribe<AcquirerReleaser> 
               .onErrorResumeNext(
                   err -> {
                     if (err instanceof NotFoundException) {
-                      return remoteIO.apply(new RemoteConfig()).map(res -> new RemoteConfig());
+                      return remoteIO.apply(new RemoteConfig(providers, records, maxFilesPerIndex)).map(res -> new RemoteConfig(providers, records, maxFilesPerIndex));
                     }
                     return Observable.error(err);
                   })

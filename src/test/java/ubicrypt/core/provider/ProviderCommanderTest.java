@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import ubicrypt.core.dto.LocalConfig;
-import ubicrypt.core.dto.RemoteConfig;
+import ubicrypt.core.remote.RemoteConfig;
 import ubicrypt.core.dto.RemoteFile;
 import ubicrypt.core.provider.ftp.FTPConf;
 import ubicrypt.core.provider.ftp.FTProvider;
@@ -70,7 +70,7 @@ public class ProviderCommanderTest {
     final ProviderHook mock2 = mock(ProviderHook.class);
     doReturn(
             Optional.of(
-                new RemoteConfig() {
+                new RemoteConfig(providers, records, maxFilesPerIndex) {
                   @Override
                   public Set<RemoteFile> getRemoteFiles() {
                     return new HashSet<RemoteFile>() {
@@ -94,7 +94,7 @@ public class ProviderCommanderTest {
     doReturn(origin).when(mock1).getRepository();
     doReturn(
             Optional.of(
-                new RemoteConfig() {
+                new RemoteConfig(providers, records, maxFilesPerIndex) {
                   @Override
                   public Set<RemoteFile> getRemoteFiles() {
                     return new HashSet<RemoteFile>() {

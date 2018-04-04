@@ -38,7 +38,6 @@ import ubicrypt.core.ProgressFile;
 import ubicrypt.core.RemoteIO;
 import ubicrypt.core.Utils;
 import ubicrypt.core.crypto.AESGCM;
-import ubicrypt.core.dto.RemoteConfig;
 import ubicrypt.core.dto.UbiFile;
 import ubicrypt.core.provider.FileEvent;
 import ubicrypt.core.provider.RemoteFileGetter;

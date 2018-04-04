@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import ubicrypt.core.TestUtils;
 import ubicrypt.core.crypto.IPGPService;
-import ubicrypt.core.dto.RemoteConfig;
+import ubicrypt.core.remote.RemoteConfig;
 import ubicrypt.core.util.Persist;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,7 +45,7 @@ public class FileProviderTest {
             setPgpService(mock(IPGPService.class));
           }
         };
-    ser.putObject(new RemoteConfig(), fp.getConfFile()).toBlocking().first();
+    ser.putObject(new RemoteConfig(providers, records, maxFilesPerIndex), fp.getConfFile()).toBlocking().first();
   }
 
   @After

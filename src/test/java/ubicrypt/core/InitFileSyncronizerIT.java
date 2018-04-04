@@ -49,7 +49,7 @@ import ubicrypt.core.crypto.PGPEC;
 import ubicrypt.core.crypto.PGPService;
 import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.dto.LocalFile;
-import ubicrypt.core.dto.RemoteConfig;
+import ubicrypt.core.remote.RemoteConfig;
 import ubicrypt.core.dto.RemoteFile;
 import ubicrypt.core.local.LocalRepository;
 import ubicrypt.core.provider.ProviderEvent;
@@ -190,7 +190,7 @@ public class InitFileSyncronizerIT implements ApplicationContextAware {
           }
         };
     os.putObject(
-            new RemoteConfig() {
+            new RemoteConfig(providers, records, maxFilesPerIndex) {
               {
                 getRemoteFiles().add(remoteFile);
               }
@@ -236,7 +236,7 @@ public class InitFileSyncronizerIT implements ApplicationContextAware {
           }
         };
     os.putObject(
-            new RemoteConfig() {
+            new RemoteConfig(providers, records, maxFilesPerIndex) {
               {
                 getRemoteFiles().add(remoteFile);
               }

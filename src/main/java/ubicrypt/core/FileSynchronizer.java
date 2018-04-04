@@ -40,7 +40,7 @@ import rx.Subscriber;
 import rx.subjects.PublishSubject;
 import rx.subjects.Subject;
 import ubicrypt.core.dto.LocalConfig;
-import ubicrypt.core.dto.RemoteConfig;
+import ubicrypt.core.remote.RemoteConfig;
 import ubicrypt.core.dto.VClock;
 import ubicrypt.core.events.SyncBeginEvent;
 import ubicrypt.core.events.SynchDoneEvent;

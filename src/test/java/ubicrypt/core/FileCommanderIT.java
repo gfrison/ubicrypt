@@ -64,7 +64,7 @@ import ubicrypt.core.crypto.PGPEC;
 import ubicrypt.core.crypto.PGPService;
 import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.dto.LocalFile;
-import ubicrypt.core.dto.RemoteConfig;
+import ubicrypt.core.remote.RemoteConfig;
 import ubicrypt.core.dto.UbiFile;
 import ubicrypt.core.local.LocalRepository;
 import ubicrypt.core.local.OnNewLocal;

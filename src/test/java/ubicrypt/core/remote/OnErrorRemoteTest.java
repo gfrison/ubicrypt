@@ -18,7 +18,6 @@ import org.junit.Test;
 
 import ubicrypt.core.FileProvenience;
 import ubicrypt.core.dto.LocalFile;
-import ubicrypt.core.dto.RemoteConfig;
 import ubicrypt.core.dto.RemoteFile;
 import ubicrypt.core.dto.UbiFile;
 import ubicrypt.core.provider.UbiProvider;
@@ -39,7 +38,7 @@ public class OnErrorRemoteTest {
   public void test1() throws Exception {
     UbiFile file = new LocalFile();
     FileProvenience fp = new FileProvenience(file, mock(RemoteRepository.class));
-    RemoteConfig rconfig = new RemoteConfig();
+    RemoteConfig rconfig = new RemoteConfig(providers, records, maxFilesPerIndex);
     final RemoteFile remoteFile = RemoteFile.createFrom(file);
     remoteFile.setError(true);
     rconfig.getRemoteFiles().add(remoteFile);

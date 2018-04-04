@@ -36,9 +36,9 @@ import static ubicrypt.core.TestUtils.createDirs;
 import static ubicrypt.core.TestUtils.deleteDirs;
 import static ubicrypt.core.TestUtils.fileProvider;
 import static ubicrypt.core.TestUtils.tmp;
-import static ubicrypt.core.fdx.RemoteFileAction.Action.add;
-import static ubicrypt.core.fdx.RemoteFileAction.Action.delete;
-import static ubicrypt.core.fdx.RemoteFileAction.Action.update;
+import static ubicrypt.core.Action.add;
+import static ubicrypt.core.Action.delete;
+import static ubicrypt.core.Action.update;
 
 public class FDXIT {
   private IPersist persist;

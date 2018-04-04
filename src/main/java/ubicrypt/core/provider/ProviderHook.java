@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.util.function.Function;
 
 import rx.Observable;
-import ubicrypt.core.dto.RemoteConfig;
+import ubicrypt.core.remote.RemoteConfig;
 import ubicrypt.core.provider.lock.AcquirerReleaser;
 import ubicrypt.core.remote.RemoteRepository;
 

@@ -23,7 +23,7 @@ import rx.functions.Action0;
 import rx.functions.Actions;
 import rx.functions.Func1;
 import rx.functions.Func2;
-import ubicrypt.core.dto.RemoteConfig;
+import ubicrypt.core.remote.RemoteConfig;
 import ubicrypt.core.dto.RemoteFile;
 import ubicrypt.core.dto.UbiFile;
 import ubicrypt.core.provider.lock.AcquirerReleaser;

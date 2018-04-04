@@ -18,7 +18,6 @@ import java.util.function.BiPredicate;
 
 import rx.Observable;
 import ubicrypt.core.FileProvenience;
-import ubicrypt.core.dto.RemoteConfig;
 
 public interface IRemoteAction
     extends BiPredicate<FileProvenience, RemoteConfig>,

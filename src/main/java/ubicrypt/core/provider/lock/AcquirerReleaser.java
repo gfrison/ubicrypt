@@ -14,7 +14,7 @@
 package ubicrypt.core.provider.lock;
 
 import rx.functions.Action0;
-import ubicrypt.core.dto.RemoteConfig;
+import ubicrypt.core.remote.RemoteConfig;
 
 public class AcquirerReleaser {
   private final RemoteConfig remoteConfig;

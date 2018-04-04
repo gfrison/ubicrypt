@@ -21,20 +21,26 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 public class VClock implements Cloneable {
   final ConcurrentHashMap<Integer, AtomicLong> map;
+  private transient Consumer<Void> observer;
 
   public VClock() {
     this.map = new ConcurrentHashMap<>();
   }
 
-  private VClock(ConcurrentHashMap<Integer, AtomicLong> map) {
+  private VClock(ConcurrentHashMap<Integer, AtomicLong> map, Consumer<Void> observer) {
     this.map = map;
+    this.observer = observer;
   }
 
   public void increment(int device) {
     map.computeIfAbsent(device, i -> new AtomicLong(0)).incrementAndGet();
+    if (observer != null) {
+      observer.accept(null);
+    }
   }
 
   public Comparison compare(VClock v2) {
@@ -92,18 +98,22 @@ public class VClock implements Cloneable {
   }
 
   @Override
-  public Object clone() throws CloneNotSupportedException {
+  public Object clone() {
     return new VClock(
         map.entrySet()
             .stream()
             .collect(
-                ConcurrentHashMap<Integer, AtomicLong>::new,
+                ConcurrentHashMap::new,
                 (ConcurrentHashMap<Integer, AtomicLong> map,
-                        Map.Entry<Integer, AtomicLong> entry) ->
+                 Map.Entry<Integer, AtomicLong> entry) ->
                     map.put(entry.getKey(), new AtomicLong(entry.getValue().longValue())),
                 (ConcurrentHashMap<Integer, AtomicLong> map1,
-                        ConcurrentHashMap<Integer, AtomicLong> map2) ->
-                    map1.putAll(map2)));
+                 ConcurrentHashMap<Integer, AtomicLong> map2) ->
+                    map1.putAll(map2)), observer);
+  }
+
+  public void setObserver(Consumer<Void>observer) {
+    this.observer = observer;
   }
 
   public enum Comparison {
