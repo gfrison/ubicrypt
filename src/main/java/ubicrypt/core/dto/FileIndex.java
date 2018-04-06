@@ -18,6 +18,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -25,7 +26,7 @@ import ubicrypt.core.Action;
 
 import static ubicrypt.core.Utils.copySynchronized;
 
-public class FileIndex {
+public class FileIndex implements Iterable<FileIndex> {
   private Set<RemoteFile> files = ConcurrentHashMap.newKeySet();
   private RemoteFile nextIndex;
   @JsonIgnore
@@ -48,6 +49,9 @@ public class FileIndex {
   }
 
   public void setStatus(Action status) {
+    if (status == Action.add) {
+      return;
+    }
     this.status = status;
   }
 
@@ -82,6 +86,25 @@ public class FileIndex {
         .append("files", files)
         .append("nextIndex", nextIndex)
         .toString();
+  }
+
+  @Override
+  public Iterator<FileIndex> iterator() {
+    final FileIndex fi = this;
+    return new Iterator<>() {
+      private FileIndex el = fi;
+      @Override
+      public boolean hasNext() {
+        return el != null;
+      }
+
+      @Override
+      public FileIndex next() {
+        FileIndex ret = el;
+        el = el.next;
+        return ret;
+      }
+    };
   }
 
 

@@ -17,10 +17,14 @@ import org.slf4j.Logger;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import rx.Observable;
 import rx.Observer;
 import rx.Subscriber;
+import ubicrypt.core.Action;
+import ubicrypt.core.dto.FileIndex;
 import ubicrypt.core.dto.RemoteFile;
 import ubicrypt.core.util.IPersist;
 import ubicrypt.core.util.Reverser;
@@ -28,31 +32,32 @@ import ubicrypt.core.util.Reverser;
 import static org.slf4j.LoggerFactory.getLogger;
 import static rx.Observable.error;
 import static rx.Observable.just;
-import static ubicrypt.core.fdx.IndexRecord.IRStatus.created;
-import static ubicrypt.core.fdx.IndexRecord.IRStatus.modified;
-import static ubicrypt.core.fdx.IndexRecord.IRStatus.unchanged;
+import static ubicrypt.core.Action.add;
+import static ubicrypt.core.Action.unchanged;
 
-public class FDXSaver implements Observable.OnSubscribe<List<IndexRecord>> {
+public class FDXSaver implements Observable.OnSubscribe<FileIndex> {
   private static final Logger log = getLogger(FDXSaver.class);
   private final IPersist serializer;
-  private final List<IndexRecord> records;
+  private final FileIndex index;
+  private final RemoteFile indexFile;
 
-  public FDXSaver(IPersist serializer, List<IndexRecord> records) {
+  public FDXSaver(IPersist serializer, FileIndex index, RemoteFile indexFile) {
     this.serializer = serializer;
-    this.records = records;
+    this.index = index;
+    this.indexFile = indexFile;
   }
 
   @Override
-  public void call(Subscriber<? super List<IndexRecord>> subscriber) {
+  public void call(Subscriber<? super FileIndex> subscriber) {
     //reverse list
-    List<IndexRecord> reverse = records.stream().collect(new Reverser<>());
+    List<FileIndex> list = StreamSupport.stream(index.spliterator(),false).collect(Collectors.toList());
 
     //save records
-    saveCascade(reverse.iterator(), unchanged, just(new RemoteFile()))
+    saveCascade(list.iterator(), unchanged, just(indexFile))
         .last()
         .map(
             rff -> {
-              List<IndexRecord> front = reverse.stream().collect(new Reverser<>());
+              List<IndexRecord> front = list.stream().collect(new Reverser<>());
               if (!front.isEmpty()) {
                 //set initial remote file
                 final RemoteFile remoteFile = front.get(0).getRemoteFile();
@@ -60,17 +65,17 @@ public class FDXSaver implements Observable.OnSubscribe<List<IndexRecord>> {
               }
               return front;
             })
-        .defaultIfEmpty(reverse.stream().collect(new Reverser<>()))
+        .defaultIfEmpty(list.stream().collect(new Reverser<>()))
         .subscribe((Observer<? super Object>) subscriber);
   }
 
   private Observable<RemoteFile> saveCascade(
-      Iterator<IndexRecord> it, IndexRecord.IRStatus previousStatus, Observable<RemoteFile> chain) {
+      Iterator<FileIndex> it, Observable<RemoteFile> chain) {
     if (!it.hasNext()) {
       return chain;
     }
-    IndexRecord ir = it.next();
-    if (previousStatus == created) {
+    FileIndex idx = it.next();
+    if (idx.getStatus() == add) {
       if (ir.getStatus() != created) {
         ir.setStatus(modified);
       }
@@ -108,4 +113,5 @@ public class FDXSaver implements Observable.OnSubscribe<List<IndexRecord>> {
         return error(new IllegalStateException(ir.getStatus() + " not managed"));
     }
   }
+
 }

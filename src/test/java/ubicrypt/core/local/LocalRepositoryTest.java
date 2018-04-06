@@ -41,13 +41,13 @@ import ubicrypt.core.crypto.IPGPService;
 import ubicrypt.core.dto.Key;
 import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.dto.LocalFile;
-import ubicrypt.core.remote.RemoteConfig;
 import ubicrypt.core.dto.RemoteFile;
 import ubicrypt.core.dto.VClock;
 import ubicrypt.core.provider.FileEvent;
 import ubicrypt.core.provider.file.FileProvider;
 import ubicrypt.core.provider.lock.AcquirerReleaser;
 import ubicrypt.core.provider.lock.ObjectIO;
+import ubicrypt.core.remote.RemoteConfig;
 import ubicrypt.core.remote.RemoteRepository;
 import ubicrypt.core.util.Persist;
 import ubicrypt.core.util.QueueLiner;
@@ -94,7 +94,7 @@ public class LocalRepositoryTest {
         "ciaoooooooooooooooooooooooo000000000000000000000000000000000000000000000".getBytes());
     file.setPath(Paths.get("fileName"));
     final FileProvider provider = TestUtils.fileProvider(tmp2);
-    RemoteConfig rconfig = new RemoteConfig(providers, records, maxFilesPerIndex);
+    RemoteConfig rconfig = new RemoteConfig();
     rconfig.getProviders().add(provider);
     final RemoteFile remoteFile = RemoteFile.createFrom(file);
     remoteFile.setRemoteName("fileName");
@@ -153,7 +153,7 @@ public class LocalRepositoryTest {
           }
         };
 
-    final RemoteConfig remoteConfig = new RemoteConfig(providers, records, maxFilesPerIndex);
+    final RemoteConfig remoteConfig = new RemoteConfig();
     remoteConfig.getRemoteFiles().add(rf);
     Observable.OnSubscribe<AcquirerReleaser> acquirer =
         (subscriber) -> {
@@ -166,7 +166,7 @@ public class LocalRepositoryTest {
             setPgpService(mock(IPGPService.class));
           }
         };
-    ser.putObject(new RemoteConfig(providers, records, maxFilesPerIndex), provider.getConfFile()).toBlocking().first();
+    ser.putObject(new RemoteConfig(), provider.getConfFile()).toBlocking().first();
 
     final RemoteRepository repo =
         new RemoteRepository(
