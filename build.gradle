@@ -14,7 +14,7 @@ apply plugin: 'idea'
 apply plugin: 'jacoco'
 
 version = '0.19'
-sourceCompatibility = 1.9
+sourceCompatibility = 10
 
 project.group = 'ubicrypt'
 mainClassName = 'ubicrypt.UbiCrypt'

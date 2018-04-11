@@ -13,7 +13,7 @@
  */
 package ubicrypt.core.fdx;
 
-import org.apache.commons.lang3.StringUtils;
+import java.util.Objects;
 
 import rx.Observable;
 import rx.Subscriber;
@@ -21,37 +21,40 @@ import ubicrypt.core.dto.FileIndex;
 import ubicrypt.core.dto.RemoteFile;
 import ubicrypt.core.util.IPersist;
 
-import static org.apache.commons.lang3.StringUtils.isEmpty;
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static rx.Observable.create;
-import static rx.Observable.empty;
 
 public class FDXLoader implements Observable.OnSubscribe<FileIndex> {
   private final IPersist serializer;
   private final RemoteFile fileIndexFile;
+  private final FileIndex parent;
 
   public FDXLoader(IPersist serializer, RemoteFile fileIndexFile) {
+    Objects.nonNull(fileIndexFile);
     this.serializer = serializer;
     this.fileIndexFile = fileIndexFile;
+    this.parent = null;
+  }
+
+  public FDXLoader(IPersist serializer, RemoteFile fileIndexFile, FileIndex parent) {
+    this.serializer = serializer;
+    this.fileIndexFile = fileIndexFile;
+    this.parent = parent;
   }
 
   @Override
   public void call(Subscriber<? super FileIndex> subscriber) {
-    if (isEmpty(fileIndexFile.getName())) {
-      subscriber.onCompleted();
-      return;
-    }
-    serializer
-        .getObject(fileIndexFile, FileIndex.class)
-        .flatMap(
-            fdx -> {
-              subscriber.onNext(fdx);
-              final RemoteFile nextIndex = fdx.getNextIndex();
-              if (nextIndex != null && isNotEmpty(nextIndex.getName())) {
-                return create(new FDXLoader(serializer, nextIndex));
-              }
-              return empty();
-            })
+    serializer.getObject(fileIndexFile, FileIndex.class)
+        .flatMap(fi -> {
+          if (parent != null) {
+            fi.setParent(parent);
+            parent.setNext(fi);
+          }
+          if (fi.getNextIndex() != null) {
+            return create(new FDXLoader(serializer, fi.getNextIndex(), fi));
+          }
+          return Observable.just(fi);
+        })
+        .last()
         .subscribe(subscriber);
   }
 }

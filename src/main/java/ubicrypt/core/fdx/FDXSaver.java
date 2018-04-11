@@ -17,101 +17,67 @@ import org.slf4j.Logger;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import rx.Observable;
-import rx.Observer;
 import rx.Subscriber;
-import ubicrypt.core.Action;
 import ubicrypt.core.dto.FileIndex;
 import ubicrypt.core.dto.RemoteFile;
 import ubicrypt.core.util.IPersist;
 import ubicrypt.core.util.Reverser;
 
 import static org.slf4j.LoggerFactory.getLogger;
-import static rx.Observable.error;
-import static rx.Observable.just;
-import static ubicrypt.core.Action.add;
-import static ubicrypt.core.Action.unchanged;
+import static rx.Observable.empty;
 
-public class FDXSaver implements Observable.OnSubscribe<FileIndex> {
+public class FDXSaver implements Observable.OnSubscribe<RemoteFile> {
   private static final Logger log = getLogger(FDXSaver.class);
   private final IPersist serializer;
   private final FileIndex index;
-  private final RemoteFile indexFile;
 
-  public FDXSaver(IPersist serializer, FileIndex index, RemoteFile indexFile) {
+  public FDXSaver(IPersist serializer, FileIndex index) {
     this.serializer = serializer;
     this.index = index;
-    this.indexFile = indexFile;
   }
 
   @Override
-  public void call(Subscriber<? super FileIndex> subscriber) {
+  public void call(Subscriber<? super RemoteFile> subscriber) {
     //reverse list
-    List<FileIndex> list = StreamSupport.stream(index.spliterator(),false).collect(Collectors.toList());
+    List<FileIndex> list = StreamSupport.stream(index.spliterator(), false).collect(new Reverser<>());
 
     //save records
-    saveCascade(list.iterator(), unchanged, just(indexFile))
-        .last()
-        .map(
-            rff -> {
-              List<IndexRecord> front = list.stream().collect(new Reverser<>());
-              if (!front.isEmpty()) {
-                //set initial remote file
-                final RemoteFile remoteFile = front.get(0).getRemoteFile();
-                remoteFile.copyFrom(rff);
-              }
-              return front;
-            })
-        .defaultIfEmpty(list.stream().collect(new Reverser<>()))
-        .subscribe((Observer<? super Object>) subscriber);
+    saveCascade(list.iterator(),null);
   }
 
   private Observable<RemoteFile> saveCascade(
-      Iterator<FileIndex> it, Observable<RemoteFile> chain) {
+      Iterator<FileIndex> it, RemoteFile chain) {
     if (!it.hasNext()) {
-      return chain;
+      return empty();
     }
-    FileIndex idx = it.next();
-    if (idx.getStatus() == add) {
-      if (ir.getStatus() != created) {
-        ir.setStatus(modified);
-      }
-      return saveCascade(
-          it,
-          ir.getStatus(),
-          chain.flatMap(
-              rf -> {
-                if (ir.getFileIndex().getNextIndex() == null) {
-                  ir.getFileIndex().setNextIndex(rf);
-                } else {
-                  ir.getFileIndex().getNextIndex().copyFrom(rf);
-                }
-                return serializer
-                    .put(ir.getFileIndex(), ir.getRemoteFile())
-                    .map(r -> ir.getRemoteFile());
-              }));
+    FileIndex fi = it.next();
+    if (chain != null) {
+      fi.setNextIndex(chain);
     }
-    return saveCascade(it, ir.getStatus(), chain.flatMap(rf -> action(ir, rf)));
+    switch (fi.getStatus()) {
+      case add:
+        final RemoteFile rf = new RemoteFile();
+        return serializer.put(fi, rf)
+            .flatMap(res -> saveCascade(it, rf));
+      case update:
+        return serializer.put(fi, fi.getParent().getNextIndex())
+            .flatMap(r -> saveCascade(it, null));
+      case delete:
+        return serializer.delete(fi.getParent().getNextIndex())
+            .flatMap(r -> {
+              fi.getParent().setNextIndex(null);
+              return saveCascade(it, null);
+            });
+      case unchanged:
+        return saveCascade(it, null);
+      default:
+        log.warn("no action defined {}", fi.getStatus());
+        return empty();
+    }
   }
 
-  private Observable<RemoteFile> action(IndexRecord ir, RemoteFile previous) {
-    switch (ir.getStatus()) {
-      case unchanged:
-        return just(ir.getRemoteFile());
-      case created:
-      case modified:
-        return serializer
-            .put(ir.getFileIndex(), ir.getRemoteFile())
-            .map(r -> ir.getRemoteFile())
-            .defaultIfEmpty(ir.getRemoteFile());
-      case deleted:
-        return serializer.delete(ir.getRemoteFile()).map(r -> previous).defaultIfEmpty(previous);
-      default:
-        return error(new IllegalStateException(ir.getStatus() + " not managed"));
-    }
-  }
 
 }
