@@ -13,8 +13,8 @@
  */
 package ubicrypt.core.exp;
 
-import reactor.fn.tuple.Tuple;
-import reactor.fn.tuple.Tuple2;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 import ubicrypt.core.dto.UbiFile;
 
 public class ConflictException extends RuntimeException {
@@ -22,7 +22,7 @@ public class ConflictException extends RuntimeException {
   private final Tuple2<UbiFile, UbiFile> files;
 
   public <T extends UbiFile> ConflictException(final UbiFile tUbiFile, final UbiFile file) {
-    this.files = Tuple.of(tUbiFile, file);
+    this.files = Tuples.of(tUbiFile, file);
   }
 
   public Tuple2<UbiFile, UbiFile> getFiles() {

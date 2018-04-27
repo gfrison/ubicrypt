@@ -35,7 +35,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import reactor.fn.tuple.Tuple;
+import reactor.util.function.Tuples;
 import ubicrypt.core.provider.ProviderDescriptor;
 import ubicrypt.core.provider.ProviderStatus;
 import ubicrypt.core.provider.UbiProvider;
@@ -77,7 +77,7 @@ public class ProviderItem implements ITreeItem {
     info.setOnMouseClicked(
         event -> {
           navigator.browse(
-              "provider/" + provider.code() + "-info", Tuple.of(provider, providerRemover, status));
+              "provider/" + provider.code() + "-info", Tuples.of(provider, providerRemover, status));
         });
     if (ProviderItem.class.getResource("/fxml/provider/" + provider.code() + "-info.fxml")
         == null) {

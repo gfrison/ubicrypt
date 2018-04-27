@@ -45,7 +45,7 @@ public class FileProviderTest {
             setPgpService(mock(IPGPService.class));
           }
         };
-    ser.putObject(new RemoteConfig(providers, records, maxFilesPerIndex), fp.getConfFile()).toBlocking().first();
+    ser.putObject(new RemoteConfig(), fp.getConfFile()).toBlocking().first();
   }
 
   @After

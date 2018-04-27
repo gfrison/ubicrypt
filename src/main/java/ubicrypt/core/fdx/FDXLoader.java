@@ -22,6 +22,7 @@ import ubicrypt.core.dto.RemoteFile;
 import ubicrypt.core.util.IPersist;
 
 import static rx.Observable.create;
+import static rx.Observable.just;
 
 public class FDXLoader implements Observable.OnSubscribe<FileIndex> {
   private final IPersist serializer;
@@ -35,7 +36,7 @@ public class FDXLoader implements Observable.OnSubscribe<FileIndex> {
     this.parent = null;
   }
 
-  public FDXLoader(IPersist serializer, RemoteFile fileIndexFile, FileIndex parent) {
+  private FDXLoader(IPersist serializer, RemoteFile fileIndexFile, FileIndex parent) {
     this.serializer = serializer;
     this.fileIndexFile = fileIndexFile;
     this.parent = parent;
@@ -50,11 +51,13 @@ public class FDXLoader implements Observable.OnSubscribe<FileIndex> {
             parent.setNext(fi);
           }
           if (fi.getNextIndex() != null) {
-            return create(new FDXLoader(serializer, fi.getNextIndex(), fi));
+            return just(fi).concatWith(create(new FDXLoader(serializer, fi.getNextIndex(), fi)));
+          } else {
+            return Observable.just(fi);
           }
-          return Observable.just(fi);
         })
-        .last()
+        .toList()
+        .map(l->l.iterator().next())
         .subscribe(subscriber);
   }
 }

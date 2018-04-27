@@ -60,11 +60,13 @@ import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -559,5 +561,17 @@ public class Utils {
       }
 
     } while (i < args.length);
+  }
+  public static <T, R> Optional<R> dig(T obj, Function<T, R> func) {
+    return Optional.ofNullable(obj).map(func);
+  }
+
+  public static <T, R, S> Optional<S> dig(T obj, Function<T, R> func, Function<R, S> func2) {
+    return dig(obj, func).map(func2);
+  }
+
+  public static <T, R, S, V> Optional<V> dig(
+      T obj, Function<T, R> func, Function<R, S> func2, Function<S, V> func3) {
+    return dig(obj, func, func2).map(func3);
   }
 }

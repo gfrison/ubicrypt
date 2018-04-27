@@ -38,7 +38,7 @@ public class OnErrorRemoteTest {
   public void test1() throws Exception {
     UbiFile file = new LocalFile();
     FileProvenience fp = new FileProvenience(file, mock(RemoteRepository.class));
-    RemoteConfig rconfig = new RemoteConfig(providers, records, maxFilesPerIndex);
+    RemoteConfig rconfig = new RemoteConfig();
     final RemoteFile remoteFile = RemoteFile.createFrom(file);
     remoteFile.setError(true);
     rconfig.getRemoteFiles().add(remoteFile);

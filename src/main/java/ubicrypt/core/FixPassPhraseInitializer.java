@@ -30,8 +30,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 
-import reactor.fn.tuple.Tuple;
-import reactor.fn.tuple.Tuple2;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 import ubicrypt.core.crypto.PGPEC;
 import ubicrypt.core.dto.LocalConfig;
 
@@ -69,7 +69,7 @@ public class FixPassPhraseInitializer
             .doOnError(err -> log.error(err.getMessage(), err))
             .subscribe();
       }
-      return Tuple.of(signkey, keyPair);
+      return Tuples.of(signkey, keyPair);
     } catch (final Exception e) {
 
       Throwables.propagate(e);

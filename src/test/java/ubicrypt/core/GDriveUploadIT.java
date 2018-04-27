@@ -36,7 +36,7 @@ import java.util.stream.IntStream;
 import javax.annotation.Resource;
 import javax.inject.Inject;
 
-import reactor.fn.tuple.Tuple2;
+import reactor.util.function.Tuple2;
 import rx.Observable;
 import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.dto.RemoteFile;

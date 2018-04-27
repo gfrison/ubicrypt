@@ -33,14 +33,13 @@ import java.util.stream.Stream;
 import javax.annotation.Resource;
 import javax.inject.Inject;
 
-import reactor.fn.tuple.Tuple;
-import reactor.fn.tuple.Tuple2;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 import rx.Observable;
 import rx.Subscriber;
 import rx.subjects.PublishSubject;
 import rx.subjects.Subject;
 import ubicrypt.core.dto.LocalConfig;
-import ubicrypt.core.remote.RemoteConfig;
 import ubicrypt.core.dto.VClock;
 import ubicrypt.core.events.SyncBeginEvent;
 import ubicrypt.core.events.SynchDoneEvent;
@@ -49,6 +48,7 @@ import ubicrypt.core.provider.FileEvent;
 import ubicrypt.core.provider.ProviderEvent;
 import ubicrypt.core.provider.ProviderHook;
 import ubicrypt.core.provider.ProviderLifeCycle;
+import ubicrypt.core.remote.RemoteConfig;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -281,7 +281,7 @@ public class FileSynchronizer implements Observable.OnSubscribe<Boolean> {
                         .map(
                             releaser -> {
                               releaser.getReleaser().call();
-                              return Tuple.of(provider, releaser.getRemoteConfig());
+                              return Tuples.of(provider, releaser.getRemoteConfig());
                             }))
             .collect(Collectors.toList());
     return Observable.zip(

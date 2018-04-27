@@ -190,7 +190,7 @@ public class InitFileSyncronizerIT implements ApplicationContextAware {
           }
         };
     os.putObject(
-            new RemoteConfig(providers, records, maxFilesPerIndex) {
+            new RemoteConfig() {
               {
                 getRemoteFiles().add(remoteFile);
               }
@@ -236,7 +236,7 @@ public class InitFileSyncronizerIT implements ApplicationContextAware {
           }
         };
     os.putObject(
-            new RemoteConfig(providers, records, maxFilesPerIndex) {
+            new RemoteConfig() {
               {
                 getRemoteFiles().add(remoteFile);
               }

@@ -36,6 +36,16 @@ public class FileIndex implements Iterable<FileIndex> {
   @JsonIgnore
   private volatile FileIndex parent;
 
+  public FileIndex() {
+  }
+
+
+  public FileIndex(Action status) {
+    this.status = status;
+  }
+
+
+
   public FileIndex getParent() {
     return parent;
   }
@@ -49,9 +59,6 @@ public class FileIndex implements Iterable<FileIndex> {
   }
 
   public void setStatus(Action status) {
-    if (status == Action.add) {
-      return;
-    }
     this.status = status;
   }
 

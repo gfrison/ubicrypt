@@ -29,8 +29,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
-import reactor.fn.tuple.Tuple;
-import reactor.fn.tuple.Tuple2;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 import rx.Observable;
 import rx.Subscriber;
 import rx.schedulers.Schedulers;
@@ -68,7 +68,7 @@ public class S3Provider extends UbiProvider {
                   subscriber.onError(new RuntimeException("no key provided in the ID"));
                   return;
                 }
-                subscriber.onNext(Tuple.of(ids[0], ids[1]));
+                subscriber.onNext(Tuples.of(ids[0], ids[1]));
                 subscriber.onCompleted();
               });
   private S3Conf conf;

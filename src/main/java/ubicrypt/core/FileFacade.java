@@ -20,8 +20,8 @@ import java.util.Optional;
 
 import javax.inject.Inject;
 
-import reactor.fn.tuple.Tuple;
-import reactor.fn.tuple.Tuple2;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 import rx.Observable;
 import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.dto.LocalFile;
@@ -52,13 +52,13 @@ public class FileFacade implements IFileCommander {
       final LocalFile localFile = optFile.get();
       if (localFile.isRemoved()) {
         return Observable.just(
-            Tuple.of(
+            Tuples.of(
                 optFile.get(),
                 fileCommander.update(absolutePath, (file) -> file.setRemoved(false))));
       }
       if (localFile.isDeleted()) {
         return Observable.just(
-            Tuple.of(
+            Tuples.of(
                 optFile.get(),
                 fileCommander.update(absolutePath, (file) -> file.setDeleted(false))));
       }
@@ -67,7 +67,7 @@ public class FileFacade implements IFileCommander {
         .addFile(absolutePath)
         .map(
             ret ->
-                Tuple.of(
+                Tuples.of(
                     ret.getT1(),
                     ret.getT2()
                         .doOnNext(

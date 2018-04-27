@@ -38,10 +38,12 @@ import rx.Subscription;
 import rx.functions.Actions;
 import rx.internal.operators.BufferUntilSubscriber;
 import rx.subjects.Subject;
+import ubicrypt.core.RemoteIO;
 import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.dto.ProviderLock;
-import ubicrypt.core.remote.RemoteConfig;
+import ubicrypt.core.dto.StoredRemoteConfig;
 import ubicrypt.core.exp.NotFoundException;
+import ubicrypt.core.fdx.RemoteConfigIO;
 import ubicrypt.core.provider.lock.ConfigAcquirer;
 import ubicrypt.core.provider.lock.InitLockChecker;
 import ubicrypt.core.provider.lock.LockChecker;
@@ -49,6 +51,7 @@ import ubicrypt.core.provider.lock.ObjectIO;
 import ubicrypt.core.remote.OnErrorRemote;
 import ubicrypt.core.remote.OnInsertRemote;
 import ubicrypt.core.remote.OnUpdateRemote;
+import ubicrypt.core.remote.RemoteConfig;
 import ubicrypt.core.remote.RemoteRepository;
 import ubicrypt.core.util.InProgressTracker;
 import ubicrypt.core.util.Persist;
@@ -69,10 +72,13 @@ public class ProviderLifeCycle implements ApplicationContextAware {
   @Qualifier("providerEvent")
   private Subject<ProviderEvent, ProviderEvent> providerEvents = BufferUntilSubscriber.create();
 
-  @Inject private LocalConfig localConfig;
-  @Inject private int deviceId;
+  @Inject
+  private LocalConfig localConfig;
+  @Inject
+  private int deviceId;
   private ConfigurableApplicationContext ctx;
-  @Inject private InProgressTracker inProgressTracker;
+  @Inject
+  private InProgressTracker inProgressTracker;
 
   @PostConstruct
   public void init() {
@@ -104,8 +110,8 @@ public class ProviderLifeCycle implements ApplicationContextAware {
                     provider.getDelayAcquiringLockMs());
             /** renew lock when download/upload in progress */
             lockCheker.setShouldExtendLock(() -> inProgressTracker.inProgress());
-            ObjectIO<RemoteConfig> configIO =
-                new ObjectIO<>(serializer, provider.getConfFile(), RemoteConfig.class);
+            RemoteIO<RemoteConfig> configIO = new RemoteConfigIO(serializer,
+                new ObjectIO<>(serializer, provider.getConfFile(), StoredRemoteConfig.class));
             ConfigAcquirer acquirer =
                 new ConfigAcquirer(new InitLockChecker(provider, deviceId), lockCheker, configIO);
             acquirer.setProviderRef(provider.toString());

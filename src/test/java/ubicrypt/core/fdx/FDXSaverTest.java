@@ -14,17 +14,19 @@
 package ubicrypt.core.fdx;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterators;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Iterator;
-import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
-import reactor.fn.tuple.Tuple;
-import reactor.fn.tuple.Tuple2;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 import rx.Observable;
 import ubicrypt.core.Action;
 import ubicrypt.core.dto.FileIndex;
@@ -33,7 +35,6 @@ import ubicrypt.core.util.IPersist;
 import ubicrypt.core.util.Persist;
 
 import static java.lang.String.valueOf;
-import static java.util.stream.IntStream.range;
 import static org.assertj.core.api.Assertions.assertThat;
 import static rx.Observable.create;
 import static ubicrypt.core.TestUtils.createDirs;
@@ -41,9 +42,6 @@ import static ubicrypt.core.TestUtils.deleteDirs;
 import static ubicrypt.core.TestUtils.fileProvider;
 import static ubicrypt.core.TestUtils.tmp;
 import static ubicrypt.core.dto.FileIndex.FileIndexBuilder.aFileIndex;
-import static ubicrypt.core.fdx.IndexRecord.IRStatus.created;
-import static ubicrypt.core.fdx.IndexRecord.IRStatus.modified;
-import static ubicrypt.core.fdx.IndexRecord.IRStatus.unchanged;
 
 public class FDXSaverTest {
   private IPersist persist;
@@ -68,7 +66,7 @@ public class FDXSaverTest {
   @Test
   public void empty() throws Exception {
     FDXSaver saver = new FDXSaver(persist, new FileIndex());
-    assertThat(create(saver).defaultIfEmpty(null).toBlocking().last()).isNull();
+    assertThat(create(saver).defaultIfEmpty(null).toBlocking().last()).isNotEmpty();
   }
 
   @Test
@@ -78,37 +76,38 @@ public class FDXSaverTest {
         .withStatus(Action.add)
         .build();
     FDXSaver saver = new FDXSaver(persist, fi);
-    final RemoteFile last = create(saver).toBlocking().last();
+    final RemoteFile last = create(saver).toBlocking().last().get();
     assertThat(last).isNotNull();
     assertThat(last.getRemoteName()).isNotEmpty();
     FileIndex ret = persist.getObject(last, FileIndex.class).toBlocking().last();
     assertThat(ret.getFiles().size()).isEqualTo(1);
-    assertThat(ret.getNextIndex().getName()).isNull();
+    assertThat(ret.getNextIndex()).isNull();
+  }
+
+  @Test
+  public void oneAlreadyExists() throws Exception {
+    FileIndex fi = aFileIndex()
+        .withFiles(ImmutableSet.of(new RemoteFile()))
+        .withStatus(Action.update)
+        .build();
+    RemoteFile rf = new RemoteFile();
+    persist.put(fi, rf).toBlocking().last();
+    FDXSaver saver = new FDXSaver(persist, fi,rf);
+    Optional<RemoteFile> last = create(saver).toBlocking().last();
+    assertThat(last).isNotNull();
+    assertThat(last).isEmpty();
+    FileIndex ret = persist.getObject(rf, FileIndex.class).toBlocking().last();
+    assertThat(ret.getFiles().size()).isEqualTo(1);
+    assertThat(ret.getNextIndex()).isNull();
   }
 
   @Test
   public void manyNewFiles() throws Exception {
-    FileIndex fi = createUnsaved(10);
+    FileIndex fi = createUnsaved(3);
     FDXSaver saver = new FDXSaver(persist, fi);
-    create(saver)
-    assertThat(irecord.get(0).getRemoteFile().getRemoteName()).isNotEmpty();
-    range(0, 10)
-        .forEach(
-            i ->
-                assertThat(
-                    persist
-                        .getObject(irecord.get(i).getRemoteFile(), FileIndex.class)
-                        .toBlocking()
-                        .last()
-                        .getFiles())
-                    .hasSize(1));
-
-    range(0, 10)
-        .forEach(
-            i -> {
-              final IndexRecord record = irecord.get(i);
-              assertThat(Files.exists(tmp.resolve(record.getRemoteFile().getRemoteName())));
-            });
+    RemoteFile rf = create(saver).toBlocking().last().get();
+    assertThat(rf).isNotNull();
+    assertThat(Files.list(tmp)).hasSize(3);
   }
 
   public FileIndex createUnsaved(int num) {
@@ -122,10 +121,10 @@ public class FDXSaverTest {
                 }))
         .withStatus(Action.add)
         .build();
-    if (num == 0) {
+    if (num == 1) {
       return index;
     }
-    FileIndex created = createFI(num - 1);
+    FileIndex created = createUnsaved(num - 1);
     index.setNext(created);
     created.setParent(index);
     return index;
@@ -147,10 +146,10 @@ public class FDXSaverTest {
                   }
                 }))
         .build();
-    if (num == 0) {
+    if (num == 1) {
       RemoteFile rf = new RemoteFile();
       return persist.put(index, rf)
-          .map(res -> Tuple.of(index, rf));
+          .map(res -> Tuples.of(index, rf));
     }
 
     return createN(num - 1)
@@ -160,82 +159,70 @@ public class FDXSaverTest {
           tupla.getT1().setParent(index);
           RemoteFile rf = new RemoteFile();
           return persist.put(index, rf)
-              .map(res -> Tuple.of(index, rf));
+              .map(res -> Tuples.of(index, rf));
         });
   }
 
   @Test
   public void addNewFile() throws Exception {
-    List<IndexRecord> records = create10();
-    records.forEach(r -> r.setStatus(unchanged));
-    records.add(
-        new IndexRecord(
-            aFileIndex()
-                .addFile(
-                    new RemoteFile() {
-                      {
-                        setRemoteName("10");
-                      }
-                    })
-                .build(),
-            new RemoteFile(),
-            created));
-    FDXSaver save = new FDXSaver(persist, records);
-    assertThat(create(save).toBlocking().last()).hasSize(11);
-    assertThat(Files.exists(tmp.resolve(records.get(10).getRemoteFile().getRemoteName())));
-    Iterator<IndexRecord> it = records.iterator();
-    RemoteFile rf = records.get(0).getRemoteFile();
-    int i = 0;
-    while (it.hasNext()) {
-      IndexRecord ir = it.next();
-      assertThat(Files.exists(tmp.resolve(rf.getRemoteName()))).isTrue();
-      assertThat(
-          persist
-              .getObject(rf, FileIndex.class)
-              .toBlocking()
-              .last()
-              .getFiles()
-              .iterator()
-              .next()
-              .getRemoteName())
-          .isEqualTo(valueOf(i++));
-      rf = ir.getFileIndex().getNextIndex();
-    }
+    RemoteFile rf = create10();
+    FDXLoader loader = new FDXLoader(persist, rf);
+    FileIndex fi = create(loader).toBlocking().first();
+    assertThat(fi.iterator()).hasSize(10);
+    FileIndex last = Iterators.getLast(fi.iterator());
+    last.setNext(aFileIndex()
+      .withFiles(Set.of(new RemoteFile()))
+        .withStatus(Action.add)
+        .withParent(last)
+        .build());
+    Optional<RemoteFile> opt = create(new FDXSaver(persist, fi, rf)).toBlocking().last();
+    assertThat(opt).isEmpty();
+    assertThat(Files.list(tmp)).hasSize(11);
+    fi = create(loader).toBlocking().last();
+    last = Iterators.getLast(fi.iterator());
+    assertThat(last.getFiles()).hasSize(1);
   }
 
   @Test
   public void modify1File() throws Exception {
-    List<IndexRecord> records = create10();
-    records.forEach(r -> r.setStatus(unchanged));
-    records
-        .get(0)
-        .getFileIndex()
-        .setFiles(
-            ImmutableSet.of(
-                records.get(0).getFileIndex().getFiles().iterator().next(), new RemoteFile()));
-    records
-        .get(1)
-        .getFileIndex()
-        .setFiles(
-            ImmutableSet.of(
-                records.get(1).getFileIndex().getFiles().iterator().next(), new RemoteFile()));
-    records.get(1).setStatus(modified);
+    RemoteFile rf = create10();
+    FDXLoader loader = new FDXLoader(persist, rf);
+    FileIndex parent = create(loader).toBlocking().last();
+    FileIndex fi = Iterators.get(parent.iterator(),5);
+    fi.getFiles().add(new RemoteFile());
+    fi.setStatus(Action.update);
+    Optional<RemoteFile> opt = create(new FDXSaver(persist, parent, rf)).toBlocking().last();
+    assertThat(opt).isEmpty();
+    assertThat(Files.list(tmp)).hasSize(10);
+    parent = create(loader).toBlocking().last();
+    fi = Iterators.get(parent.iterator(),5);
+    assertThat(fi.getFiles()).hasSize(2);
+  }
 
-    FDXSaver saver = new FDXSaver(persist, records);
-    assertThat(create(saver).toBlocking().last()).hasSize(10);
-    assertThat(
-        persist
-            .getObject(records.get(0).getRemoteFile(), FileIndex.class)
-            .toBlocking()
-            .last()
-            .getFiles())
-        .hasSize(1);
-    assertThat(
-        persist
-            .getObject(records.get(1).getRemoteFile(), FileIndex.class)
-            .toBlocking()
-            .last()
-            .getFiles())
-        .hasSize(2);
+  @Test
+  public void deleteLastFile() throws IOException {
+    RemoteFile rf = create10();
+    FDXLoader loader = new FDXLoader(persist, rf);
+    FileIndex parent = create(loader).toBlocking().last();
+    Iterators.getLast(parent.iterator()).setStatus(Action.delete);
+    Optional<RemoteFile> opt = create(new FDXSaver(persist, parent, rf)).toBlocking().last();
+    assertThat(opt).isEmpty();
+    assertThat(Files.list(tmp)).hasSize(9);
+    parent = create(loader).toBlocking().last();
+    assertThat(parent.iterator()).hasSize(9);
+
+  }
+  @Test
+  public void deleteIntermediateFile() throws IOException {
+    RemoteFile rf = create10();
+    FDXLoader loader = new FDXLoader(persist, rf);
+    FileIndex parent = create(loader).toBlocking().last();
+    Iterators.get(parent.iterator(),5).setStatus(Action.delete);
+    Optional<RemoteFile> opt = create(new FDXSaver(persist, parent, rf)).toBlocking().last();
+    assertThat(opt).isEmpty();
+    assertThat(Files.list(tmp)).hasSize(9);
+    parent = create(loader).toBlocking().last();
+    assertThat(parent.iterator()).hasSize(9);
+
   }
 }

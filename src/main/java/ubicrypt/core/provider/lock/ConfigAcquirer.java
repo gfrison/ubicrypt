@@ -23,9 +23,9 @@ import rx.Subscriber;
 import rx.subjects.PublishSubject;
 import rx.subjects.Subject;
 import ubicrypt.core.RemoteIO;
-import ubicrypt.core.remote.RemoteConfig;
 import ubicrypt.core.exp.NotFoundException;
 import ubicrypt.core.provider.ProviderStatus;
+import ubicrypt.core.remote.RemoteConfig;
 
 import static org.slf4j.LoggerFactory.getLogger;
 import static rx.Observable.create;
@@ -160,7 +160,8 @@ public class ConfigAcquirer implements Observable.OnSubscribe<AcquirerReleaser> 
               .onErrorResumeNext(
                   err -> {
                     if (err instanceof NotFoundException) {
-                      return remoteIO.apply(new RemoteConfig(providers, records, maxFilesPerIndex)).map(res -> new RemoteConfig(providers, records, maxFilesPerIndex));
+                      final RemoteConfig t = new RemoteConfig();
+                      return remoteIO.apply(t).map(res -> t);
                     }
                     return Observable.error(err);
                   })

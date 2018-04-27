@@ -35,7 +35,7 @@ import java.util.HashSet;
 
 import javax.inject.Inject;
 
-import reactor.fn.tuple.Tuple;
+import reactor.util.function.Tuples;
 import rx.Observable;
 import rx.subjects.PublishSubject;
 import rx.subjects.Subject;
@@ -107,7 +107,7 @@ public class WatchReactorIT {
   @Test
   public void createFile() throws Exception {
     when(fc.addFile(any(Path.class)))
-        .thenReturn(Observable.just(Tuple.of(null, Observable.just(true))));
+        .thenReturn(Observable.just(Tuples.of(null, Observable.just(true))));
     when(fc.deleteFile(any(Path.class))).thenReturn(Observable.just(true));
     Files.write(tmp.resolve("folder").resolve("newFile"), "ciao".getBytes());
     Thread.sleep(50);
@@ -117,7 +117,7 @@ public class WatchReactorIT {
   @Test
   public void createInTrackedSubfolderFile() throws Exception {
     when(fc.addFile(any(Path.class)))
-        .thenReturn(Observable.just(Tuple.of(null, Observable.just(true))));
+        .thenReturn(Observable.just(Tuples.of(null, Observable.just(true))));
     when(fc.deleteFile(any(Path.class))).thenReturn(Observable.just(true));
     final Path newDir = tmp.resolve("folder").resolve("newDir");
     Files.createDirectories(newDir);
@@ -130,7 +130,7 @@ public class WatchReactorIT {
   @Test
   public void noCreateUntrackedFile() throws Exception {
     when(fc.addFile(any(Path.class)))
-        .thenReturn(Observable.just(Tuple.of(null, Observable.just(true))));
+        .thenReturn(Observable.just(Tuples.of(null, Observable.just(true))));
     when(fc.deleteFile(any(Path.class))).thenReturn(Observable.just(true));
     Files.write(tmp.resolve("notTracked"), "ciao".getBytes());
     Thread.sleep(50);

@@ -4,6 +4,7 @@ import com.google.common.collect.ForwardingSet;
 
 import org.slf4j.Logger;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -15,6 +16,7 @@ import ubicrypt.core.dto.FileIndex;
 import ubicrypt.core.dto.RemoteFile;
 
 import static org.slf4j.LoggerFactory.getLogger;
+import static ubicrypt.core.Action.add;
 import static ubicrypt.core.Action.delete;
 import static ubicrypt.core.Action.update;
 
@@ -47,16 +49,27 @@ public class RemoteFilesDelegate extends ForwardingSet<RemoteFile> {
     if (idx.isPresent()) {
       final FileIndex fileIndex = idx.get();
       fileIndex.getFiles().add(element);
-      fileIndex.setStatus(update);
+      if (fileIndex.getStatus() != add) {
+        fileIndex.setStatus(update);
+      }
     } else {
       FileIndex last = indexes.get(indexes.size() - 1);
-      last.setStatus(update);
+      if (last.getStatus() != add) {
+        last.setStatus(update);
+      }
       final FileIndex nfi = new FileIndex();
       last.setNext(nfi);
       nfi.setParent(last);
+      nfi.setStatus(add);
       nfi.getFiles().add(element);
     }
     return delegate.add(element);
+  }
+
+  @Override
+  public boolean addAll(Collection<? extends RemoteFile> collection) {
+    collection.forEach(this::add);
+    return true;
   }
 
   @Override

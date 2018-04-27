@@ -29,8 +29,8 @@ import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import javax.inject.Inject;
 
-import reactor.fn.tuple.Tuple;
-import reactor.fn.tuple.Tuple2;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 import rx.Observable;
 import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
@@ -93,7 +93,7 @@ public class FileCommander implements IFileCommander {
                     lfile.getVclock().increment(deviceId);
                     localConfig.getLocalFiles().add(lfile);
                     subscriber.onNext(
-                        Tuple.of(
+                        Tuples.of(
                             lfile,
                             Observable.merge(
                                     providerLifeCycle

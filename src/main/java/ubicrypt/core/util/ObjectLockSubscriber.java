@@ -19,8 +19,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
-import reactor.fn.tuple.Tuple;
-import reactor.fn.tuple.Tuple2;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 import rx.Observable;
 import rx.Subscriber;
 import rx.Subscription;
@@ -46,7 +46,7 @@ public class ObjectLockSubscriber<T> implements Observable.OnSubscribe<T> {
   public void call(final Subscriber<? super T> subscriber) {
     final Tuple2<AtomicBoolean, Queue<Action0>> tuple =
         locks.computeIfAbsent(
-            obj, (object) -> Tuple.of(new AtomicBoolean(false), new ConcurrentLinkedQueue()));
+            obj, (object) -> Tuples.of(new AtomicBoolean(false), new ConcurrentLinkedQueue()));
     final Queue queue = tuple.getT2();
     subscriber.add(
         new Subscription() {

@@ -15,7 +15,7 @@ package ubicrypt.core;
 
 import java.nio.file.Path;
 
-import reactor.fn.tuple.Tuple2;
+import reactor.util.function.Tuple2;
 import rx.Observable;
 import ubicrypt.core.dto.LocalFile;
 

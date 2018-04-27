@@ -15,7 +15,6 @@ package ubicrypt.core.remote;
 
 import org.slf4j.Logger;
 
-import java.util.HashSet;
 import java.util.Set;
 
 import ubicrypt.core.dto.FileIndex;
@@ -28,22 +27,30 @@ public class RemoteConfig {
   private static final Logger log = getLogger(RemoteConfig.class);
   private final Set<UbiProvider> providers;
   private final int maxFilesPerIndex;
-  private final HashSet<RemoteFile> rf;
+  private final RemoteFile indexFile;
   private final FileIndex index;
 
   public RemoteConfig() {
-    this.providers = null;
-    this.index = null;
-    this.maxFilesPerIndex = -1;
-    this.rf = new HashSet<>();
+    providers = null;
+    indexFile = null;
+    index = new FileIndex();
+    maxFilesPerIndex = 100;
   }
 
-  public RemoteConfig(Set<UbiProvider> providers, FileIndex index, int maxFilesPerIndex) {
-    this.rf = null;
+  public RemoteConfig(Set<UbiProvider> providers) {
+    indexFile = null;
+    index = new FileIndex();
+    maxFilesPerIndex = 100;
+    this.providers = providers;
+  }
+
+  public RemoteConfig(Set<UbiProvider> providers, FileIndex index, RemoteFile indexFile, int maxFilesPerIndex) {
+    this.indexFile = indexFile;
     this.providers = providers;
     this.index = index;
     this.maxFilesPerIndex = maxFilesPerIndex;
   }
+
 
   public Set<UbiProvider> getProviders() {
     return providers;
@@ -51,11 +58,14 @@ public class RemoteConfig {
 
 
   public synchronized Set<RemoteFile> getRemoteFiles() {
-    if (rf != null) {
-      return rf;
-    }
     return new RemoteFilesDelegate(index, maxFilesPerIndex);
   }
 
+  public RemoteFile getIndexFile() {
+    return indexFile;
+  }
 
+  public FileIndex getIndex() {
+    return index;
+  }
 }

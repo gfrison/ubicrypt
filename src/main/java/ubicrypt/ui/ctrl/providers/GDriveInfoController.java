@@ -27,7 +27,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
-import reactor.fn.tuple.Tuple3;
+import reactor.util.function.Tuple3;
 import rx.functions.Actions;
 import ubicrypt.core.Utils;
 import ubicrypt.core.provider.ProviderLifeCycle;

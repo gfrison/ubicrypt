@@ -14,7 +14,7 @@ apply plugin: 'idea'
 apply plugin: 'jacoco'
 
 version = '0.19'
-sourceCompatibility = 10
+sourceCompatibility = 9
 
 project.group = 'ubicrypt'
 mainClassName = 'ubicrypt.UbiCrypt'
@@ -101,14 +101,14 @@ dependencies {
     compile "com.fasterxml.jackson.dataformat:jackson-dataformat-smile:$jacksonVersion"
 
 
-    compile 'io.reactivex:rxjava:1.2.3'
+    compile 'io.reactivex:rxjava:1.2.7'
     compile 'javax.inject:javax.inject:1'
     compile 'commons-net:commons-net:3.5'
     compile 'commons-io:commons-io:2.6'
     compile 'org.apache.commons:commons-lang3:3.4'
 
     // Reactor Core
-    compile 'io.projectreactor:reactor-core:2.0.7.RELEASE'
+    compile 'io.projectreactor:reactor-core:3.1.1.RELEASE'
 
     compile 'org.controlsfx:controlsfx:8.40.12'
     compile 'de.jensd:fontawesomefx-commons:8.13'

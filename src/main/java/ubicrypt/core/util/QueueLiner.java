@@ -23,8 +23,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import reactor.fn.tuple.Tuple;
-import reactor.fn.tuple.Tuple2;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 import rx.Observable;
 import rx.Subscriber;
 import rx.functions.Func1;
@@ -207,7 +207,7 @@ public class QueueLiner implements IStoppable {
       return Observable.create(
           subscriber -> {
             log.trace("enqueued epilogue:{}", epilogue.hashCode());
-            queue.offer(Tuple.of(enqueable, subscriber));
+            queue.offer(Tuples.of(enqueable, subscriber));
             if (inProcess.compareAndSet(false, true)) {
               log.trace("fetch queue");
               fetch();
