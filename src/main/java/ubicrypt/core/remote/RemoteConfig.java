@@ -44,18 +44,17 @@ public class RemoteConfig {
     this.providers = providers;
   }
 
-  public RemoteConfig(Set<UbiProvider> providers, FileIndex index, RemoteFile indexFile, int maxFilesPerIndex) {
+  public RemoteConfig(
+      Set<UbiProvider> providers, FileIndex index, RemoteFile indexFile, int maxFilesPerIndex) {
     this.indexFile = indexFile;
     this.providers = providers;
     this.index = index;
     this.maxFilesPerIndex = maxFilesPerIndex;
   }
 
-
   public Set<UbiProvider> getProviders() {
     return providers;
   }
-
 
   public synchronized Set<RemoteFile> getRemoteFiles() {
     return new RemoteFilesDelegate(index, maxFilesPerIndex);

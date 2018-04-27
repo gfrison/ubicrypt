@@ -71,10 +71,8 @@ public class FDXSaverTest {
 
   @Test
   public void one() throws Exception {
-    FileIndex fi = aFileIndex()
-        .withFiles(ImmutableSet.of(new RemoteFile()))
-        .withStatus(Action.add)
-        .build();
+    FileIndex fi =
+        aFileIndex().withFiles(ImmutableSet.of(new RemoteFile())).withStatus(Action.add).build();
     FDXSaver saver = new FDXSaver(persist, fi);
     final RemoteFile last = create(saver).toBlocking().last().get();
     assertThat(last).isNotNull();
@@ -86,13 +84,11 @@ public class FDXSaverTest {
 
   @Test
   public void oneAlreadyExists() throws Exception {
-    FileIndex fi = aFileIndex()
-        .withFiles(ImmutableSet.of(new RemoteFile()))
-        .withStatus(Action.update)
-        .build();
+    FileIndex fi =
+        aFileIndex().withFiles(ImmutableSet.of(new RemoteFile())).withStatus(Action.update).build();
     RemoteFile rf = new RemoteFile();
     persist.put(fi, rf).toBlocking().last();
-    FDXSaver saver = new FDXSaver(persist, fi,rf);
+    FDXSaver saver = new FDXSaver(persist, fi, rf);
     Optional<RemoteFile> last = create(saver).toBlocking().last();
     assertThat(last).isNotNull();
     assertThat(last).isEmpty();
@@ -111,16 +107,17 @@ public class FDXSaverTest {
   }
 
   public FileIndex createUnsaved(int num) {
-    final FileIndex index = aFileIndex()
-        .withFiles(
-            ImmutableSet.of(
-                new RemoteFile() {
-                  {
-                    setRemoteName(valueOf(num));
-                  }
-                }))
-        .withStatus(Action.add)
-        .build();
+    final FileIndex index =
+        aFileIndex()
+            .withFiles(
+                ImmutableSet.of(
+                    new RemoteFile() {
+                      {
+                        setRemoteName(valueOf(num));
+                      }
+                    }))
+            .withStatus(Action.add)
+            .build();
     if (num == 1) {
       return index;
     }
@@ -131,36 +128,34 @@ public class FDXSaverTest {
   }
 
   public RemoteFile create10() {
-    return createN(10)
-        .map(Tuple2::getT2)
-        .toBlocking().last();
+    return createN(10).map(Tuple2::getT2).toBlocking().last();
   }
 
   public Observable<Tuple2<FileIndex, RemoteFile>> createN(int num) {
-    final FileIndex index = aFileIndex()
-        .withFiles(
-            ImmutableSet.of(
-                new RemoteFile() {
-                  {
-                    setRemoteName(valueOf(num));
-                  }
-                }))
-        .build();
+    final FileIndex index =
+        aFileIndex()
+            .withFiles(
+                ImmutableSet.of(
+                    new RemoteFile() {
+                      {
+                        setRemoteName(valueOf(num));
+                      }
+                    }))
+            .build();
     if (num == 1) {
       RemoteFile rf = new RemoteFile();
-      return persist.put(index, rf)
-          .map(res -> Tuples.of(index, rf));
+      return persist.put(index, rf).map(res -> Tuples.of(index, rf));
     }
 
     return createN(num - 1)
-        .flatMap(tupla -> {
-          index.setNextIndex(tupla.getT2());
-          index.setNext(tupla.getT1());
-          tupla.getT1().setParent(index);
-          RemoteFile rf = new RemoteFile();
-          return persist.put(index, rf)
-              .map(res -> Tuples.of(index, rf));
-        });
+        .flatMap(
+            tupla -> {
+              index.setNextIndex(tupla.getT2());
+              index.setNext(tupla.getT1());
+              tupla.getT1().setParent(index);
+              RemoteFile rf = new RemoteFile();
+              return persist.put(index, rf).map(res -> Tuples.of(index, rf));
+            });
   }
 
   @Test
@@ -170,11 +165,12 @@ public class FDXSaverTest {
     FileIndex fi = create(loader).toBlocking().first();
     assertThat(fi.iterator()).hasSize(10);
     FileIndex last = Iterators.getLast(fi.iterator());
-    last.setNext(aFileIndex()
-      .withFiles(Set.of(new RemoteFile()))
-        .withStatus(Action.add)
-        .withParent(last)
-        .build());
+    last.setNext(
+        aFileIndex()
+            .withFiles(Set.of(new RemoteFile()))
+            .withStatus(Action.add)
+            .withParent(last)
+            .build());
     Optional<RemoteFile> opt = create(new FDXSaver(persist, fi, rf)).toBlocking().last();
     assertThat(opt).isEmpty();
     assertThat(Files.list(tmp)).hasSize(11);
@@ -188,14 +184,14 @@ public class FDXSaverTest {
     RemoteFile rf = create10();
     FDXLoader loader = new FDXLoader(persist, rf);
     FileIndex parent = create(loader).toBlocking().last();
-    FileIndex fi = Iterators.get(parent.iterator(),5);
+    FileIndex fi = Iterators.get(parent.iterator(), 5);
     fi.getFiles().add(new RemoteFile());
     fi.setStatus(Action.update);
     Optional<RemoteFile> opt = create(new FDXSaver(persist, parent, rf)).toBlocking().last();
     assertThat(opt).isEmpty();
     assertThat(Files.list(tmp)).hasSize(10);
     parent = create(loader).toBlocking().last();
-    fi = Iterators.get(parent.iterator(),5);
+    fi = Iterators.get(parent.iterator(), 5);
     assertThat(fi.getFiles()).hasSize(2);
   }
 
@@ -210,19 +206,18 @@ public class FDXSaverTest {
     assertThat(Files.list(tmp)).hasSize(9);
     parent = create(loader).toBlocking().last();
     assertThat(parent.iterator()).hasSize(9);
-
   }
+
   @Test
   public void deleteIntermediateFile() throws IOException {
     RemoteFile rf = create10();
     FDXLoader loader = new FDXLoader(persist, rf);
     FileIndex parent = create(loader).toBlocking().last();
-    Iterators.get(parent.iterator(),5).setStatus(Action.delete);
+    Iterators.get(parent.iterator(), 5).setStatus(Action.delete);
     Optional<RemoteFile> opt = create(new FDXSaver(persist, parent, rf)).toBlocking().last();
     assertThat(opt).isEmpty();
     assertThat(Files.list(tmp)).hasSize(9);
     parent = create(loader).toBlocking().last();
     assertThat(parent.iterator()).hasSize(9);
-
   }
 }

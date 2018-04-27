@@ -129,8 +129,7 @@ public class ConfigAcquirerTest {
     AtomicReference<AcquirerReleaser> ref = new AtomicReference<>();
     Observable.create(acquirer).doOnNext(ref::set).subscribe(config -> cd.countDown());
     lockPub.onNext(LockStatus.available);
-    configPub.onNext(
-        new RemoteConfig(ImmutableSet.of(mock(UbiProvider.class))));
+    configPub.onNext(new RemoteConfig(ImmutableSet.of(mock(UbiProvider.class))));
     configPub.onCompleted();
     assertThat(cd.await(10, TimeUnit.SECONDS)).isTrue();
     assertThat(ref.get()).isNotNull();

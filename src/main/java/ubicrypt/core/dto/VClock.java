@@ -105,14 +105,15 @@ public class VClock implements Cloneable {
             .collect(
                 ConcurrentHashMap::new,
                 (ConcurrentHashMap<Integer, AtomicLong> map,
-                 Map.Entry<Integer, AtomicLong> entry) ->
+                        Map.Entry<Integer, AtomicLong> entry) ->
                     map.put(entry.getKey(), new AtomicLong(entry.getValue().longValue())),
                 (ConcurrentHashMap<Integer, AtomicLong> map1,
-                 ConcurrentHashMap<Integer, AtomicLong> map2) ->
-                    map1.putAll(map2)), observer);
+                        ConcurrentHashMap<Integer, AtomicLong> map2) ->
+                    map1.putAll(map2)),
+        observer);
   }
 
-  public void setObserver(Consumer<Void>observer) {
+  public void setObserver(Consumer<Void> observer) {
     this.observer = observer;
   }
 

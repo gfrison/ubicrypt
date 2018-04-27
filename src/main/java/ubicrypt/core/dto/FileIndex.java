@@ -29,22 +29,15 @@ import static ubicrypt.core.Utils.copySynchronized;
 public class FileIndex implements Iterable<FileIndex> {
   private Set<RemoteFile> files = ConcurrentHashMap.newKeySet();
   private RemoteFile nextIndex;
-  @JsonIgnore
-  private volatile Action status = Action.unchanged;
-  @JsonIgnore
-  private volatile FileIndex next;
-  @JsonIgnore
-  private volatile FileIndex parent;
+  @JsonIgnore private volatile Action status = Action.unchanged;
+  @JsonIgnore private volatile FileIndex next;
+  @JsonIgnore private volatile FileIndex parent;
 
-  public FileIndex() {
-  }
-
+  public FileIndex() {}
 
   public FileIndex(Action status) {
     this.status = status;
   }
-
-
 
   public FileIndex getParent() {
     return parent;
@@ -86,7 +79,6 @@ public class FileIndex implements Iterable<FileIndex> {
     this.nextIndex = nextIndex;
   }
 
-
   @Override
   public String toString() {
     return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
@@ -100,6 +92,7 @@ public class FileIndex implements Iterable<FileIndex> {
     final FileIndex fi = this;
     return new Iterator<>() {
       private FileIndex el = fi;
+
       @Override
       public boolean hasNext() {
         return el != null;
@@ -114,7 +107,6 @@ public class FileIndex implements Iterable<FileIndex> {
     };
   }
 
-
   public static final class FileIndexBuilder {
     private Set<RemoteFile> files = ConcurrentHashMap.newKeySet();
     private RemoteFile nextIndex;
@@ -122,8 +114,7 @@ public class FileIndex implements Iterable<FileIndex> {
     private volatile FileIndex next;
     private volatile FileIndex parent;
 
-    private FileIndexBuilder() {
-    }
+    private FileIndexBuilder() {}
 
     public static FileIndexBuilder aFileIndex() {
       return new FileIndexBuilder();

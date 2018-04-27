@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2016 Giancarlo Frison <giancarlo@gfrison.com>
+ *
+ * Licensed under the UbiCrypt License, Version 1.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *     http://github.com/gfrison/ubicrypt/LICENSE.md
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ubicrypt.core.remote;
 
 import com.google.common.collect.ForwardingSet;
@@ -28,10 +41,12 @@ public class RemoteFilesDelegate extends ForwardingSet<RemoteFile> {
 
   public RemoteFilesDelegate(FileIndex index, int maxFilesPerIndex) {
     this.index = index;
-    this.delegate = new HashSet<>(StreamSupport.stream(index.spliterator(), false)
-        .map(FileIndex::getFiles)
-        .flatMap(Set::stream)
-        .collect(Collectors.toSet()));
+    this.delegate =
+        new HashSet<>(
+            StreamSupport.stream(index.spliterator(), false)
+                .map(FileIndex::getFiles)
+                .flatMap(Set::stream)
+                .collect(Collectors.toSet()));
     this.maxFilesPerIndex = maxFilesPerIndex;
   }
 
@@ -43,9 +58,8 @@ public class RemoteFilesDelegate extends ForwardingSet<RemoteFile> {
   @Override
   public boolean add(RemoteFile element) {
     List<FileIndex> indexes = indexes();
-    Optional<FileIndex> idx = indexes.stream()
-        .filter(fi -> fi.getFiles().size() < maxFilesPerIndex)
-        .findFirst();
+    Optional<FileIndex> idx =
+        indexes.stream().filter(fi -> fi.getFiles().size() < maxFilesPerIndex).findFirst();
     if (idx.isPresent()) {
       final FileIndex fileIndex = idx.get();
       fileIndex.getFiles().add(element);
@@ -75,9 +89,8 @@ public class RemoteFilesDelegate extends ForwardingSet<RemoteFile> {
   @Override
   public boolean remove(Object object) {
     List<FileIndex> indexes = indexes();
-    Optional<FileIndex> idx = indexes.stream()
-        .filter(fi -> fi.getFiles().contains(object))
-        .findFirst();
+    Optional<FileIndex> idx =
+        indexes.stream().filter(fi -> fi.getFiles().contains(object)).findFirst();
     if (!idx.isPresent()) {
       log.warn("no index present for remote file:{}", object);
       return false;
@@ -96,8 +109,6 @@ public class RemoteFilesDelegate extends ForwardingSet<RemoteFile> {
   }
 
   private List<FileIndex> indexes() {
-    return StreamSupport.stream(index.spliterator(), false)
-        .collect(Collectors.toList());
+    return StreamSupport.stream(index.spliterator(), false).collect(Collectors.toList());
   }
-
 }

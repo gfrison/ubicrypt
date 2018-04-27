@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2016 Giancarlo Frison <giancarlo@gfrison.com>
+ *
+ * Licensed under the UbiCrypt License, Version 1.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *     http://github.com/gfrison/ubicrypt/LICENSE.md
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ubicrypt.core.fdx;
 
 import com.google.common.collect.Iterators;
@@ -41,15 +54,20 @@ public class FDXSaver implements Observable.OnSubscribe<Optional<RemoteFile>> {
 
   @Override
   public void call(Subscriber<? super Optional<RemoteFile>> subscriber) {
-    save(Iterators.getLast(index.iterator()))
-        .last()
-        .subscribe(subscriber);
+    save(Iterators.getLast(index.iterator())).last().subscribe(subscriber);
   }
 
   private Observable<Optional<RemoteFile>> save(FileIndex ind) {
-    boolean tocreate = (ind.getParent() == null && file == null)
-        || (ind.getParent() == null && !dig(file, RemoteFile::getRemoteName).isPresent())
-        || (ind.getParent() != null && !dig(ind, FileIndex::getParent, FileIndex::getNextIndex, RemoteFile::getRemoteName).isPresent());
+    boolean tocreate =
+        (ind.getParent() == null && file == null)
+            || (ind.getParent() == null && !dig(file, RemoteFile::getRemoteName).isPresent())
+            || (ind.getParent() != null
+                && !dig(
+                        ind,
+                        FileIndex::getParent,
+                        FileIndex::getNextIndex,
+                        RemoteFile::getRemoteName)
+                    .isPresent());
     RemoteFile rfile;
     if (tocreate) {
       rfile = new RemoteFile();
@@ -60,45 +78,51 @@ public class FDXSaver implements Observable.OnSubscribe<Optional<RemoteFile>> {
     FileIndex parent = ind.getParent();
     switch (ind.getStatus()) {
       case add:
-        return serializer.put(ind, rfile)
-            .flatMap(r -> {
-              if (parent == null) {
-                return just(Optional.of(rfile));
-              }
-              if (parent.getStatus() != Action.add) {
-                parent.setStatus(Action.update);
-              }
-              parent.setNextIndex(rfile);
-              return save(parent);
-            });
+        return serializer
+            .put(ind, rfile)
+            .flatMap(
+                r -> {
+                  if (parent == null) {
+                    return just(Optional.of(rfile));
+                  }
+                  if (parent.getStatus() != Action.add) {
+                    parent.setStatus(Action.update);
+                  }
+                  parent.setNextIndex(rfile);
+                  return save(parent);
+                });
       case update:
-        return serializer.put(ind, rfile)
-            .flatMap(r -> {
-              if (parent == null) {
-                return just(Optional.empty());
-              }
-              return save(parent);
-            });
+        return serializer
+            .put(ind, rfile)
+            .flatMap(
+                r -> {
+                  if (parent == null) {
+                    return just(Optional.empty());
+                  }
+                  return save(parent);
+                });
       case delete:
-        return serializer.delete(rfile)
-            .flatMap(r -> {
-              if (parent == null) {
-                return just(Optional.empty());
-              }
-              if (ind.getNextIndex() != null) {
-                parent.setNextIndex(ind.getNextIndex());
-                if (parent.getStatus() != Action.add) {
-                  parent.setStatus(Action.update);
-                }
-                return save(parent);
-              }
-              parent.setNextIndex(null);
-              parent.setNext(null);
-              if (parent.getStatus() != Action.add) {
-                parent.setStatus(Action.update);
-              }
-              return save(parent);
-            });
+        return serializer
+            .delete(rfile)
+            .flatMap(
+                r -> {
+                  if (parent == null) {
+                    return just(Optional.empty());
+                  }
+                  if (ind.getNextIndex() != null) {
+                    parent.setNextIndex(ind.getNextIndex());
+                    if (parent.getStatus() != Action.add) {
+                      parent.setStatus(Action.update);
+                    }
+                    return save(parent);
+                  }
+                  parent.setNextIndex(null);
+                  parent.setNext(null);
+                  if (parent.getStatus() != Action.add) {
+                    parent.setStatus(Action.update);
+                  }
+                  return save(parent);
+                });
       case unchanged:
         if (parent == null) {
           return just(Optional.empty());

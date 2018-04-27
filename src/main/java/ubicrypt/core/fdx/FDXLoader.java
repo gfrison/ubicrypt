@@ -44,20 +44,23 @@ public class FDXLoader implements Observable.OnSubscribe<FileIndex> {
 
   @Override
   public void call(Subscriber<? super FileIndex> subscriber) {
-    serializer.getObject(fileIndexFile, FileIndex.class)
-        .flatMap(fi -> {
-          if (parent != null) {
-            fi.setParent(parent);
-            parent.setNext(fi);
-          }
-          if (fi.getNextIndex() != null) {
-            return just(fi).concatWith(create(new FDXLoader(serializer, fi.getNextIndex(), fi)));
-          } else {
-            return Observable.just(fi);
-          }
-        })
+    serializer
+        .getObject(fileIndexFile, FileIndex.class)
+        .flatMap(
+            fi -> {
+              if (parent != null) {
+                fi.setParent(parent);
+                parent.setNext(fi);
+              }
+              if (fi.getNextIndex() != null) {
+                return just(fi)
+                    .concatWith(create(new FDXLoader(serializer, fi.getNextIndex(), fi)));
+              } else {
+                return Observable.just(fi);
+              }
+            })
         .toList()
-        .map(l->l.iterator().next())
+        .map(l -> l.iterator().next())
         .subscribe(subscriber);
   }
 }

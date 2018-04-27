@@ -562,6 +562,7 @@ public class Utils {
 
     } while (i < args.length);
   }
+
   public static <T, R> Optional<R> dig(T obj, Function<T, R> func) {
     return Optional.ofNullable(obj).map(func);
   }

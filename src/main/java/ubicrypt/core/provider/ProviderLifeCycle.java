@@ -72,13 +72,10 @@ public class ProviderLifeCycle implements ApplicationContextAware {
   @Qualifier("providerEvent")
   private Subject<ProviderEvent, ProviderEvent> providerEvents = BufferUntilSubscriber.create();
 
-  @Inject
-  private LocalConfig localConfig;
-  @Inject
-  private int deviceId;
+  @Inject private LocalConfig localConfig;
+  @Inject private int deviceId;
   private ConfigurableApplicationContext ctx;
-  @Inject
-  private InProgressTracker inProgressTracker;
+  @Inject private InProgressTracker inProgressTracker;
 
   @PostConstruct
   public void init() {
@@ -110,8 +107,10 @@ public class ProviderLifeCycle implements ApplicationContextAware {
                     provider.getDelayAcquiringLockMs());
             /** renew lock when download/upload in progress */
             lockCheker.setShouldExtendLock(() -> inProgressTracker.inProgress());
-            RemoteIO<RemoteConfig> configIO = new RemoteConfigIO(serializer,
-                new ObjectIO<>(serializer, provider.getConfFile(), StoredRemoteConfig.class));
+            RemoteIO<RemoteConfig> configIO =
+                new RemoteConfigIO(
+                    serializer,
+                    new ObjectIO<>(serializer, provider.getConfFile(), StoredRemoteConfig.class));
             ConfigAcquirer acquirer =
                 new ConfigAcquirer(new InitLockChecker(provider, deviceId), lockCheker, configIO);
             acquirer.setProviderRef(provider.toString());

@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2016 Giancarlo Frison <giancarlo@gfrison.com>
+ *
+ * Licensed under the UbiCrypt License, Version 1.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *     http://github.com/gfrison/ubicrypt/LICENSE.md
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ubicrypt.core.remote;
 
 import com.google.common.collect.Iterators;
@@ -27,7 +40,6 @@ import static ubicrypt.core.TestUtils.deleteDirs;
 import static ubicrypt.core.TestUtils.fileProvider;
 import static ubicrypt.core.TestUtils.tmp;
 
-
 public class RemoteFilesDelegateTest {
   private IPersist persist;
 
@@ -43,7 +55,6 @@ public class RemoteFilesDelegateTest {
         };
   }
 
-
   @Test
   public void addMany() {
     final FileIndex fi = new FileIndex();
@@ -56,7 +67,8 @@ public class RemoteFilesDelegateTest {
   public void addAll() {
     final FileIndex fi = new FileIndex();
     RemoteFilesDelegate d = new RemoteFilesDelegate(fi, 1);
-    List<RemoteFile> l = IntStream.range(0, 10).mapToObj(i -> new RemoteFile()).collect(Collectors.toList());
+    List<RemoteFile> l =
+        IntStream.range(0, 10).mapToObj(i -> new RemoteFile()).collect(Collectors.toList());
     d.addAll(l);
     assertThat(fi.iterator()).hasSize(10);
     StreamSupport.stream(fi.spliterator(), false)
@@ -67,7 +79,8 @@ public class RemoteFilesDelegateTest {
   public void removeLast() {
     final FileIndex fi = new FileIndex(Action.add);
     RemoteFilesDelegate d = new RemoteFilesDelegate(fi, 1);
-    List<RemoteFile> l = IntStream.range(0, 10).mapToObj(i -> new RemoteFile()).collect(Collectors.toList());
+    List<RemoteFile> l =
+        IntStream.range(0, 10).mapToObj(i -> new RemoteFile()).collect(Collectors.toList());
     d.addAll(l);
     FDXSaver saver = new FDXSaver(persist, fi);
     Optional<RemoteFile> rf = Observable.create(saver).toBlocking().last();
@@ -76,7 +89,8 @@ public class RemoteFilesDelegateTest {
     d = new RemoteFilesDelegate(loaded, 1);
     assertThat(loaded.iterator()).hasSize(10);
     assertThat(d.remove(getLast(getLast(loaded.iterator()).getFiles().iterator()))).isTrue();
-    Optional<RemoteFile> rf2 = Observable.create(new FDXSaver(persist,loaded,rf.get())).toBlocking().last();
+    Optional<RemoteFile> rf2 =
+        Observable.create(new FDXSaver(persist, loaded, rf.get())).toBlocking().last();
     assertThat(rf2.isPresent()).isFalse();
     loaded = Observable.create(new FDXLoader(persist, rf.get())).toBlocking().last();
     assertThat(loaded.iterator()).hasSize(9);
@@ -86,7 +100,8 @@ public class RemoteFilesDelegateTest {
   public void removeFirst() {
     final FileIndex fi = new FileIndex(Action.add);
     RemoteFilesDelegate d = new RemoteFilesDelegate(fi, 1);
-    List<RemoteFile> l = IntStream.range(0, 10).mapToObj(i -> new RemoteFile()).collect(Collectors.toList());
+    List<RemoteFile> l =
+        IntStream.range(0, 10).mapToObj(i -> new RemoteFile()).collect(Collectors.toList());
     d.addAll(l);
     FDXSaver saver = new FDXSaver(persist, fi);
     Optional<RemoteFile> rf = Observable.create(saver).toBlocking().last();
@@ -95,19 +110,20 @@ public class RemoteFilesDelegateTest {
     d = new RemoteFilesDelegate(loaded, 1);
 
     assertThat(d.remove(loaded.getFiles().iterator().next())).isTrue();
-    Optional<RemoteFile> rf2 = Observable.create(new FDXSaver(persist,loaded,rf.get())).toBlocking().last();
+    Optional<RemoteFile> rf2 =
+        Observable.create(new FDXSaver(persist, loaded, rf.get())).toBlocking().last();
     assertThat(rf2.isPresent()).isFalse();
     loaded = Observable.create(new FDXLoader(persist, rf.get())).toBlocking().last();
     assertThat(loaded.iterator()).hasSize(10);
     assertThat(loaded.getFiles()).isEmpty();
-
-
   }
+
   @Test
   public void removeMiddle() {
     final FileIndex fi = new FileIndex(Action.add);
     RemoteFilesDelegate d = new RemoteFilesDelegate(fi, 1);
-    List<RemoteFile> l = IntStream.range(0, 10).mapToObj(i -> new RemoteFile()).collect(Collectors.toList());
+    List<RemoteFile> l =
+        IntStream.range(0, 10).mapToObj(i -> new RemoteFile()).collect(Collectors.toList());
     d.addAll(l);
     FDXSaver saver = new FDXSaver(persist, fi);
     Optional<RemoteFile> rf = Observable.create(saver).toBlocking().last();
@@ -115,13 +131,12 @@ public class RemoteFilesDelegateTest {
     FileIndex loaded = Observable.create(new FDXLoader(persist, rf.get())).toBlocking().last();
     d = new RemoteFilesDelegate(loaded, 1);
 
-    assertThat(d.remove(Iterators.get(loaded.iterator(),5).getFiles().iterator().next())).isTrue();
-    Optional<RemoteFile> rf2 = Observable.create(new FDXSaver(persist,loaded,rf.get())).toBlocking().last();
+    assertThat(d.remove(Iterators.get(loaded.iterator(), 5).getFiles().iterator().next())).isTrue();
+    Optional<RemoteFile> rf2 =
+        Observable.create(new FDXSaver(persist, loaded, rf.get())).toBlocking().last();
     assertThat(rf2.isPresent()).isFalse();
     loaded = Observable.create(new FDXLoader(persist, rf.get())).toBlocking().last();
     assertThat(loaded.iterator()).hasSize(9);
     assertThat(loaded.getFiles()).isNotEmpty();
-
-
   }
 }
