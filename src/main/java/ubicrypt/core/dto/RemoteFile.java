@@ -19,6 +19,7 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import java.util.Optional;
 
 import ubicrypt.core.crypto.AESGCM;
+import ubicrypt.core.remote.IListener;
 
 public class RemoteFile extends UbiFile<RemoteFile> {
   private Key key = new Key(AESGCM.rndKey());
@@ -32,11 +33,18 @@ public class RemoteFile extends UbiFile<RemoteFile> {
     return ret;
   }
 
+  public void registerUpdateListener(IListener<RemoteFile> config) {
+    super.listener = config;
+  }
+
   public RemoteFile copyFrom(RemoteFile file) {
     super.copyFrom(file);
     key = file.getKey();
     remoteName = file.getRemoteName();
     error = file.isError();
+    if (listener != null) {
+      listener.onChange(this);
+    }
     return this;
   }
 
@@ -46,6 +54,9 @@ public class RemoteFile extends UbiFile<RemoteFile> {
 
   public void setKey(Key key) {
     this.key = key;
+    if (listener != null) {
+      listener.onChange(this);
+    }
   }
 
   public String getRemoteName() {
@@ -54,6 +65,9 @@ public class RemoteFile extends UbiFile<RemoteFile> {
 
   public void setRemoteName(String remoteName) {
     this.remoteName = remoteName;
+    if (listener != null) {
+      listener.onChange(this);
+    }
   }
 
   @Override
@@ -72,6 +86,9 @@ public class RemoteFile extends UbiFile<RemoteFile> {
 
   public void setError(boolean error) {
     this.error = error;
+    if (listener != null) {
+      listener.onChange(this);
+    }
   }
 
   @Override

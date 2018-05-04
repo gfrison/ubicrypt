@@ -135,7 +135,7 @@ public class GDriveUploadIT {
                 .execute()
                 .getFiles()
                 .size())
-        .isEqualTo(numFiles + 2);
+        .isEqualTo(numFiles + 4);
 
     //untrack
     List<Observable<Boolean>> untracked =

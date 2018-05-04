@@ -15,6 +15,7 @@ package ubicrypt.core.remote;
 
 import org.slf4j.Logger;
 
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import ubicrypt.core.dto.FileIndex;
@@ -28,28 +29,28 @@ public class RemoteConfig {
   private final Set<UbiProvider> providers;
   private final int maxFilesPerIndex;
   private final RemoteFile indexFile;
-  private final FileIndex index;
+  private final RemoteFilesDelegate delegate;
 
   public RemoteConfig() {
-    providers = null;
+    providers = new LinkedHashSet<>();
     indexFile = null;
-    index = new FileIndex();
     maxFilesPerIndex = 100;
+    delegate = new RemoteFilesDelegate(new FileIndex(), maxFilesPerIndex);
   }
 
   public RemoteConfig(Set<UbiProvider> providers) {
     indexFile = null;
-    index = new FileIndex();
     maxFilesPerIndex = 100;
     this.providers = providers;
+    delegate = new RemoteFilesDelegate(new FileIndex(), maxFilesPerIndex);
   }
 
   public RemoteConfig(
       Set<UbiProvider> providers, FileIndex index, RemoteFile indexFile, int maxFilesPerIndex) {
     this.indexFile = indexFile;
     this.providers = providers;
-    this.index = index;
     this.maxFilesPerIndex = maxFilesPerIndex;
+    delegate = new RemoteFilesDelegate(index, maxFilesPerIndex);
   }
 
   public Set<UbiProvider> getProviders() {
@@ -57,7 +58,7 @@ public class RemoteConfig {
   }
 
   public synchronized Set<RemoteFile> getRemoteFiles() {
-    return new RemoteFilesDelegate(index, maxFilesPerIndex);
+    return delegate;
   }
 
   public RemoteFile getIndexFile() {
@@ -65,6 +66,6 @@ public class RemoteConfig {
   }
 
   public FileIndex getIndex() {
-    return index;
+    return delegate.getIndex();
   }
 }

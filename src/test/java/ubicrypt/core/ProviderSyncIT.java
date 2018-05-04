@@ -139,6 +139,6 @@ public class ProviderSyncIT {
     AcquirerReleaser acquirer = Observable.create(opt.get().getAcquirer()).toBlocking().first();
     assertThat(acquirer).isNotNull();
     assertThat(acquirer.getRemoteConfig().getRemoteFiles()).hasSize(20);
-    assertThat(Files.list(tmp3)).hasSize(22);
+    assertThat(Files.list(tmp3)).hasSize(24);
   }
 }

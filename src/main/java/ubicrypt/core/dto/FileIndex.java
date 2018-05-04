@@ -19,15 +19,14 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import ubicrypt.core.Action;
 
-import static ubicrypt.core.Utils.copySynchronized;
-
 public class FileIndex implements Iterable<FileIndex> {
-  private Set<RemoteFile> files = ConcurrentHashMap.newKeySet();
+  private Set<RemoteFile> files = new LinkedHashSet<>();
   private RemoteFile nextIndex;
   @JsonIgnore private volatile Action status = Action.unchanged;
   @JsonIgnore private volatile FileIndex next;
@@ -68,7 +67,7 @@ public class FileIndex implements Iterable<FileIndex> {
   }
 
   public void setFiles(Set<RemoteFile> files) {
-    this.files = copySynchronized(files);
+    this.files = files;
   }
 
   public RemoteFile getNextIndex() {

@@ -180,7 +180,7 @@ public class SingleLocalProviderIT {
             });
     assertThat(fileCounter.await(5, TimeUnit.SECONDS)).isTrue();
     sub.unsubscribe();
-    assertThat(Files.list(TestUtils.tmp2).count()).isEqualTo(12);
+    assertThat(Files.list(TestUtils.tmp2).count()).isEqualTo(13);
     //all files are processed
     assertThat(nums).isEmpty();
   }
@@ -199,7 +199,7 @@ public class SingleLocalProviderIT {
             });
 
     assertThat(fileCounter.await(5, TimeUnit.SECONDS)).isTrue();
-    assertThat(Files.list(TestUtils.tmp2).count()).isEqualTo(2);
+    assertThat(Files.list(TestUtils.tmp2).count()).isEqualTo(5);
     assertThat(localConfig.getLocalFiles().stream().filter(LocalFile::isRemoved)).hasSize(10);
     ProviderHook hook = providerLifeCycle.currentlyActiveProviders().get(0);
     assertThat(

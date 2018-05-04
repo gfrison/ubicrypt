@@ -502,7 +502,9 @@ public class Utils {
 
   public static <T> Set<T> copySynchronized(final Set<T> set) {
     final Set<T> ret = ConcurrentHashMap.newKeySet();
-    ret.addAll(set);
+    if (set != null) {
+      ret.addAll(set);
+    }
     return ret;
   }
 

@@ -18,7 +18,7 @@ import com.google.common.collect.ForwardingSet;
 import org.slf4j.Logger;
 
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -31,23 +31,39 @@ import ubicrypt.core.dto.RemoteFile;
 import static org.slf4j.LoggerFactory.getLogger;
 import static ubicrypt.core.Action.add;
 import static ubicrypt.core.Action.delete;
+import static ubicrypt.core.Action.unchanged;
 import static ubicrypt.core.Action.update;
 
-public class RemoteFilesDelegate extends ForwardingSet<RemoteFile> {
+public class RemoteFilesDelegate extends ForwardingSet<RemoteFile>
+    implements IListener<RemoteFile> {
   private static final Logger log = getLogger(RemoteFilesDelegate.class);
   private final Set<RemoteFile> delegate;
   private final int maxFilesPerIndex;
   private final FileIndex index;
 
   public RemoteFilesDelegate(FileIndex index, int maxFilesPerIndex) {
-    this.index = index;
+    this.index = deepClone(index);
+    //    index.getFiles().stream()
+    //        .forEach(rf -> rf.registerUpdateListener(this));
     this.delegate =
-        new HashSet<>(
-            StreamSupport.stream(index.spliterator(), false)
-                .map(FileIndex::getFiles)
-                .flatMap(Set::stream)
-                .collect(Collectors.toSet()));
+        StreamSupport.stream(index.spliterator(), false)
+            .map(FileIndex::getFiles)
+            .flatMap(Set::stream)
+            .collect(LinkedHashSet::new, (set, file) -> set.add(file), (s1, s2) -> s1.addAll(s2));
+    delegate.forEach(rf -> rf.registerUpdateListener(this));
     this.maxFilesPerIndex = maxFilesPerIndex;
+  }
+
+  private static FileIndex deepClone(FileIndex idx) {
+    FileIndex nidx = new FileIndex();
+    nidx.setStatus(idx.getStatus());
+    nidx.setFiles(new LinkedHashSet<>(idx.getFiles()));
+    nidx.setNextIndex(idx.getNextIndex());
+    if (idx.getNext() != null) {
+      nidx.setNext(deepClone(idx.getNext()));
+      nidx.getNext().setParent(nidx);
+    }
+    return nidx;
   }
 
   @Override
@@ -63,12 +79,12 @@ public class RemoteFilesDelegate extends ForwardingSet<RemoteFile> {
     if (idx.isPresent()) {
       final FileIndex fileIndex = idx.get();
       fileIndex.getFiles().add(element);
-      if (fileIndex.getStatus() != add) {
+      if (fileIndex.getStatus() == unchanged) {
         fileIndex.setStatus(update);
       }
     } else {
       FileIndex last = indexes.get(indexes.size() - 1);
-      if (last.getStatus() != add) {
+      if (last.getStatus() == unchanged) {
         last.setStatus(update);
       }
       final FileIndex nfi = new FileIndex();
@@ -99,7 +115,9 @@ public class RemoteFilesDelegate extends ForwardingSet<RemoteFile> {
     fileIndex.getFiles().remove(object);
     if (fileIndex.getFiles().isEmpty()) {
       if (fileIndex.getParent() == null) {
-        fileIndex.setStatus(update);
+        if (fileIndex.getStatus() == unchanged) {
+          fileIndex.setStatus(update);
+        }
       } else {
         fileIndex.setStatus(delete);
         fileIndex.getParent().setStatus(update);
@@ -110,5 +128,24 @@ public class RemoteFilesDelegate extends ForwardingSet<RemoteFile> {
 
   private List<FileIndex> indexes() {
     return StreamSupport.stream(index.spliterator(), false).collect(Collectors.toList());
+  }
+
+  @Override
+  public void onChange(RemoteFile obj) {
+    List<FileIndex> indexes = indexes();
+    Optional<FileIndex> idx =
+        indexes.stream().filter(fi -> fi.getFiles().contains(obj)).findFirst();
+    if (!idx.isPresent()) {
+      log.warn("no index present for remote file:{}", obj);
+      return;
+    }
+    final FileIndex fileIndex = idx.get();
+    if (fileIndex.getStatus() == unchanged) {
+      fileIndex.setStatus(update);
+    }
+  }
+
+  public FileIndex getIndex() {
+    return index;
   }
 }

@@ -28,6 +28,7 @@ import java.util.UUID;
 import javax.validation.constraints.NotNull;
 
 import ubicrypt.core.exp.ConflictException;
+import ubicrypt.core.remote.IListener;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -42,6 +43,7 @@ public abstract class UbiFile<T extends UbiFile> implements Comparable<UbiFile> 
   protected boolean active = true;
   protected Path path;
   protected long size;
+  protected IListener listener;
 
   @JsonIgnore
   public abstract Optional<Key> getEncryption();
@@ -85,6 +87,9 @@ public abstract class UbiFile<T extends UbiFile> implements Comparable<UbiFile> 
 
   public void setId(final UUID id) {
     this.id = id;
+    if (listener != null) {
+      listener.onChange(this);
+    }
   }
 
   public VClock getVclock() {
@@ -93,6 +98,9 @@ public abstract class UbiFile<T extends UbiFile> implements Comparable<UbiFile> 
 
   public void setVclock(final VClock vclock) {
     this.vclock = vclock;
+    if (listener != null) {
+      listener.onChange(this);
+    }
   }
 
   public byte[] getSha1() {
@@ -101,6 +109,9 @@ public abstract class UbiFile<T extends UbiFile> implements Comparable<UbiFile> 
 
   public void setSha1(final byte[] sha1) {
     this.sha1 = sha1;
+    if (listener != null) {
+      listener.onChange(this);
+    }
   }
 
   public Instant getLastModified() {
@@ -109,6 +120,9 @@ public abstract class UbiFile<T extends UbiFile> implements Comparable<UbiFile> 
 
   public void setLastModified(final Instant lastModified) {
     this.lastModified = lastModified;
+    if (listener != null) {
+      listener.onChange(this);
+    }
   }
 
   public boolean isDeleted() {
@@ -117,6 +131,9 @@ public abstract class UbiFile<T extends UbiFile> implements Comparable<UbiFile> 
 
   public void setDeleted(final boolean deleted) {
     this.deleted = deleted;
+    if (listener != null) {
+      listener.onChange(this);
+    }
   }
 
   public boolean isRemoved() {
@@ -125,6 +142,9 @@ public abstract class UbiFile<T extends UbiFile> implements Comparable<UbiFile> 
 
   public void setRemoved(final boolean removed) {
     this.removed = removed;
+    if (listener != null) {
+      listener.onChange(this);
+    }
   }
 
   public boolean isActive() {
@@ -133,6 +153,9 @@ public abstract class UbiFile<T extends UbiFile> implements Comparable<UbiFile> 
 
   public void setActive(final boolean active) {
     this.active = active;
+    if (listener != null) {
+      listener.onChange(this);
+    }
   }
 
   public Path getPath() {
@@ -141,6 +164,9 @@ public abstract class UbiFile<T extends UbiFile> implements Comparable<UbiFile> 
 
   public void setPath(final Path path) {
     this.path = path;
+    if (listener != null) {
+      listener.onChange(this);
+    }
   }
 
   public long getSize() {
@@ -149,6 +175,9 @@ public abstract class UbiFile<T extends UbiFile> implements Comparable<UbiFile> 
 
   public void setSize(final long size) {
     this.size = size;
+    if (listener != null) {
+      listener.onChange(this);
+    }
   }
 
   public VClock.Comparison compare(@NotNull UbiFile file) {
