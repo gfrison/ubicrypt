@@ -28,16 +28,21 @@ import rx.functions.Actions;
 import rx.internal.operators.BufferUntilSubscriber;
 import rx.schedulers.Schedulers;
 import rx.subjects.Subject;
+import ubicrypt.core.Action;
+import ubicrypt.core.dto.FileIndex;
 import ubicrypt.core.dto.LocalConfig;
 import ubicrypt.core.exp.AlreadyManagedException;
 import ubicrypt.core.exp.NotFoundException;
+import ubicrypt.core.provider.lock.AcquirerReleaser;
 import ubicrypt.core.util.PGPKValue;
 
+import static rx.Observable.create;
 import static rx.Observable.error;
 
 public class ProviderCommander {
   private static final Logger log = LoggerFactory.getLogger(ProviderCommander.class);
-  @Inject LocalConfig localConfig;
+  @Inject
+  LocalConfig localConfig;
 
   @Resource
   @Qualifier("providerLifeCycle")
@@ -117,8 +122,22 @@ public class ProviderCommander {
         providerLifeCycle
             .enabledProviders()
             .stream()
-            .map(ProviderHook::getConfLockRewriter)
-            .map(Observable::create)
+            .map(hook -> {
+              Observable.OnSubscribe<AcquirerReleaser> acquirer = hook.getAcquirer();
+              return create(acquirer)
+                  .flatMap(acquirerReleaser -> {
+                    acquirerReleaser.getReleaser().call();
+                    setUpdate(acquirerReleaser.getRemoteConfig().getIndex());
+                    return create(hook.getConfLockRewriter());
+                  });
+            })
             .collect(Collectors.toList()));
+  }
+
+  private void setUpdate(FileIndex index) {
+    index.setStatus(Action.update);
+    if (index.getNext() != null) {
+      setUpdate(index.getNext());
+    }
   }
 }

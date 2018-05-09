@@ -110,8 +110,8 @@ dependencies {
     // Reactor Core
     compile 'io.projectreactor:reactor-core:3.1.1.RELEASE'
 
-    compile 'org.controlsfx:controlsfx:8.40.12'
-    compile 'de.jensd:fontawesomefx-commons:8.13'
+    compile 'org.controlsfx:controlsfx:9.0.0'
+    compile 'de.jensd:fontawesomefx-commons:9.1.2'
     //AWS
     compile "com.amazonaws:aws-java-sdk-s3:$awsVersion"
     compile "com.thoughtworks.xstream:xstream:1.4.10"
@@ -163,6 +163,7 @@ spotless {
 
 compileJava.dependsOn 'spotlessApply'
 
+/*
 ext.moduleName = 'ubicrypt'
 compileJava {
     inputs.property("moduleName", moduleName)
@@ -185,3 +186,4 @@ task link(type: Exec) {
             '--add-modules', 'ubicrypt', '--launcher', "ubicrypt=${mainClassName}", '--output', 'dist', '--strip-debug',
             '--compress', '2', '--no-header-files', '--no-man-pages'
 }
+*/
