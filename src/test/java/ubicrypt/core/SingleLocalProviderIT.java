@@ -180,7 +180,7 @@ public class SingleLocalProviderIT {
             });
     assertThat(fileCounter.await(5, TimeUnit.SECONDS)).isTrue();
     sub.unsubscribe();
-    assertThat(Files.list(TestUtils.tmp2).count()).isEqualTo(13);
+    assertThat(Files.list(TestUtils.tmp2).count()).isEqualTo(14);
     //all files are processed
     assertThat(nums).isEmpty();
   }

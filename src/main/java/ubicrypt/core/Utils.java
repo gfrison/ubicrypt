@@ -373,12 +373,15 @@ public class Utils {
 
   public static Path ubiqFolder() {
     Path def = null;
+    String conFolder = ".ubicrypt";
     if ((System.getProperty("os.name")).toUpperCase().contains("WIN")) {
-      def = Paths.get(System.getenv("AppData"), "ubicrypt");
+      def = Paths.get(System.getenv("AppData"));
+      conFolder = "ubicrypt";
     } else {
-      def = Paths.get(System.getProperty("user.home"), ".ubicrypt");
+      def = Paths.get(System.getProperty("user.home"));
     }
-    return Paths.get(System.getProperty("conf", def.toString()));
+    final Path path = Paths.get(System.getProperty("conf", System.getProperty("home", def.toString())), conFolder);
+    return path;
   }
 
   public static boolean isAppInUse(final Path ubiqFolder) throws IOException {

@@ -40,18 +40,25 @@ import static ubicrypt.ui.Anchor.anchor;
 
 public class ConfirmPKController implements Initializable, Consumer<PGPPublicKey> {
   private static final Logger log = getLogger(ConfirmPKController.class);
-  @FXML Label creationDate;
-  @FXML Label algorithm;
-  @FXML ListView<String> userIds;
-  @Inject PGPService pgpService;
-  @Inject ProviderCommander providerCommander;
-  @FXML Button cancel;
-  @FXML Button add;
+  @FXML
+  Label creationDate;
+  @FXML
+  Label algorithm;
+  @FXML
+  ListView<String> userIds;
+  @Inject
+  PGPService pgpService;
+  @Inject
+  ProviderCommander providerCommander;
+  @FXML
+  Button cancel;
+  @FXML
+  Button add;
   StackNavigator navigator;
 
   @Override
   public void accept(final PGPPublicKey pgpPublicKey) {
-    log.debug("received pk:{}", pgpPublicKey);
+    log.debug("received pk:{}", pgpPublicKey.getKeyID());
     creationDate.setText(
         DateFormatUtils.format(pgpPublicKey.getCreationTime(), "yyyy-MM-dd HH:mm"));
     algorithm.setText(PGPEC.algorithm(pgpPublicKey.getAlgorithm()));
@@ -64,9 +71,10 @@ public class ConfirmPKController implements Initializable, Consumer<PGPPublicKey
                 .addOwnedPK(pgpPublicKey)
                 .doOnError(err -> log.error(err.getMessage(), err))
                 .doOnCompleted(() -> Platform.runLater(() -> navigator.browse("exportConfig")))
-                .subscribe());
+                .subscribe(result -> log.info("add pk res:{}", result)));
   }
 
   @Override
-  public void initialize(final URL location, final ResourceBundle resources) {}
+  public void initialize(final URL location, final ResourceBundle resources) {
+  }
 }

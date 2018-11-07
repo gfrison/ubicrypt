@@ -128,7 +128,9 @@ public class ProviderCommander {
                   .flatMap(acquirerReleaser -> {
                     acquirerReleaser.getReleaser().call();
                     setUpdate(acquirerReleaser.getRemoteConfig().getIndex());
-                    return create(hook.getConfLockRewriter());
+                    return hook.getConfigSaver()
+                        .apply(r -> r)
+                        .flatMap(r -> create(hook.getConfLockRewriter()));
                   });
             })
             .collect(Collectors.toList()));
